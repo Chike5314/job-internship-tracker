@@ -1,0 +1,50 @@
+.tile {
+  display: grid;
+  gap: var(--space-2);
+  align-content: start;
+  padding: var(--space-5);
+  border-radius: var(--radius-lg);
+  min-width: 0;
+}
+
+/* The one tile holding something the viewer has to answer. The vermilion is an
+   outline rather than a fill, so a count stays a count and the tile does not
+   read as a button. */
+.urgent {
+  box-shadow: inset 0 0 0 1px var(--color-brand-verm);
+}
+
+.urgent .note {
+  color: var(--color-attention-text);
+  font-weight: 600;
+}
+
+.head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.label {
+  color: var(--color-text-muted);
+}
+
+.icon {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-xs);
+  background: var(--color-state-open-bg);
+  color: var(--color-text-muted);
+}
+
+.value {
+  color: var(--color-text-primary);
+  font-variant-numeric: tabular-nums;
+}
+
+.note {
+  color: var(--color-text-muted);
+}

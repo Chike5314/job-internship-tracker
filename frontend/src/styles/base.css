@@ -1,0 +1,76 @@
+html {
+  background: var(--color-ground);
+  color: var(--color-text-primary);
+  color-scheme: light dark;
+  font-family: var(--font-sans);
+}
+
+body {
+  min-height: 100vh;
+}
+
+/* The vermilion focus ring, 2px with a 2px offset. Identical in both themes
+   and never removed anywhere in this codebase. */
+:focus-visible {
+  outline: 2px solid var(--color-rule-focus);
+  outline-offset: 2px;
+}
+
+/* The measure body-lg calls for: marketing paragraphs held to 70 characters. */
+.measure {
+  max-width: 70ch;
+}
+
+/* aria-hidden layers (the bloom field) never take part in layout flow or
+   pointer handling. */
+[aria-hidden='true'] {
+  pointer-events: none;
+}
+
+.bloom-field {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+}
+
+.bloom-field__shape {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(var(--blur-bloom));
+}
+
+.bloom-field__shape--forest {
+  width: 60vw;
+  height: 60vw;
+  top: -10vw;
+  left: -10vw;
+  background: var(--color-bloom-forest);
+}
+
+.bloom-field__shape--verm {
+  width: 40vw;
+  height: 40vw;
+  bottom: -15vw;
+  right: -5vw;
+  background: var(--color-bloom-verm);
+}
+
+.bloom-field__shape--warm {
+  width: 50vw;
+  height: 50vw;
+  top: 20vh;
+  right: 15vw;
+  background: var(--color-bloom-warm);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

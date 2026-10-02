@@ -1,0 +1,272 @@
+.page {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-5);
+}
+
+.muted {
+  color: var(--color-text-muted);
+}
+
+.head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  justify-content: space-between;
+  gap: var(--space-4);
+}
+
+.headText {
+  display: grid;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.headActions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.total {
+  color: var(--color-text-primary);
+  font-variant-numeric: tabular-nums;
+}
+
+/* The bulk bar appears only when something is selected, so it never takes room
+   from the board while nothing is happening. */
+.bulk {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  padding: var(--space-4) var(--space-5);
+}
+
+.bulkActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+/* The board scrolls sideways in its own container at narrow widths rather than
+   taking the page with it. */
+.board {
+  display: grid;
+  grid-auto-flow: column;
+  /* Narrow enough that all five stages fit a laptop without scrolling. The
+     column that needs attention is the fourth, so a board that clips at three
+     hides exactly the thing a recruiter came to see. */
+  grid-auto-columns: minmax(200px, 1fr);
+  gap: var(--space-4);
+  overflow-x: auto;
+  padding-bottom: var(--space-3);
+}
+
+.column {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  gap: var(--space-3);
+  align-content: start;
+  min-width: 0;
+}
+
+.columnHead {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: var(--space-1) var(--space-2);
+  padding-bottom: var(--space-3);
+  border-bottom: 2px solid var(--color-rule-hairline);
+}
+
+.columnHead p:last-child {
+  grid-column: 1 / -1;
+}
+
+.count {
+  color: var(--color-text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.cards {
+  display: grid;
+  gap: var(--space-2);
+  align-content: start;
+}
+
+/* The checkbox and avatar sit on the card's own top line, so the text below
+   them gets the full column width. Side by side they took a third of a 236px
+   column and pushed every name onto two lines. */
+.card {
+  display: grid;
+  grid-template-columns: auto auto minmax(0, 1fr);
+  grid-template-areas:
+    'pick avatar .'
+    'text text text';
+  align-items: center;
+  gap: var(--space-2) var(--space-3);
+  padding: var(--space-3);
+}
+
+.pick {
+  grid-area: pick;
+}
+
+.avatar {
+  grid-area: avatar;
+}
+
+.cardText {
+  grid-area: text;
+  width: 100%;
+}
+
+.cardPicked {
+  box-shadow: var(--shadow-inset-edge), 0 0 0 1.5px var(--color-brand-forest) inset;
+}
+
+/* The checkbox keeps its label for a screen reader and loses it on screen,
+   where the name is already in the row beside it. */
+.pick span {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.avatar {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 999px;
+  background: var(--color-active-wash);
+  color: var(--color-state-active-text);
+  font-size: var(--type-caption-size);
+  font-weight: 600;
+}
+
+.cardText {
+  display: grid;
+  gap: var(--space-2);
+  justify-items: start;
+  min-width: 0;
+}
+
+.cardText a:hover {
+  text-decoration: underline;
+}
+
+.none {
+  padding: var(--space-4);
+  color: var(--color-text-subtle);
+  text-align: center;
+}
+
+.closedBlock {
+  display: grid;
+  gap: var(--space-3);
+  padding-top: var(--space-5);
+  border-top: 1px solid var(--color-rule-hairline);
+}
+
+.closedList {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 280px), 1fr));
+  gap: var(--space-2) var(--space-6);
+}
+
+.closedRow {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.closedRow a {
+  color: var(--color-text-secondary);
+}
+
+.closedRow a:hover {
+  color: var(--color-text-primary);
+  text-decoration: underline;
+}
+
+.dialogActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-2);
+}
+
+/* ----------------------------------------------------------------------
+   Card detail the board needs to be read at a glance
+   ---------------------------------------------------------------------- */
+
+.nameRow {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+/* The one mark on a card that means nobody has read this yet. It is a dot
+   rather than a word because the column header already says the stage. */
+.unread {
+  flex: none;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--color-brand-verm);
+}
+
+.chip {
+  align-self: start;
+  padding: 2px 8px;
+  border-radius: var(--radius-xs);
+  font-size: var(--type-caption-size);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+/* A time still waiting on a reply takes the signal hue; one already agreed is
+   a settled fact and takes the structural one. */
+.chipAwaiting {
+  background: var(--color-attention-wash);
+  color: var(--color-attention-text);
+}
+
+.chipConfirmed {
+  background: var(--color-active-wash);
+  color: var(--color-state-active-text);
+}
+
+.decidedTag {
+  display: flex;
+}
+
+.cardFoot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  width: 100%;
+  gap: var(--space-2);
+  margin-top: var(--space-1);
+  padding-top: var(--space-2);
+  border-top: 1px solid var(--color-rule-hairline);
+}
+
+/* A pill that wraps keeps its padding on both lines rather than splitting the
+   background open at the break. */
+.chip,
+.decidedTag :global(*) {
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
+}

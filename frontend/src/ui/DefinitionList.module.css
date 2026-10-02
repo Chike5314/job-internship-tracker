@@ -1,0 +1,17 @@
+.list {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.row {
+  display: grid;
+  grid-template-columns: minmax(120px, 1fr) 2fr;
+  gap: var(--space-3);
+  padding-bottom: var(--space-3);
+  border-bottom: 1px solid var(--color-rule-hairline);
+}
+
+.row:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}

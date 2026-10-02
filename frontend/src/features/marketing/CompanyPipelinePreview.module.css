@@ -1,0 +1,114 @@
+.stack {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-3);
+  min-width: 0;
+}
+
+.muted {
+  color: var(--color-text-muted);
+}
+
+.panel {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-4);
+  padding: var(--space-5);
+}
+
+.head {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: var(--space-4);
+}
+
+.headText {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.published {
+  flex: none;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: var(--color-state-active-bg);
+  color: var(--color-state-active-text);
+  font-size: var(--type-caption-size);
+  font-weight: 600;
+}
+
+.stages {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.stage {
+  display: grid;
+  grid-template-columns: minmax(0, 8rem) minmax(0, 1fr) auto;
+  gap: var(--space-3);
+  align-items: center;
+}
+
+.track {
+  height: 10px;
+  border-radius: 999px;
+  background: var(--color-state-open-bg);
+  overflow: hidden;
+}
+
+.bar {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: var(--color-brand-forest);
+}
+
+/* The one vermilion mark on the panel, on the stage waiting for an answer. */
+.attention {
+  background: var(--color-brand-verm);
+}
+
+.count {
+  color: var(--color-text-primary);
+  font-variant-numeric: tabular-nums;
+}
+
+.pair {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-3);
+}
+
+.small {
+  display: grid;
+  gap: var(--space-2);
+  padding: var(--space-4);
+  min-width: 0;
+}
+
+.eyebrow {
+  color: var(--color-text-subtle);
+}
+
+.confirmed,
+.file {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.confirmed {
+  color: var(--color-state-active-text);
+}
+
+.file {
+  overflow-wrap: anywhere;
+}
+
+@media (min-width: 520px) {
+  .pair {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}

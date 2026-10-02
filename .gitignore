@@ -1,0 +1,15 @@
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.env
+cdk.out/
+cdk.context.json
+.pytest_cache/
+.DS_Store
+*.egg-info/
+
+# Frontend (frontend/ has its own .gitignore for anything scoped inside it;
+# these two are here in case something is ever run from the repo root)
+frontend/node_modules/
+frontend/dist/

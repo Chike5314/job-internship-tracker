@@ -1,0 +1,10 @@
+-r requirements.txt
+boto3>=1.34.0
+botocore>=1.34.0
+pytest>=8.0.0
+# The integration tests stand up DynamoDB with its indexes, S3, SQS, SNS, SES and
+# Cognito in process, so the broad extra is the one that matters here.
+moto[all]>=5.0.0
+# SRP sign in for scripts/seed.py. The app client only allows
+# ALLOW_USER_SRP_AUTH, and hand rolling that protocol is not worth repeating.
+pycognito>=2024.5.1

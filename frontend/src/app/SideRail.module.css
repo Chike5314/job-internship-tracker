@@ -1,0 +1,128 @@
+.rail {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+  padding: var(--space-4);
+  border-radius: 0;
+}
+
+.head {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-width: 0;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+}
+
+/* Names the side of the product without competing with the wordmark, which is
+   why it is a quiet chip rather than a second piece of brand. */
+.section {
+  padding: 2px 8px;
+  border-radius: var(--radius-xs);
+  background: var(--color-state-open-bg);
+  color: var(--color-text-subtle);
+}
+
+.nav {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+/* The destinations that are not daily work sit under a rule, so the list above
+   reads as the short one it is. */
+.secondary {
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--color-rule-hairline);
+}
+
+.link {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  height: 44px;
+  padding: 0 var(--space-3);
+  border-radius: var(--radius-sm);
+  color: var(--color-text-secondary);
+  transition:
+    background-color 120ms ease,
+    color 120ms ease;
+}
+
+.link:hover {
+  background: var(--color-glass-hover);
+  color: var(--color-text-primary);
+}
+
+.active {
+  background: var(--color-active-wash);
+  color: var(--color-text-primary);
+  font-weight: 600;
+}
+
+.count {
+  margin-left: auto;
+  min-width: 22px;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: var(--color-state-open-bg);
+  color: var(--color-state-open-text);
+  font-family: var(--font-mono);
+  font-size: var(--type-caption-size);
+  font-variant-numeric: tabular-nums;
+  line-height: 20px;
+  text-align: center;
+}
+
+.alert {
+  background: var(--color-attention-fill);
+  color: var(--color-on-brand);
+}
+
+.foot {
+  margin-top: auto;
+  padding-top: var(--space-4);
+}
+
+@media (min-width: 900px) {
+  .rail {
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    padding: var(--space-5) var(--space-4);
+  }
+}
+
+/* Below the split the rail becomes a band: the brand on one line and the
+   destinations scrolling across under it. The identity card goes with the
+   account menu in the bar, so it is not repeated here. */
+@media (max-width: 899px) {
+  .rail {
+    gap: var(--space-4);
+  }
+
+  .nav {
+    flex-direction: row;
+    gap: var(--space-2);
+    overflow-x: auto;
+    padding-bottom: var(--space-1);
+  }
+
+  .secondary {
+    padding-top: 0;
+    border-top: none;
+  }
+
+  .link {
+    flex: none;
+    padding: 0 var(--space-4);
+  }
+
+  .foot {
+    display: none;
+  }
+}

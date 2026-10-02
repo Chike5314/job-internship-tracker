@@ -1,0 +1,59 @@
+.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  height: 40px;
+  padding: 0 var(--space-4);
+  border-radius: var(--radius-sm);
+  white-space: nowrap;
+  transition:
+    background-color 120ms ease,
+    box-shadow 120ms ease,
+    opacity 120ms ease;
+}
+
+.button:disabled {
+  opacity: var(--opacity-disabled);
+  cursor: not-allowed;
+}
+
+/* The ground of the one primary button on a view. Solid, never glass. */
+.primary {
+  background: var(--color-action-fill);
+  color: var(--color-on-brand);
+}
+
+.primary:hover:not(:disabled) {
+  background: var(--color-action-fill-hover);
+}
+
+.secondary {
+  background: var(--color-glass-solid);
+  color: var(--color-text-primary);
+  box-shadow: var(--shadow-inset-edge), 0 0 0 1px var(--color-rule-strong) inset;
+}
+
+.secondary:hover:not(:disabled) {
+  background-image: linear-gradient(var(--color-glass-hover), var(--color-glass-hover));
+}
+
+.quiet {
+  background: transparent;
+  color: var(--color-text-secondary);
+}
+
+.quiet:hover:not(:disabled) {
+  background: var(--color-active-wash);
+  color: var(--color-text-primary);
+}
+
+.danger {
+  background: transparent;
+  color: var(--color-attention-text);
+  box-shadow: 0 0 0 1px var(--color-verm-500) inset;
+}
+
+.danger:hover:not(:disabled) {
+  background: var(--color-attention-wash);
+}

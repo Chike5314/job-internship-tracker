@@ -1,0 +1,103 @@
+.page {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-6);
+}
+
+.muted {
+  color: var(--color-text-muted);
+}
+
+.days {
+  display: grid;
+  gap: var(--space-6);
+}
+
+.day {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.dayHeading {
+  color: var(--color-text-subtle);
+}
+
+.rows {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-2);
+  padding: var(--space-4);
+  align-items: center;
+}
+
+.time {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+  font-variant-numeric: tabular-nums;
+}
+
+.who {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.who a:hover {
+  text-decoration: underline;
+}
+
+.where {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 0;
+  color: var(--color-text-secondary);
+}
+
+.where span {
+  overflow-wrap: anywhere;
+}
+
+.state {
+  justify-self: start;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: var(--type-caption-size);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.confirmed {
+  background: var(--color-state-active-bg);
+  color: var(--color-state-active-text);
+}
+
+/* Awaiting a reply is the thing on this page waiting on somebody, so it is the
+   one that carries the signal hue. */
+.proposed {
+  background: var(--color-state-waiting-bg);
+  color: var(--color-state-waiting-text);
+}
+
+.when {
+  justify-self: start;
+}
+
+@media (min-width: 900px) {
+  .row {
+    grid-template-columns: 8.5rem minmax(0, 1.1fr) minmax(0, 1.2fr) auto auto;
+    gap: var(--space-4);
+  }
+
+  .when {
+    justify-self: end;
+    min-width: 6rem;
+    text-align: right;
+  }
+}

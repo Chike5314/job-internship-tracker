@@ -1,0 +1,39 @@
+.tag {
+  display: inline-flex;
+  align-items: center;
+  height: 26px;
+  padding: 0 var(--space-2);
+  border-radius: var(--radius-xs);
+  font-weight: 600;
+}
+
+.open {
+  background: var(--color-state-open-bg);
+  color: var(--color-state-open-text);
+}
+
+.active {
+  background: var(--color-state-active-bg);
+  color: var(--color-state-active-text);
+}
+
+.waiting {
+  background: var(--color-state-waiting-bg);
+  color: var(--color-state-waiting-text);
+}
+
+/* The only solid tag, because it is the only state that demands an answer. */
+.offer {
+  background: var(--color-state-offer-bg);
+  color: var(--color-state-offer-text);
+}
+
+.won {
+  background: var(--color-state-won-bg);
+  color: var(--color-state-won-text);
+}
+
+.closed {
+  background: var(--color-state-closed-bg);
+  color: var(--color-state-closed-text);
+}

@@ -1,0 +1,33 @@
+.shell {
+  min-height: 100vh;
+}
+
+.foreground {
+  position: relative;
+  z-index: 1;
+  min-height: 100vh;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.column {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.main {
+  flex: 1;
+  min-width: 0;
+  padding: var(--space-5) var(--space-4) var(--space-8);
+}
+
+@media (min-width: 900px) {
+  .foreground {
+    grid-template-columns: 260px minmax(0, 1fr);
+  }
+
+  .main {
+    padding: var(--space-7) var(--space-7) var(--space-9);
+  }
+}

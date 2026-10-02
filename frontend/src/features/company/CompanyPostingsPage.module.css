@@ -1,0 +1,207 @@
+.page {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-5);
+}
+
+.muted {
+  color: var(--color-text-muted);
+}
+
+.controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+}
+
+.tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.tab {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  height: 36px;
+  padding: 0 var(--space-3);
+  border-radius: 999px;
+  color: var(--color-text-secondary);
+}
+
+.tab:hover {
+  background: var(--color-glass-hover);
+}
+
+.tabActive {
+  background: var(--color-active-wash);
+  color: var(--color-text-primary);
+  font-weight: 600;
+}
+
+.tabCount {
+  font-family: var(--font-mono);
+  font-size: var(--type-caption-size);
+  font-variant-numeric: tabular-nums;
+  color: var(--color-text-muted);
+}
+
+.search {
+  flex: 0 1 260px;
+  min-width: 0;
+}
+
+.loading {
+  display: grid;
+  gap: var(--space-2);
+}
+
+/* The table is the one thing on this page allowed to scroll sideways, and it
+   does so in its own container rather than taking the page with it. */
+.tableWrap {
+  overflow-x: auto;
+  border-radius: var(--radius-lg);
+}
+
+.table {
+  width: 100%;
+  min-width: 720px;
+  border-collapse: collapse;
+}
+
+.table th,
+.table td {
+  text-align: left;
+  vertical-align: top;
+  padding: var(--space-4);
+}
+
+.table thead th {
+  position: sticky;
+  top: 0;
+  padding-block: var(--space-2) var(--space-3);
+  font-family: var(--font-mono);
+  font-size: var(--type-eyebrow-size);
+  font-weight: 400;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--color-text-subtle);
+  background: var(--color-ground);
+}
+
+.table tbody tr {
+  background: var(--color-glass-solid);
+  box-shadow: var(--shadow-inset-edge);
+}
+
+.table tbody tr:hover {
+  background-image: linear-gradient(var(--color-glass-hover), var(--color-glass-hover));
+}
+
+.table tbody th,
+.table tbody td {
+  border-top: 1px solid var(--color-rule-hairline);
+}
+
+.table tbody th {
+  font-weight: 400;
+}
+
+.title {
+  display: block;
+  font-size: var(--type-heading-sm-size);
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.title:hover {
+  text-decoration: underline;
+}
+
+.table td span,
+.table th span {
+  display: block;
+}
+
+.status {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: var(--type-caption-size);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.published {
+  background: var(--color-state-active-bg);
+  color: var(--color-state-active-text);
+}
+
+.draft {
+  background: var(--color-state-open-bg);
+  color: var(--color-state-open-text);
+}
+
+.closed,
+.expired {
+  background: var(--color-state-closed-bg);
+  color: var(--color-state-closed-text);
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  white-space: nowrap;
+}
+
+.action {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  height: 32px;
+  padding: 0 var(--space-3);
+  border-radius: var(--radius-sm);
+  color: var(--color-text-secondary);
+  font-size: var(--type-body-sm-size);
+}
+
+.action:hover {
+  background: var(--color-active-wash);
+  color: var(--color-text-primary);
+}
+
+/* The four counts the page opens with. One row on a wide screen, two on a
+   tablet, stacked on a phone. */
+.tiles {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-4);
+}
+
+@media (min-width: 700px) {
+  .tiles {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1100px) {
+  .tiles {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+.applicants {
+  color: var(--color-text-primary);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Unopened applications are the one thing on this table waiting on the
+   recruiter, so they take the signal hue. */
+.unopened {
+  color: var(--color-attention-text);
+  font-weight: 600;
+}

@@ -1,0 +1,8 @@
+/* The sprite strokes in currentColor, so an icon takes the colour of the text
+   it sits beside and there is no per theme variant to keep in step. */
+.icon {
+  display: inline-block;
+  flex: none;
+  color: inherit;
+  vertical-align: -0.125em;
+}

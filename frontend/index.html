@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="color-scheme" content="light dark" />
+    <title>Offerline</title>
+    <script>
+      // Runs before the stylesheet, so there is no flash of the wrong theme.
+      // Kept in sync with the logic in src/app/ThemeProvider.tsx.
+      (function () {
+        var stored = localStorage.getItem('offerline.theme')
+        var preference = stored === 'paper' || stored === 'ink' ? stored : 'system'
+        var resolved =
+          preference === 'system'
+            ? window.matchMedia('(prefers-color-scheme: dark)').matches
+              ? 'ink'
+              : 'paper'
+            : preference
+        document.documentElement.dataset.theme = resolved
+      })()
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

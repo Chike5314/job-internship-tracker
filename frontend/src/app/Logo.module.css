@@ -1,0 +1,16 @@
+/* The height comes from the component and the width follows the artwork, so a
+   caller sets one number and the proportions hold. */
+/* The ink inherits rather than naming a token, because the wordmark has to work
+   both on the page and on the fixed dark brand panel, where the surrounding
+   text colour is the right answer and the page's own is not. */
+.logo {
+  display: inline-flex;
+  align-items: center;
+  color: inherit;
+}
+
+.logo > svg {
+  display: block;
+  height: 100%;
+  width: auto;
+}

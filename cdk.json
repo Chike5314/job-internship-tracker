@@ -1,0 +1,29 @@
+{
+  "app": "python app.py",
+  "watch": {
+    "include": ["**"],
+    "exclude": [
+      "README.md",
+      "cdk*.json",
+      "requirements*.txt",
+      "**/__pycache__",
+      "tests",
+      ".venv"
+    ]
+  },
+  "context": {
+    "stage": "dev",
+    "region": "us-east-1",
+    "senderEmail": "no-reply@example.com",
+    "googleClientId": "",
+    "googleClientSecretArn": "",
+    "allowedOrigins": ["http://localhost:3000"],
+    "userPoolDomainPrefix": "jiat-dev",
+    "@aws-cdk/aws-lambda:recognizeLayerVersion": true,
+    "@aws-cdk/core:checkSecretUsage": true,
+    "@aws-cdk/aws-iam:minimizePolicies": true,
+    "@aws-cdk/core:validateSnapshotRemovalPolicy": true,
+    "@aws-cdk/aws-apigateway:disableCloudWatchRole": false,
+    "@aws-cdk/core:target-partitions": ["aws"]
+  }
+}

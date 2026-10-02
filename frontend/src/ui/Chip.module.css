@@ -1,0 +1,21 @@
+.chip {
+  display: inline-flex;
+  align-items: center;
+  height: 32px;
+  padding: 0 var(--space-3);
+  border-radius: var(--radius-xs);
+  background: var(--color-glass-solid);
+  color: var(--color-text-secondary);
+  box-shadow: 0 0 0 1px var(--color-rule-hairline) inset;
+  transition: background-color 120ms ease;
+}
+
+.chip:hover {
+  background-image: linear-gradient(var(--color-glass-hover), var(--color-glass-hover));
+}
+
+.selected {
+  background: var(--color-active-wash);
+  color: var(--color-state-active-text);
+  box-shadow: 0 0 0 1px var(--color-brand-forest) inset;
+}

@@ -1,0 +1,225 @@
+.page {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-5);
+  max-width: 54rem;
+}
+
+.muted {
+  color: var(--color-text-muted);
+}
+
+.head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  justify-content: space-between;
+  gap: var(--space-4);
+}
+
+.head div {
+  min-width: 0;
+  display: grid;
+  gap: var(--space-2);
+}
+
+.headActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+}
+
+.steps {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.step {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  height: 40px;
+  padding: 0 var(--space-4);
+  border-radius: 999px;
+  color: var(--color-text-secondary);
+}
+
+.step:hover {
+  background: var(--color-glass-hover);
+}
+
+.stepActive {
+  background: var(--color-active-wash);
+  color: var(--color-text-primary);
+  font-weight: 600;
+}
+
+.stepMark {
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 999px;
+  background: var(--color-brand-forest);
+  color: var(--color-n-0);
+  font-family: var(--font-mono);
+  font-size: var(--type-caption-size);
+}
+
+.panel {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-5);
+  padding: var(--space-6);
+  border-radius: var(--radius-xl);
+  background: var(--color-glass-solid);
+  box-shadow: var(--shadow-inset-edge), var(--shadow-soft-lg);
+}
+
+.fieldset {
+  display: grid;
+  gap: var(--space-3);
+  border: none;
+  padding: 0;
+  margin: 0;
+}
+
+.fieldset legend {
+  padding: 0;
+  color: var(--color-text-secondary);
+}
+
+.choices {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr));
+  gap: var(--space-3);
+}
+
+/* The whole card is the control, so the hit area is the card rather than the
+   radio dot beside it. */
+.choice {
+  display: flex;
+  align-items: start;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  border-radius: var(--radius-md);
+  background: var(--color-glass-dense);
+  box-shadow: 0 0 0 1px var(--color-rule-hairline) inset;
+  cursor: pointer;
+}
+
+.choice span {
+  display: grid;
+  gap: var(--space-1);
+  min-width: 0;
+}
+
+.choicePicked {
+  box-shadow: 0 0 0 1.5px var(--color-brand-forest) inset;
+}
+
+.inline {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  height: 40px;
+  padding: 0 var(--space-4);
+  border-radius: 999px;
+  background: var(--color-glass-dense);
+  box-shadow: 0 0 0 1px var(--color-rule-hairline) inset;
+  cursor: pointer;
+}
+
+.chipPicked {
+  background: var(--color-active-wash);
+  box-shadow: 0 0 0 1.5px var(--color-brand-forest) inset;
+  font-weight: 600;
+}
+
+.row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 170px), 1fr));
+  gap: var(--space-4);
+}
+
+.skillRow {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.skills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.skill {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: 4px 6px 4px 12px;
+  border-radius: 999px;
+  background: var(--color-state-open-bg);
+  color: var(--color-state-open-text);
+  font-size: var(--type-body-sm-size);
+}
+
+.skill button {
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 999px;
+  color: var(--color-text-muted);
+}
+
+.skill button:hover {
+  background: var(--color-attention-wash);
+  color: var(--color-attention-text);
+}
+
+.documents {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.document {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  gap: var(--space-2);
+  align-items: center;
+}
+
+.notice {
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-sm);
+  background: var(--color-attention-wash);
+  color: var(--color-attention-text);
+}
+
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.footer {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.footer :only-child {
+  margin-left: auto;
+}

@@ -1,0 +1,63 @@
+.bar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  padding: var(--space-4) var(--space-6);
+  border-bottom: 1px solid var(--color-rule-hairline);
+}
+
+.search {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  flex: 1;
+  min-width: 0;
+  max-width: 440px;
+  height: 44px;
+  padding: 0 var(--space-4);
+  border-radius: var(--radius-md);
+  color: var(--color-text-muted);
+}
+
+.field {
+  flex: 1;
+  min-width: 0;
+  border: none;
+  background: transparent;
+  color: var(--color-text-primary);
+  font-size: var(--type-body-size);
+}
+
+.field:focus {
+  outline: none;
+}
+
+/* The field already carries a focus ring from the controls layer; the hint is
+   decoration and steps aside once the viewer is typing in it. */
+.shortcut {
+  flex: none;
+  padding: 2px 6px;
+  border-radius: var(--radius-xs);
+  background: var(--color-state-open-bg);
+  color: var(--color-text-subtle);
+  font-family: var(--font-mono);
+  font-size: var(--type-caption-size);
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-left: auto;
+}
+
+@media (max-width: 640px) {
+  .bar {
+    padding: var(--space-3) var(--space-4);
+    gap: var(--space-3);
+  }
+
+  .shortcut {
+    display: none;
+  }
+}

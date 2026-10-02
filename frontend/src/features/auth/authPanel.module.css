@@ -1,0 +1,150 @@
+.panel {
+  display: grid;
+  gap: var(--space-4);
+}
+
+.tabs {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 2px;
+  padding: 4px;
+  border-radius: var(--radius-md);
+  margin-bottom: var(--space-2);
+}
+
+.tab {
+  height: 40px;
+  padding: 0 var(--space-3);
+  border: none;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--color-text-muted);
+  font-size: var(--type-body-sm-size);
+  font-weight: 600;
+}
+
+.tab:hover {
+  color: var(--color-text-primary);
+}
+
+.tabActive {
+  background: var(--color-glass-solid);
+  box-shadow: 0 0 0 1px var(--color-brand-forest) inset;
+  color: var(--color-state-active-text);
+}
+
+.lead {
+  display: grid;
+  gap: var(--space-1);
+}
+
+.subtitle {
+  color: var(--color-text-muted);
+}
+
+/* A rule with the word sitting in it, which is how the board separates the
+   federated route from the email one. */
+.divider {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  color: var(--color-text-subtle);
+  font-size: var(--type-caption-size);
+}
+
+.divider::before,
+.divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--color-rule-hairline);
+}
+
+.google {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-3);
+  width: 100%;
+  height: 48px;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: var(--color-glass-solid);
+  box-shadow: var(--shadow-inset-edge), 0 0 0 1px var(--color-rule-strong) inset;
+  color: var(--color-text-primary);
+  font-size: var(--type-body-size);
+  font-weight: 600;
+}
+
+.google:hover:not(:disabled) {
+  background-image: linear-gradient(var(--color-glass-hover), var(--color-glass-hover));
+}
+
+.google:disabled {
+  opacity: var(--opacity-disabled);
+}
+
+/* The label row carries the rule for the field beside its name, so the form
+   stays one column of fields rather than a column of fields and a list. */
+.labelRow {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.hint {
+  color: var(--color-text-subtle);
+  font-size: var(--type-caption-size);
+}
+
+.forgot {
+  justify-self: end;
+  color: var(--color-text-link);
+  font-size: var(--type-body-sm-size);
+  font-weight: 600;
+}
+
+.forgot:hover {
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.swap {
+  text-align: center;
+  color: var(--color-text-muted);
+}
+
+.swap button {
+  border: none;
+  background: none;
+  padding: 0;
+  color: var(--color-text-link);
+  font: inherit;
+  font-weight: 600;
+}
+
+.swap button:hover {
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.note {
+  color: var(--color-text-subtle);
+  text-align: center;
+}
+
+.aside {
+  color: var(--color-text-muted);
+}
+
+.error {
+  padding: var(--space-3);
+  border-radius: var(--radius-sm);
+  background: var(--color-attention-wash);
+  color: var(--color-attention-text);
+}
+
+.rules {
+  margin: 0;
+}

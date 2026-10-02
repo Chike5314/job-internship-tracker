@@ -1,0 +1,24 @@
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  height: 24px;
+  padding: 0 var(--space-2);
+  border-radius: var(--radius-round);
+  font-weight: 600;
+}
+
+.positive {
+  background: var(--color-active-wash);
+  color: var(--color-state-active-text);
+}
+
+.neutral {
+  background: var(--color-state-closed-bg);
+  color: var(--color-state-closed-text);
+}
+
+.attention {
+  background: var(--color-attention-wash);
+  color: var(--color-attention-text);
+}

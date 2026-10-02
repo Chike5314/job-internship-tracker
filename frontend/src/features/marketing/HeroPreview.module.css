@@ -1,0 +1,114 @@
+.stack {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-4);
+  justify-items: stretch;
+  min-width: 0;
+}
+
+.panel {
+  padding: var(--space-5);
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-4);
+  min-width: 0;
+}
+
+.panelHead {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-4);
+}
+
+.quiet {
+  color: var(--color-text-muted);
+}
+
+.rows {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+}
+
+.rowText {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 2px;
+  min-width: 0;
+}
+
+/* States are tints on glass, never fills, and each one carries its word. */
+.state {
+  flex: none;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: var(--type-caption-size);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.active {
+  background: var(--color-state-active-bg);
+  color: var(--color-state-active-text);
+}
+
+.waiting {
+  background: var(--color-state-waiting-bg);
+  color: var(--color-state-waiting-text);
+}
+
+/* The one solid tag in the system, because an offer is the only state that
+   demands an answer. */
+.offer {
+  background: var(--color-state-offer-bg);
+  color: var(--color-state-offer-text);
+}
+
+.invite {
+  padding: var(--space-5);
+  display: grid;
+  gap: var(--space-2);
+  justify-self: end;
+  width: min(100%, 340px);
+}
+
+.inviteEyebrow {
+  color: var(--color-attention-text);
+}
+
+.detail {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: var(--space-1) var(--space-4);
+  margin-top: var(--space-2);
+}
+
+.detail dd {
+  margin: 0;
+}
+
+.confirm {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  margin-top: var(--space-3);
+  height: 36px;
+  border-radius: var(--radius-sm);
+  background: var(--color-action-fill);
+  color: var(--color-on-brand);
+  font-size: var(--type-button-size);
+  font-weight: 600;
+}
+
+.note {
+  color: var(--color-text-subtle);
+  text-align: right;
+}

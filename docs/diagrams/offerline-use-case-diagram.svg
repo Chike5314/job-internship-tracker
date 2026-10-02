@@ -1,0 +1,123 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 1140" width="1440" height="1140" role="img" aria-label="Use case diagram for the Offerline application tracker." xmlns:c2pa="http://c2pa.org/manifest"><metadata><c2pa:manifest>AAAWgmp1bWIAAAAeanVtZGMycGEAEQAQgAAAqgA4m3EDYzJwYQAAABZcanVtYgAAAEdqdW1kYzJtYQARABCAAACqADibcQN1cm46YzJwYTphYWU0NDA3Mi1iNDMzLTQ1YTYtYjU1Yi03MDZkMjg3OWY0M2QAAAADl2p1bWIAAAApanVtZGMyYXMAEQAQgAAAqgA4m3EDYzJwYS5hc3NlcnRpb25zAAAAALxqdW1iAAAARGp1bWRjYm9yABEAEIAAAKoAOJtxE2MycGEuaW5ncmVkaWVudC52MwAAAAAYYzJzaNkvfgv0XC5w8PjRF8s0N2oAAABwY2JvcqNpZGM6Zm9ybWF0bWltYWdlL3N2Zyt4bWxqaW5zdGFuY2VJRHgseG1wOmlpZDoyYmVlMDhlOC02ZWI5LTQ3MTMtYWI3ZS1mNTI1ZWMxNzNmN2JscmVsYXRpb25zaGlwaHBhcmVudE9mAAAB4mp1bWIAAABBanVtZGNib3IAEQAQgAAAqgA4m3ETYzJwYS5hY3Rpb25zLnYyAAAAABhjMnNou5DOOkuL8gLMS68D3hhk2QAAAZljYm9yomdhY3Rpb25zgqJmYWN0aW9ua2MycGEub3BlbmVkanBhcmFtZXRlcnOha2luZ3JlZGllbnRzgaJjdXJseC1zZWxmI2p1bWJmPWMycGEuYXNzZXJ0aW9ucy9jMnBhLmluZ3JlZGllbnQudjNkaGFzaFggtaRg7EvY20xvR5jvlf9jq9zjuWuweGr0A7cpZMaFtIykZmFjdGlvbngdY29tLmFudGhyb3BpYy5jbGF1ZGUucHJvdmlkZWRqcGFyYW1ldGVyc6F4H2NvbS5hbnRocm9waWMub3JpZ2luLWNvbmZpZGVuY2VndW5rbm93bmtkZXNjcmlwdGlvbnhmQ2xhdWRlIHByb3ZpZGVkIHRoaXMgZmlsZSBhdCB0aGUgcmVxdWVzdCBvZiBhIHVzZXIgYW5kIG1heSBoYXZlIGNyZWF0ZWQgb3IgbW9kaWZpZWQgdGhlIGZpbGUgY29udGVudHMubXNvZnR3YXJlQWdlbnShZG5hbWVmQ2xhdWRlcmFsbEFjdGlvbnNJbmNsdWRlZPUAAADIanVtYgAAAEBqdW1kY2JvcgARABCAAACqADibcRNjMnBhLmhhc2guZGF0YQAAAAAYYzJzaNnogiFzt+n4LX86bivD7P8AAACAY2JvcqVjYWxnZnNoYTI1NmNwYWRMAAAAAAAAAAAAAAAAZGhhc2hYIO27dZ+sxC7VFPKaUO6zGYjkcwvyy6Wa3Foa7msWYnvYZG5hbWVuanVtYmYgbWFuaWZlc3RqZXhjbHVzaW9uc4GiZXN0YXJ0GQERZmxlbmd0aBkeBAAAAj5qdW1iAAAAJ2p1bWRjMmNsABEAEIAAAKoAOJtxA2MycGEuY2xhaW0udjIAAAACD2Nib3KlY2FsZ2ZzaGEyNTZpc2lnbmF0dXJleE1zZWxmI2p1bWJmPS9jMnBhL3VybjpjMnBhOmFhZTQ0MDcyLWI0MzMtNDVhNi1iNTViLTcwNmQyODc5ZjQzZC9jMnBhLnNpZ25hdHVyZWppbnN0YW5jZUlEeCx4bXA6aWlkOjNiOGVmNGVmLTk5NjUtNDU3NS04ZjIwLTgxMWNhNjQyYmMzYXJjcmVhdGVkX2Fzc2VydGlvbnODomN1cmx4LXNlbGYjanVtYmY9YzJwYS5hc3NlcnRpb25zL2MycGEuaW5ncmVkaWVudC52M2RoYXNoWCC1pGDsS9jbTG9HmO+V/2Or3OO5a7B4avQDtylkxoW0jKJjdXJseCpzZWxmI2p1bWJmPWMycGEuYXNzZXJ0aW9ucy9jMnBhLmFjdGlvbnMudjJkaGFzaFggkRfkJeFanYpGhHUzAuOgXheiluhTLx+hJlu/a+omiASiY3VybHgpc2VsZiNqdW1iZj1jMnBhLmFzc2VydGlvbnMvYzJwYS5oYXNoLmRhdGFkaGFzaFggviwEsOrw/rUNf3wEWLvhj1HrFqsUI6HZ8RkJ6QD5LzN0Y2xhaW1fZ2VuZXJhdG9yX2luZm+jZG5hbWVvQW50aHJvcGljIEZpbGVzZ3ZlcnNpb25lMS4wLjBrc3BlY1ZlcnNpb25lMi40LjAAABA4anVtYgAAAChqdW1kYzJjcwARABCAAACqADibcQNjMnBhLnNpZ25hdHVyZQAAABAIY2JvctKEWQISogEmGCFZAgowggIGMIIBjaADAgECAhRA5aAK7sI50L64g/oGQgU9Z1UTADAKBggqhkjOPQQDAzBJMRcwFQYDVQQKEw5BbnRocm9waWMsIFBCQzEuMCwGA1UEAxMlQW50aHJvcGljIENvbnRlbnQgQ3JlZGVudGlhbHMgUm9vdCBDQTAeFw0yNjA4MDcxODQzNTZaFw0yODA4MDYxOTQzNTZaMEQxFzAVBgNVBAoTDkFudGhyb3BpYywgUEJDMSkwJwYDVQQDEyBBbnRocm9waWMgQ2xhdWRlIENvbnRlbnQgU2lnbmluZzBZMBMGByqGSM49AgEGCCqGSM49AwEHA0IABJh6CmvLUBgFFNU0vUKlOVtE6djd17L5SuwX0LemFisBM3dkd/3cyjxFA3Qo5S46fX0/ihY0VZ7mfb9KF703t5OjWDBWMA4GA1UdDwEB/wQEAwIHgDAVBgNVHSUEDjAMBgorBgEEAYPoXgIBMAwGA1UdEwEB/wQCMAAwHwYDVR0jBBgwFoAUzlHiBIFOZFsj+OPEz5o+nMHXXMIwCgYIKoZIzj0EAwMDZwAwZAIwMXMdFJ4BetLLVY7ORuE9noqbbAZOZn/aArXyTwFAZfKrPzxF2vPoJNf1+UCdg1XGAjBwX1zd9WGqYkqmL5SFqw1QySjr1zJfpJM9+1rdDwSPLMOPOjKuiXjoU/pUUeG9RwmhY3BhZFkNngAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAPZYQLMTdBUKLSfyfPHqsfwQa2oJvazy5Fqn8JxWVnZ8gfTlxWc0iasx5zvZw/QOM+XvSzsxKzURyrr1ggYS3RnU8AE=</c2pa:manifest></metadata>
+<rect x="0" y="0" width="1440" height="1140" fill="#fdfbf7"/>
+<defs>
+<marker id="arrI" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto-start-reverse"><path d="M0.5,0.5 L9.5,5 L0.5,9.5" fill="none" stroke="#1f5540" stroke-width="1.6"/></marker>
+<marker id="arrE" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="9" markerHeight="9" orient="auto-start-reverse"><path d="M0.5,0.5 L9.5,5 L0.5,9.5" fill="none" stroke="#b93514" stroke-width="1.6"/></marker>
+</defs>
+<rect x="200" y="200" width="1040" height="880" rx="18" fill="#f4f2ed" stroke="#c2bba8" stroke-width="1.5"/>
+<text x="224" y="238" font-family="'Source Sans 3','Segoe UI',Helvetica,Arial,sans-serif" font-size="15" font-weight="600" fill="#1c1a15" text-anchor="start">Offerline Application Tracker</text>
+<text x="400" y="274" font-family="'Source Sans 3','Segoe UI',Helvetica,Arial,sans-serif" font-size="11" font-weight="600" fill="#736d5c" text-anchor="middle" letter-spacing="1.1">APPLICANT</text>
+<text x="720" y="274" font-family="'Source Sans 3','Segoe UI',Helvetica,Arial,sans-serif" font-size="11" font-weight="600" fill="#736d5c" text-anchor="middle" letter-spacing="1.1">INCLUDED AND EXTENDING</text>
+<text x="1040" y="274" font-family="'Source Sans 3','Segoe UI',Helvetica,Arial,sans-serif" font-size="11" font-weight="600" fill="#736d5c" text-anchor="middle" letter-spacing="1.1">COMPANY ACCOUNT</text>
+<text x="1040" y="862" font-family="'Source Sans 3','Segoe UI',Helvetica,Arial,sans-serif" font-size="11" font-weight="600" fill="#736d5c" text-anchor="middle" letter-spacing="1.1">ADMIN</text>
+<polyline points="116,645 252,330 280,330" fill="none" stroke="#c2bba8" stroke-width="1.4" stroke-linejoin="round"/>
+<polyline points="116,645 252,420 280,420" fill="none" stroke="#c2bba8" stroke-width="1.4" stroke-linejoin="round"/>
+<polyline points="116,645 252,510 280,510" fill="none" stroke="#c2bba8" stroke-width="1.4" stroke-linejoin="round"/>
+<polyline points="116,645 252,600 280,600" fill="none" stroke="#c2bba8" stroke-width="1.4" stroke-linejoin="round"/>
+<polyline points="116,645 252,690 280,690" fill="none" stroke="#c2bba8" stroke-width="1.4" stroke-linejoin="round"/>
+<polyline points="116,645 252,780 280,780" fill="none" stroke="#c2bba8" stroke-width="1.4" stroke-linejoin="round"/>
+<polyline points="116,645 252,870 280,870" fill="none" stroke="#c2bba8" stroke-width="1.4" stroke-linejoin="round"/>
+<polyline points="116,645 252,960 280,960" fill="none" stroke="#c2bba8" stroke-width="1.4" stroke-linejoin="round"/>
+<polyline points="1324,555 1188,330 1160,330" fill="none" stroke="#c2bba8" stroke-width="1.4" stroke-linejoin="round"/>
+<polyline points="1324,555 1188,420 1160,420" fill="none" stroke="#c2bba8" stroke-width="1.4" stroke-linejoin="round"/>
+<polyline points="1324,555 1188,510 1160,510" fill="none" stroke="#c2bba8" stroke-width="1.4" stroke-linejoin="round"/>
+<polyline points="1324,555 1188,600 1160,600" fill="none" stroke="#c2bba8" stroke-width="1.4" stroke-linejoin="round"/>
+<polyline points="1324,555 1188,690 1160,690" fill="none" stroke="#c2bba8" stroke-width="1.4" stroke-linejoin="round"/>
+<polyline points="1324,555 1188,780 1160,780" fill="none" stroke="#c2bba8" stroke-width="1.4" stroke-linejoin="round"/>
+<polyline points="1324,945 1188,900 1160,900" fill="none" stroke="#c2bba8" stroke-width="1.4" stroke-linejoin="round"/>
+<polyline points="1324,945 1188,990 1160,990" fill="none" stroke="#c2bba8" stroke-width="1.4" stroke-linejoin="round"/>
+<line x1="720" y1="172" x2="720" y2="342" stroke="#c2bba8" stroke-width="1.4" fill="none"/>
+<ellipse cx="400" cy="330" rx="120" ry="33" fill="#ffffff" stroke="#c2bba8" stroke-width="1.5"/>
+<text x="400" y="335" font-family="'Source Sans 3','Segoe UI',Helvetica,Arial,sans-serif" font-size="13" font-weight="500" fill="#1c1a15" text-anchor="middle">Register and sign in</text>
+<ellipse cx="400" cy="420" rx="120" ry="33" fill="#ffffff" stroke="#c2bba8" stroke-width="1.5"/>
+<text x="400" y="425" font-family="'Source Sans 3','Segoe UI',Helvetica,Arial,sans-serif" font-size="13" font-weight="500" fill="#1c1a15" text-anchor="middle">Manage profile</text>
+<ellipse cx="400" cy="510" rx="120" ry="33" fill="#ffffff" stroke="#c2bba8" stroke-width="1.5"/>
+<text x="400" y="515" font-family="'Source Sans 3','Segoe UI',Helvetica,Arial,sans-serif" font-size="13" font-weight="500" fill="#1c1a15" text-anchor="middle">Find opportunities</text>
+<ellipse cx="400" cy="600" rx="120" ry="33" fill="#ffffff" stroke="#c2bba8" stroke-width="1.5"/>
+<text x="400" y="605" font-family="'Source Sans 3','Segoe UI',Helvetica,Arial,sans-serif" font-size="13" font-weight="500" fill="#1c1a15" text-anchor="middle">Submit application</text>
+<ellipse cx="400" cy="690" rx="120" ry="33" fill="#ffffff" stroke="#c2bba8" stroke-width="1.5"/>
+<text x="400" y="686" font-family="'Source Sans 3','Segoe UI',Helvetica,Arial,sans-serif" font-size="13" font-weight="500" fill="#1c1a15" text-anchor="middle">Amend or withdraw</text>
+<text x="400" y="703" font-family="'Source Sans 3','Segoe UI',Helvetica,Arial,sans-serif" font-size="13" font-weight="500" fill="#1c1a15" text-anchor="middle">application</text>
+<ellipse cx="400" cy="780" rx="120" ry="33" fill="#ffffff" stroke="#c2bba8" stroke-width="1.5"/>
+<text x="400" y="776" font-family="'Source Sans 3','Segoe UI',Helvetica,Arial,sans-serif" font-size="13" font-weight="500" fill="#1c1a15" text-anchor="middle">Track application</text>
+<text x="400" y="793" font-family="'Source Sans 3','Segoe UI',Helvetica,Arial,sans-serif" font-size="13" font-weight="500" fill="#1c1a15" text-anchor="middle">status</text>
+<ellipse cx="400" cy="870" rx="120" ry="33" fill="#ffffff" stroke="#c2bba8" stroke-width="1.5"/>
+<text x="400" y="875" font-family="'Source Sans 3','Segoe UI',Helvetica,Arial,sans-serif" font-size="13" font-weight="500" fill="#1c1a15" text-anchor="middle">Respond to offer</text>
+<ellipse cx="400" cy="960" rx="120" ry="33" fill="#ffffff" stroke="#c2bba8" stroke-width="1.5"/>
+<text x="400" y="956" font-family="'Source Sans 3','Segoe UI',Helvetica,Arial,sans-serif" font-size="13" font-weight="500" fill="#1c1a15" text-anchor="middle">Respond to interview</text>
+<text x="400" y="973" font-family="'Source Sans 3','Segoe UI',Helvetica,Arial,sans-serif" font-size="13" font-weight="500" fill="#1c1a15" text-anchor="middle">invitation</text>
+<ellipse cx="720" cy="375" rx="120" ry="33" fill="#ffffff" stroke="#c2bba8" stroke-width="1.5"/>
+<text x="720" y="380" font-family="'Source Sans 3','Segoe UI',Helvetica,Arial,sans-serif" font-size="13" font-weight="500" fill="#1c1a15" text-anchor="middle">Sign in with Google</text>
+<ellipse cx="720" cy="465" rx="120" ry="33" fill="#ffffff" stroke="#c2bba8" stroke-width="1.5"/>
+<text x="720" y="461" font-family="'Source Sans 3','Segoe UI',Helvetica,Arial,sans-serif" font-size="13" font-weight="500" fill="#1c1a15" text-anchor="middle">View applicant</text>
+<text x="720" y="478" font-family="'Source Sans 3','Segoe UI',Helvetica,Arial,sans-serif" font-size="13" font-weight="500" fill="#1c1a15" text-anchor="middle">documents</text>
+<ellipse cx="720" cy="555" rx="120" ry="33" fill="#ffffff" stroke="#c2bba8" stroke-width="1.5"/>
+<text x="720" y="551" font-family="'Source Sans 3','Segoe UI',Helvetica,Arial,sans-serif" font-size="13" font-weight="500" fill="#1c1a15" text-anchor="middle">Update applications</text>
+<text x="720" y="568" font-family="'Source Sans 3','Segoe UI',Helvetica,Arial,sans-serif" font-size="13" font-weight="500" fill="#1c1a15" text-anchor="middle">in bulk</text>
+<ellipse cx="720" cy="645" rx="120" ry="33" fill="#ffffff" stroke="#c2bba8" stroke-width="1.5"/>
+<text x="720" y="650" font-family="'Source Sans 3','Segoe UI',Helvetica,Arial,sans-serif" font-size="13" font-weight="500" fill="#1c1a15" text-anchor="middle">Upload documents</text>
+<ellipse cx="720" cy="735" rx="120" ry="33" fill="#ffffff" stroke="#c2bba8" stroke-width="1.5"/>
+<text x="720" y="731" font-family="'Source Sans 3','Segoe UI',Helvetica,Arial,sans-serif" font-size="13" font-weight="500" fill="#1c1a15" text-anchor="middle">Issue calendar</text>
+<text x="720" y="748" font-family="'Source Sans 3','Segoe UI',Helvetica,Arial,sans-serif" font-size="13" font-weight="500" fill="#1c1a15" text-anchor="middle">invitation</text>
+<ellipse cx="1040" cy="330" rx="120" ry="33" fill="#ffffff" stroke="#c2bba8" stroke-width="1.5"/>
+<text x="1040" y="335" font-family="'Source Sans 3','Segoe UI',Helvetica,Arial,sans-serif" font-size="13" font-weight="500" fill="#1c1a15" text-anchor="middle">Register company</text>
+<ellipse cx="1040" cy="420" rx="120" ry="33" fill="#ffffff" stroke="#c2bba8" stroke-width="1.5"/>
+<text x="1040" y="425" font-family="'Source Sans 3','Segoe UI',Helvetica,Arial,sans-serif" font-size="13" font-weight="500" fill="#1c1a15" text-anchor="middle">Manage postings</text>
+<ellipse cx="1040" cy="510" rx="120" ry="33" fill="#ffffff" stroke="#c2bba8" stroke-width="1.5"/>
+<text x="1040" y="515" font-family="'Source Sans 3','Segoe UI',Helvetica,Arial,sans-serif" font-size="13" font-weight="500" fill="#1c1a15" text-anchor="middle">Review applications</text>
+<ellipse cx="1040" cy="600" rx="120" ry="33" fill="#ffffff" stroke="#c2bba8" stroke-width="1.5"/>
+<text x="1040" y="596" font-family="'Source Sans 3','Segoe UI',Helvetica,Arial,sans-serif" font-size="13" font-weight="500" fill="#1c1a15" text-anchor="middle">Update application</text>
+<text x="1040" y="613" font-family="'Source Sans 3','Segoe UI',Helvetica,Arial,sans-serif" font-size="13" font-weight="500" fill="#1c1a15" text-anchor="middle">status</text>
+<ellipse cx="1040" cy="690" rx="120" ry="33" fill="#ffffff" stroke="#c2bba8" stroke-width="1.5"/>
+<text x="1040" y="695" font-family="'Source Sans 3','Segoe UI',Helvetica,Arial,sans-serif" font-size="13" font-weight="500" fill="#1c1a15" text-anchor="middle">Schedule interview</text>
+<ellipse cx="1040" cy="780" rx="120" ry="33" fill="#ffffff" stroke="#c2bba8" stroke-width="1.5"/>
+<text x="1040" y="776" font-family="'Source Sans 3','Segoe UI',Helvetica,Arial,sans-serif" font-size="13" font-weight="500" fill="#1c1a15" text-anchor="middle">View analytics</text>
+<text x="1040" y="793" font-family="'Source Sans 3','Segoe UI',Helvetica,Arial,sans-serif" font-size="13" font-weight="500" fill="#1c1a15" text-anchor="middle">and export</text>
+<ellipse cx="1040" cy="900" rx="120" ry="33" fill="#ffffff" stroke="#c2bba8" stroke-width="1.5"/>
+<text x="1040" y="905" font-family="'Source Sans 3','Segoe UI',Helvetica,Arial,sans-serif" font-size="13" font-weight="500" fill="#1c1a15" text-anchor="middle">Verify company</text>
+<ellipse cx="1040" cy="990" rx="120" ry="33" fill="#ffffff" stroke="#c2bba8" stroke-width="1.5"/>
+<text x="1040" y="986" font-family="'Source Sans 3','Segoe UI',Helvetica,Arial,sans-serif" font-size="13" font-weight="500" fill="#1c1a15" text-anchor="middle">Suspend company</text>
+<text x="1040" y="1003" font-family="'Source Sans 3','Segoe UI',Helvetica,Arial,sans-serif" font-size="13" font-weight="500" fill="#1c1a15" text-anchor="middle">or posting</text>
+<line x1="613" y1="360" x2="507" y2="345" stroke="#b93514" stroke-width="1.4" fill="none" stroke-dasharray="7 5" marker-end="url(#arrE)"/>
+<text x="560" y="337" font-family="'IBM Plex Mono',Consolas,'Courier New',monospace" font-size="11" font-weight="500" fill="#b93514" text-anchor="middle">«extend»</text>
+<line x1="933" y1="495" x2="827" y2="480" stroke="#1f5540" stroke-width="1.4" fill="none" stroke-dasharray="7 5" marker-end="url(#arrI)"/>
+<text x="880" y="472" font-family="'IBM Plex Mono',Consolas,'Courier New',monospace" font-size="11" font-weight="500" fill="#1f5540" text-anchor="middle">«include»</text>
+<line x1="827" y1="570" x2="933" y2="585" stroke="#b93514" stroke-width="1.4" fill="none" stroke-dasharray="7 5" marker-end="url(#arrE)"/>
+<text x="880" y="562" font-family="'IBM Plex Mono',Consolas,'Courier New',monospace" font-size="11" font-weight="500" fill="#b93514" text-anchor="middle">«extend»</text>
+<line x1="507" y1="615" x2="613" y2="630" stroke="#1f5540" stroke-width="1.4" fill="none" stroke-dasharray="7 5" marker-end="url(#arrI)"/>
+<text x="560" y="607" font-family="'IBM Plex Mono',Consolas,'Courier New',monospace" font-size="11" font-weight="500" fill="#1f5540" text-anchor="middle">«include»</text>
+<line x1="933" y1="705" x2="827" y2="720" stroke="#1f5540" stroke-width="1.4" fill="none" stroke-dasharray="7 5" marker-end="url(#arrI)"/>
+<text x="880" y="697" font-family="'IBM Plex Mono',Consolas,'Courier New',monospace" font-size="11" font-weight="500" fill="#1f5540" text-anchor="middle">«include»</text>
+<circle cx="100" cy="615" r="11" fill="#ffffff" stroke="#1c1a15" stroke-width="1.6"/>
+<line x1="100" y1="626" x2="100" y2="651" stroke="#1c1a15" stroke-width="1.6" stroke-linecap="round"/>
+<line x1="83" y1="637" x2="117" y2="637" stroke="#1c1a15" stroke-width="1.6" stroke-linecap="round"/>
+<line x1="100" y1="651" x2="87" y2="673" stroke="#1c1a15" stroke-width="1.6" stroke-linecap="round"/>
+<line x1="100" y1="651" x2="113" y2="673" stroke="#1c1a15" stroke-width="1.6" stroke-linecap="round"/>
+<text x="100" y="693" font-family="'Source Sans 3','Segoe UI',Helvetica,Arial,sans-serif" font-size="13" font-weight="600" fill="#1c1a15" text-anchor="middle">Applicant</text>
+<circle cx="1340" cy="525" r="11" fill="#ffffff" stroke="#1c1a15" stroke-width="1.6"/>
+<line x1="1340" y1="536" x2="1340" y2="561" stroke="#1c1a15" stroke-width="1.6" stroke-linecap="round"/>
+<line x1="1323" y1="547" x2="1357" y2="547" stroke="#1c1a15" stroke-width="1.6" stroke-linecap="round"/>
+<line x1="1340" y1="561" x2="1327" y2="583" stroke="#1c1a15" stroke-width="1.6" stroke-linecap="round"/>
+<line x1="1340" y1="561" x2="1353" y2="583" stroke="#1c1a15" stroke-width="1.6" stroke-linecap="round"/>
+<text x="1340" y="603" font-family="'Source Sans 3','Segoe UI',Helvetica,Arial,sans-serif" font-size="13" font-weight="600" fill="#1c1a15" text-anchor="middle">Recruiter</text>
+<text x="1340" y="619" font-family="'Source Sans 3','Segoe UI',Helvetica,Arial,sans-serif" font-size="11" font-weight="400" fill="#736d5c" text-anchor="middle">company account</text>
+<circle cx="1340" cy="915" r="11" fill="#ffffff" stroke="#1c1a15" stroke-width="1.6"/>
+<line x1="1340" y1="926" x2="1340" y2="951" stroke="#1c1a15" stroke-width="1.6" stroke-linecap="round"/>
+<line x1="1323" y1="937" x2="1357" y2="937" stroke="#1c1a15" stroke-width="1.6" stroke-linecap="round"/>
+<line x1="1340" y1="951" x2="1327" y2="973" stroke="#1c1a15" stroke-width="1.6" stroke-linecap="round"/>
+<line x1="1340" y1="951" x2="1353" y2="973" stroke="#1c1a15" stroke-width="1.6" stroke-linecap="round"/>
+<text x="1340" y="993" font-family="'Source Sans 3','Segoe UI',Helvetica,Arial,sans-serif" font-size="13" font-weight="600" fill="#1c1a15" text-anchor="middle">Admin</text>
+<circle cx="720" cy="80" r="11" fill="#ffffff" stroke="#1c1a15" stroke-width="1.6"/>
+<line x1="720" y1="91" x2="720" y2="116" stroke="#1c1a15" stroke-width="1.6" stroke-linecap="round"/>
+<line x1="703" y1="102" x2="737" y2="102" stroke="#1c1a15" stroke-width="1.6" stroke-linecap="round"/>
+<line x1="720" y1="116" x2="707" y2="138" stroke="#1c1a15" stroke-width="1.6" stroke-linecap="round"/>
+<line x1="720" y1="116" x2="733" y2="138" stroke="#1c1a15" stroke-width="1.6" stroke-linecap="round"/>
+<text x="720" y="158" font-family="'Source Sans 3','Segoe UI',Helvetica,Arial,sans-serif" font-size="13" font-weight="600" fill="#1c1a15" text-anchor="middle">Google OAuth</text>
+<line x1="224" y1="1108" x2="268" y2="1108" stroke="#c2bba8" stroke-width="1.4"/>
+<text x="276" y="1112" font-family="'Source Sans 3','Segoe UI',Helvetica,Arial,sans-serif" font-size="12" font-weight="400" fill="#5c5748" text-anchor="start">association</text>
+<line x1="392" y1="1108" x2="428" y2="1108" stroke="#1f5540" stroke-width="1.4" stroke-dasharray="7 5" marker-end="url(#arrI)"/>
+<text x="444" y="1112" font-family="'Source Sans 3','Segoe UI',Helvetica,Arial,sans-serif" font-size="12" font-weight="400" fill="#5c5748" text-anchor="start">«include» always happens as part of the base</text>
+<line x1="840" y1="1108" x2="876" y2="1108" stroke="#b93514" stroke-width="1.4" stroke-dasharray="7 5" marker-end="url(#arrE)"/>
+<text x="892" y="1112" font-family="'Source Sans 3','Segoe UI',Helvetica,Arial,sans-serif" font-size="12" font-weight="400" fill="#5c5748" text-anchor="start">«extend» optional variation of the base</text>
+</svg>
