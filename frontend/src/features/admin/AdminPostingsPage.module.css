@@ -1,0 +1,59 @@
+.limit {
+  padding: 10px var(--space-4);
+  border-bottom: 1px solid var(--color-rule-hairline);
+  color: var(--color-text-subtle);
+  font-size: var(--type-caption-size);
+}
+
+.table {
+  min-width: 820px;
+}
+
+.colCompany {
+  width: 24%;
+}
+
+.colPlace {
+  width: 170px;
+}
+
+.colDate {
+  width: 110px;
+}
+
+.company {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.type {
+  display: inline-flex;
+  align-items: center;
+  height: 22px;
+  padding: 0 var(--space-2);
+  border-radius: var(--radius-xs);
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.job {
+  background: var(--color-active-wash);
+  color: var(--color-state-active-text);
+}
+
+.professional {
+  background: var(--color-n-200);
+  color: var(--color-n-800);
+}
+
+:global([data-theme='ink']) .professional {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--color-n-300);
+}
+
+.academic {
+  background: var(--color-state-open-bg);
+  color: var(--color-text-primary);
+}

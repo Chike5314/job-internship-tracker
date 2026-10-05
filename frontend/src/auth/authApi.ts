@@ -1,5 +1,6 @@
 import {
   confirmResetPassword,
+  confirmSignIn,
   confirmSignUp,
   fetchAuthSession,
   getCurrentUser,
@@ -161,17 +162,32 @@ export async function resendCode(params: { email: string }): Promise<void> {
   await resendSignUpCode({ username: params.email })
 }
 
-export async function signInWithPassword(params: { email: string; password: string }): Promise<void> {
+/**
+ * 'done' once signed in. 'new-password' for an account an admin created
+ * (FR-9.6): Cognito issued it a temporary password, and the first sign in has
+ * to set one of the account's own, through confirmNewPassword, before any
+ * session exists.
+ */
+export type SignInOutcome = 'done' | 'new-password'
+
+export async function signInWithPassword(params: { email: string; password: string }): Promise<SignInOutcome> {
   // Named explicitly even though it's Amplify's default: the app client
   // allows only ALLOW_USER_SRP_AUTH (persistence_stack.py), so being
   // explicit here turns a future auth-flow config change into a clear
   // error at this one line instead of a silent attempt at a flow the pool
   // refuses.
-  await signIn({
+  const result = await signIn({
     username: params.email,
     password: params.password,
     options: { authFlowType: 'USER_SRP_AUTH' },
   })
+  if (result.nextStep.signInStep === 'CONFIRM_SIGN_IN_WITH_NEW_PASSWORD_REQUIRED') return 'new-password'
+  return 'done'
+}
+
+/** Finishes a first sign in with a temporary password by setting the account's own. */
+export async function confirmNewPassword(newPassword: string): Promise<void> {
+  await confirmSignIn({ challengeResponse: newPassword })
 }
 
 export async function signOutLocally(): Promise<void> {

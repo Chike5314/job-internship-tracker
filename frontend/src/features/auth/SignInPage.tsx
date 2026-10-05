@@ -1,7 +1,8 @@
 import { useState, type FormEvent } from 'react'
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 import { useAuth } from '@/auth/AuthProvider'
-import { getCurrentIdentity } from '@/auth/authApi'
+import { confirmNewPassword, getCurrentIdentity } from '@/auth/authApi'
+import { meetsPasswordPolicy, MIN_PASSWORD_LENGTH } from '@/auth/passwordRules'
 import { authErrorMessage } from '@/auth/authErrors'
 import { homeFor } from '@/auth/home'
 import { safeNextPath } from '@/auth/RouteGuards'
@@ -10,6 +11,7 @@ import { Field } from '@/ui/Field'
 import { Input } from '@/ui/Input'
 import { AccountTabs, useAccount, type Account } from './AccountTabs'
 import { GoogleButton } from './GoogleButton'
+import { PasswordRulesList } from './PasswordRulesList'
 import styles from './authPanel.module.css'
 
 export function SignInPage() {
@@ -36,6 +38,7 @@ function SignInForm({ account }: { account: Account }) {
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
+  const [needsNewPassword, setNeedsNewPassword] = useState(false)
 
   const company = account === 'company'
 
@@ -44,19 +47,29 @@ function SignInForm({ account }: { account: Account }) {
     setError(null)
     setSubmitting(true)
     try {
-      await signIn({ email, password })
+      const outcome = await signIn({ email, password })
+      if (outcome === 'new-password') {
+        setNeedsNewPassword(true)
+        return
+      }
       // The account decides where it lands, never the tab it was signed in
       // from: a company signing in on "I'm looking for work" is still a
       // company. `next` overrides that when the sign-in was prompted by a
       // specific page, e.g. "Sign in to apply" from a posting.
-      const who = await getCurrentIdentity()
-      navigate(safeNextPath(searchParams.get('next'), homeFor(who)))
+      await goHome()
     } catch (caught) {
       setError(authErrorMessage(caught))
     } finally {
       setSubmitting(false)
     }
   }
+
+  async function goHome() {
+    const who = await getCurrentIdentity()
+    navigate(safeNextPath(searchParams.get('next'), homeFor(who)))
+  }
+
+  if (needsNewPassword) return <NewPasswordForm email={email} onDone={goHome} />
 
   return (
     <form onSubmit={onSubmit} className={styles.form}>
@@ -144,6 +157,80 @@ function SignInForm({ account }: { account: Account }) {
           </button>
         </p>
       )}
+    </form>
+  )
+}
+
+/**
+ * The first sign in of an account an admin created. The temporary password
+ * has already been accepted; Cognito holds the sign in open until the account
+ * sets a password of its own.
+ */
+function NewPasswordForm({ email, onDone }: { email: string; onDone: () => Promise<void> }) {
+  const [password, setPassword] = useState('')
+  const [attempted, setAttempted] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [submitting, setSubmitting] = useState(false)
+
+  const passwordError =
+    attempted && !meetsPasswordPolicy(password)
+      ? password
+        ? 'This password does not meet every rule below.'
+        : 'Choose a password.'
+      : undefined
+
+  async function onSubmit(event: FormEvent) {
+    event.preventDefault()
+    setAttempted(true)
+    setError(null)
+    if (!meetsPasswordPolicy(password)) return
+    setSubmitting(true)
+    try {
+      await confirmNewPassword(password)
+      await onDone()
+    } catch (caught) {
+      setError(authErrorMessage(caught))
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  return (
+    <form onSubmit={onSubmit} className={styles.form} noValidate>
+      <div className={styles.lead}>
+        <h1 className={styles.title}>Choose your password</h1>
+        <p className={styles.subtitle}>
+          {email} was set up by the Offerline team with a temporary password. Choose one of your own to
+          finish signing in.
+        </p>
+      </div>
+
+      <div className={styles.fields}>
+        <Field label="New password" hint={`${MIN_PASSWORD_LENGTH} characters or more`} error={passwordError}>
+          {(props) => (
+            <Input
+              {...props}
+              className={styles.input}
+              type="password"
+              autoComplete="new-password"
+              value={password}
+              onChange={(event) => setPassword(event.target.value)}
+              autoFocus
+            />
+          )}
+        </Field>
+        {passwordError && password && <PasswordRulesList password={password} />}
+      </div>
+
+      {error && (
+        <p role="alert" className={styles.error}>
+          {error}
+        </p>
+      )}
+
+      <Button type="submit" variant="primary" className={styles.submit} loading={submitting}>
+        Set password and sign in
+      </Button>
     </form>
   )
 }

@@ -121,6 +121,37 @@ POSTINGS = [
     },
 ]
 
+# Published and left alone: no seeded applicant applies to these, so there is
+# always something open for a test applicant to apply to by hand.
+EXTRA_POSTINGS = [
+    {
+        "title": "Robotics Software Engineer",
+        "description": (
+            "Write the software that drives Acme's warehouse robots, from motion planning "
+            "to the dashboards operators use every day.\n\n"
+            "You will join a team of six engineers in Douala, work closely with the "
+            "hardware group, and ship to customers every two weeks."
+        ),
+        "opportunityType": "FULL_TIME_JOB",
+        "workModality": "HYBRID",
+        "experienceLevel": "MID",
+        "openings": 2,
+        "city": "Douala",
+        "country": "Cameroon",
+        "skills": ["Python", "C++", "ROS", "Linux"],
+        "applicationDeadline": iso_in(45),
+        "startDate": iso_in(60),
+        "salary": {
+            "disclosed": True,
+            "min": 700000,
+            "max": 950000,
+            "currency": "XAF",
+            "period": "MONTH",
+        },
+        "additionalDetails": [{"label": "Team", "value": "Six engineers, plus the hardware group"}],
+    },
+]
+
 APPLICANT_SPECS = [
     {
         "email": "amara.nwosu@example.com",
@@ -516,6 +547,8 @@ def main() -> None:
         job_id = ensure_posting(api, company_token, spec)
         job_ids[spec["opportunityType"]] = job_id
         log(f"  {spec['title']} -> {job_id}")
+    for spec in EXTRA_POSTINGS:
+        log(f"  {spec['title']} -> {ensure_posting(api, company_token, spec)} (open to apply)")
 
     log("applicants")
     applicants = {}

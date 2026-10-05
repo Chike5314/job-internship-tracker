@@ -15,9 +15,11 @@ import styles from './CompanyShell.module.css'
  */
 export function AdminShell() {
   const { pathname } = useLocation()
-  // On the companies list the bar filters the table in place, the way it
-  // filters the applicant's applications; anywhere else a search goes there.
-  const onCompanies = pathname === '/admin/companies'
+  // On the companies and postings lists the bar filters the table in place,
+  // the way it filters the applicant's applications; anywhere else a search
+  // goes to the companies list.
+  const onPostings = pathname === '/admin/postings'
+  const filtersPage = onPostings || pathname === '/admin/companies'
   return (
     <div className={styles.shell}>
       <BloomField />
@@ -25,7 +27,11 @@ export function AdminShell() {
         <SkipToContent />
         <AdminSidebar />
         <div className={styles.column}>
-          <AppBar placeholder="Search companies" searchTo="/admin/companies" filtersPage={onCompanies} />
+          <AppBar
+            placeholder={onPostings ? 'Search postings or companies' : 'Search companies'}
+            searchTo="/admin/companies"
+            filtersPage={filtersPage}
+          />
           <main id="main" className={styles.main}>
             <Outlet />
           </main>

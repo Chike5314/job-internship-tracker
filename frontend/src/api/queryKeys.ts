@@ -35,6 +35,8 @@ export const queryKeys = {
   admin: {
     overview: () => ['admin', 'overview'] as const,
     companies: (status: string) => ['admin', 'companies', status] as const,
+    companyPostings: (companyId: string) => ['admin', 'company-postings', companyId] as const,
+    posting: (jobId: string) => ['admin', 'posting', jobId] as const,
   },
   company: {
     all: ['company'] as const,

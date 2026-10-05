@@ -2,6 +2,12 @@ import type { CompanyFull } from '@/api/types'
 
 const DAY = 24 * 60 * 60 * 1000
 
+/**
+ * Below this the admin tables do not fit beside the rail, or on a phone at
+ * all, so the lists render as stacked rows instead.
+ */
+export const STACKED_QUERY = '(max-width: 1099px)'
+
 /** "Registered today", "Waiting 1 day", "Waiting 6 days", counted in calendar days. */
 export function waitingFor(iso: string, now: number): string {
   const start = new Date(now)

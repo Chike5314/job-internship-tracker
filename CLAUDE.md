@@ -24,6 +24,11 @@ development account: AWS account `400294419066`, region `us-east-1`, stacks
 against it twice, confirming idempotency, and populated it with a verified
 company, three published postings, two applicants with CVs, and five
 applications spread across the pipeline including one scheduled interview.
+Both seeded applicants have applied to all three postings (Amara) or two
+(Diego), so a fourth, Robotics Software Engineer from Acme Robotics, was added
+to the dev Jobs table on 2026-10-05 for applying to by hand. It is also in
+`EXTRA_POSTINGS` in the seed script, which publishes it and applies to nothing,
+so a re-seed keeps one copy (postings are matched by title).
 Everything has been verified by `cdk synth` and by 116 tests.
 
 Cognito hosted UI: `https://jiat-dev.auth.us-east-1.amazoncognito.com`. The app
@@ -344,6 +349,54 @@ verification queue as the count on Companies (from `GET /admin/overview`).
   is the app bar, which filters the table in place on this page through `?q=`
   (matching name, contact email and website). A search arriving from the bar
   with no tab chosen looks in All.
+- **The company drawer** opens from `?company=<id>` on the companies page,
+  which is also where the overview's Review buttons point. It shows the
+  company's details, its postings and every decision so far, and offers what
+  `ADMIN_TRANSITIONS` allows next: approve or reject a pending company, suspend
+  a verified one, verify a rejected one, restore a suspended one. A rejection
+  or a suspension must carry a note, because the company is emailed with it
+  and the history keeps it. The suspend warning counts the live postings that
+  will come down.
+- **A company's postings come from its analytics.** No admin route lists them,
+  but `GET /companies/{id}/analytics` returns one `perPosting` row each and lets
+  an admin through. Closing one is `PATCH /jobs/{id}` with
+  `postingStatus: CLOSED`, which records neither who closed it nor why, and
+  sends the company nothing; the drawer says so before the admin confirms.
+- **Adding a company** (FR-9.6, FR-9.7) is a drawer from the "Add a company"
+  button, at `?add=1`, posting to `POST /admin/companies`. The form checks
+  what `validation.py` checks, with the same words (`companyForm.ts`), and
+  also refuses a map link the backend would drop silently. The admin chooses
+  "Verified now" or "Send it to the queue". After creating, "Open" moves to
+  the new company's drawer on the tab that holds it.
+- **A first sign in with a temporary password** used to dead end: Cognito
+  answers `CONFIRM_SIGN_IN_WITH_NEW_PASSWORD_REQUIRED`, and the sign in page
+  ignored it and navigated as if signed in, so an admin-created company could
+  never get in. `signInWithPassword` now returns `'new-password'` for that
+  step, and the page asks for a password of the account's own and finishes
+  through `confirmNewPassword` (Amplify's `confirmSignIn`). The pool has no
+  SES configuration, so Cognito sends the temporary password itself, and it
+  arrives even while SES is in sandbox.
+- **The postings page** (FR-9.2) lists what applicants can see right now: it
+  reads the public `GET /jobs`, which returns published postings whose
+  deadline has not passed, newest first, at most 100, and shares its cache
+  with the browse page. Tabs split it by opportunity type; the app bar searches
+  title and company name in place. A row opens a drawer at `?posting=<id>`,
+  which reads the posting in full through `GET /jobs/mine/{id}` (it answers an
+  admin for any company) and its applications count from the company's
+  analytics. Closing is the same `PATCH /jobs/{id}` the company drawer uses,
+  and "Review <company>" opens that company's drawer on the All tab.
+- **Below 1100px the two lists stack.** The tables do not fit beside the rail
+  under that width, so the companies and postings pages render a stacked row
+  per item instead, switched through `useMediaQuery(STACKED_QUERY)` in
+  `adminFormat.ts`, one tree or the other as the phone layout does.
+- **The rail band keeps the current page in view.** Below the split the
+  destinations scroll across, and `SideRail` centres the current one. It
+  centres again whenever a link changes size, because the links widen after
+  the first paint (the web fonts landing, a count arriving with its data), and
+  a position worked out before that left the last destination cut off. This
+  applies to every side that uses the rail.
+- **The history names "you" or "an admin"**, since it records an admin by
+  account id and nothing maps an id to a name.
 - **A moderation entry is `{from, to, by, note, timestamp}`**, as
   `set_verification_status` writes it. The frontend type used to say
   `{status, changedBy}`, so the company's own profile page showed every past

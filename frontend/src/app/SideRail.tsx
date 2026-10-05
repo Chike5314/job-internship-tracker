@@ -1,5 +1,5 @@
 import { NavLink, useLocation } from 'react-router-dom'
-import type { ReactNode } from 'react'
+import { useEffect, useRef, type ReactNode } from 'react'
 import { Logo } from './Logo'
 import { Icon, type IconName } from '@/ui/Icon'
 import styles from './SideRail.module.css'
@@ -53,6 +53,31 @@ export function SideRail({
   navLabel,
 }: Props) {
   const location = useLocation()
+  const navRef = useRef<HTMLElement>(null)
+
+  // Below the split the destinations scroll across in a band, and on a narrow
+  // screen the current one can sit out of view. It is brought to the middle
+  // of the band, moving only the band, never the page.
+  // The links widen after the first paint, once the web fonts land and once a
+  // count arrives with its data, so it centres again whenever a link changes
+  // size; a position worked out before that no longer holds.
+  useEffect(() => {
+    const nav = navRef.current
+    if (!nav) return
+    function centre() {
+      if (!nav || nav.scrollWidth <= nav.clientWidth) return
+      const current = nav.querySelector<HTMLElement>('[aria-current="page"]')
+      if (!current) return
+      const band = nav.getBoundingClientRect()
+      const link = current.getBoundingClientRect()
+      nav.scrollLeft += link.left + link.width / 2 - (band.left + band.width / 2)
+    }
+    centre()
+    if (typeof ResizeObserver === 'undefined') return
+    const observer = new ResizeObserver(() => centre())
+    for (const link of Array.from(nav.children)) observer.observe(link)
+    return () => observer.disconnect()
+  }, [location.pathname])
 
   function renderLink(item: RailDestination) {
     return (
@@ -87,7 +112,7 @@ export function SideRail({
         {section && <span className={['t-eyebrow', styles.section].join(' ')}>{section}</span>}
       </div>
 
-      <nav className={styles.nav} aria-label={navLabel}>
+      <nav ref={navRef} className={styles.nav} aria-label={navLabel}>
         {destinations.map(renderLink)}
       </nav>
 

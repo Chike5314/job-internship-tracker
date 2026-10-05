@@ -3,10 +3,15 @@ import { useSearchParams } from 'react-router-dom'
 import { COMPANY_PAGE_LIMIT } from '@/api/admin'
 import { VERIFICATION_STATUSES, type VerificationStatus } from '@/api/enums'
 import type { CompanyFull } from '@/api/types'
+import { Button } from '@/ui/Button'
 import { ErrorState } from '@/ui/ErrorState'
+import { Icon } from '@/ui/Icon'
 import { Skeleton } from '@/ui/Skeleton'
 import { formatDateShort } from '@/lib/formatDate'
-import { host, matchesCompany, waitingFor } from './adminFormat'
+import { useMediaQuery } from '@/lib/useMediaQuery'
+import { STACKED_QUERY, host, matchesCompany, waitingFor } from './adminFormat'
+import { AddCompanyDrawer } from './AddCompanyDrawer'
+import { CompanyDrawer } from './CompanyDrawer'
 import { CompanyMark, VerificationTag } from './VerificationTag'
 import { useCompaniesByStatus } from './useAdmin'
 import pageStyles from './AdminPage.module.css'
@@ -64,6 +69,7 @@ export function AdminCompaniesPage() {
   // A search from the bar arrives with no tab chosen, and has to look in every list.
   const tab: Tab = isTab(requested) ? requested : term ? 'ALL' : 'PENDING_VERIFICATION'
   const [now] = useState(() => Date.now())
+  const stacked = useMediaQuery(STACKED_QUERY)
 
   const pending = useCompaniesByStatus('PENDING_VERIFICATION')
   const verified = useCompaniesByStatus('VERIFIED')
@@ -83,6 +89,75 @@ export function AdminCompaniesPage() {
   // At most a few hundred rows, so sorting on each render costs nothing.
   const inTab = ordered(tab, statuses.flatMap((status) => lists[status].data?.companies ?? []))
   const shown = term ? inTab.filter((company) => matchesCompany(company, term)) : inTab
+
+  // The drawer reads the company out of whichever list holds it, so a decision
+  // that moves it between lists keeps it open.
+  const openId = params.get('company')
+  const openCompany = openId
+    ? VERIFICATION_STATUSES.flatMap((status) => lists[status].data?.companies ?? []).find(
+        (company) => company.companyId === openId,
+      )
+    : undefined
+  // A company just created is not in a list until the lists are read again,
+  // so a read still under way counts as loading too.
+  const listsLoading = VERIFICATION_STATUSES.some((status) => lists[status].isPending || lists[status].isFetching)
+  const adding = params.get('add') === '1'
+
+  // Opening adds a history entry, so Back closes the drawer; closing replaces
+  // it, so Back after that does not open it again.
+  function open(companyId: string) {
+    setParams((current) => {
+      const copy = new URLSearchParams(current)
+      copy.set('company', companyId)
+      return copy
+    })
+  }
+
+  function startAdding() {
+    setParams((current) => {
+      const copy = new URLSearchParams(current)
+      copy.set('add', '1')
+      copy.delete('company')
+      return copy
+    })
+  }
+
+  function stopAdding() {
+    setParams(
+      (current) => {
+        const copy = new URLSearchParams(current)
+        copy.delete('add')
+        return copy
+      },
+      { replace: true },
+    )
+  }
+
+  // From the new account straight to its own drawer, on the tab that holds it.
+  function openCreated(company: CompanyFull) {
+    setParams(
+      (current) => {
+        const copy = new URLSearchParams(current)
+        copy.delete('add')
+        copy.delete('q')
+        copy.set('status', company.verificationStatus)
+        copy.set('company', company.companyId)
+        return copy
+      },
+      { replace: true },
+    )
+  }
+
+  function close() {
+    setParams(
+      (current) => {
+        const copy = new URLSearchParams(current)
+        copy.delete('company')
+        return copy
+      },
+      { replace: true },
+    )
+  }
 
   function count(key: Tab): string {
     const keys = key === 'ALL' ? VERIFICATION_STATUSES : [key]
@@ -121,6 +196,10 @@ export function AdminCompaniesPage() {
           <h1 className={pageStyles.title}>Companies</h1>
           <p className={pageStyles.subtitle}>Every company account, by where it stands with verification.</p>
         </div>
+        <Button variant="primary" className={styles.cta} onClick={startAdding}>
+          <Icon name="add" size={18} />
+          Add a company
+        </Button>
       </header>
 
       <section className={['glass-soft', styles.card].join(' ')} aria-label="Companies">
@@ -169,6 +248,18 @@ export function AdminCompaniesPage() {
               </button>
             )}
           </div>
+        ) : stacked ? (
+          <ul className={styles.list}>
+            {shown.map((company) => (
+              <CompanyItem
+                key={company.companyId}
+                company={company}
+                now={now}
+                current={company.companyId === openId}
+                onOpen={() => open(company.companyId)}
+              />
+            ))}
+          </ul>
         ) : (
           <div className={styles.tableWrap}>
             <table className={styles.table}>
@@ -188,28 +279,113 @@ export function AdminCompaniesPage() {
               </thead>
               <tbody>
                 {shown.map((company) => (
-                  <CompanyRow key={company.companyId} company={company} now={now} />
+                  <CompanyRow
+                    key={company.companyId}
+                    company={company}
+                    now={now}
+                    current={company.companyId === openId}
+                    onOpen={() => open(company.companyId)}
+                  />
                 ))}
               </tbody>
             </table>
           </div>
         )}
       </section>
+
+      {openId && <CompanyDrawer key={openId} company={openCompany} loading={listsLoading} onClose={close} />}
+      {adding && <AddCompanyDrawer onClose={stopAdding} onOpenCompany={openCreated} />}
     </div>
   )
 }
 
-function CompanyRow({ company, now }: { company: CompanyFull; now: number }) {
+/** The line under a company that says where it stands in time. */
+function standingNote(company: CompanyFull, now: number): { text: string; urgent: boolean } | null {
+  const status = company.verificationStatus
+  if (status === 'PENDING_VERIFICATION') return { text: waitingFor(company.createdAt, now), urgent: true }
+  const decided = DECIDED[status]
+  if (decided && company.verifiedAt) return { text: `${decided} ${formatDateShort(company.verifiedAt)}`, urgent: false }
+  return null
+}
+
+/** One company as a stacked row, for widths where the table does not fit. */
+function CompanyItem({
+  company,
+  now,
+  current,
+  onOpen,
+}: {
+  company: CompanyFull
+  now: number
+  current: boolean
+  onOpen: () => void
+}) {
+  const site = host(company.companyWebsiteUrl)
+  const note = standingNote(company, now)
+  return (
+    <li>
+      <button
+        type="button"
+        className={[styles.item, current ? styles.itemCurrent : ''].join(' ')}
+        onClick={onOpen}
+        aria-haspopup="dialog"
+      >
+        <CompanyMark name={company.companyName} logoUrl={company.logoUrl} size="sm" />
+        <span className={styles.itemMain}>
+          <span className={styles.itemTop}>
+            <span className={styles.itemName}>{company.companyName}</span>
+            <VerificationTag status={company.verificationStatus} />
+          </span>
+          <span className={styles.itemSub}>{[company.contactEmail, site].filter(Boolean).join(' · ')}</span>
+          <span className={styles.itemMeta}>
+            Registered {formatDateShort(company.createdAt)}
+            {company.createdByAdmin ? ' by an admin' : ''}
+            {note && (
+              <>
+                {' · '}
+                <span className={note.urgent ? styles.waiting : undefined}>{note.text}</span>
+              </>
+            )}
+          </span>
+        </span>
+      </button>
+    </li>
+  )
+}
+
+function CompanyRow({
+  company,
+  now,
+  current,
+  onOpen,
+}: {
+  company: CompanyFull
+  now: number
+  current: boolean
+  onOpen: () => void
+}) {
   const status = company.verificationStatus
   const decided = DECIDED[status]
   const site = host(company.companyWebsiteUrl)
+  // The whole row opens the company for a pointer; the name is the button a
+  // keyboard and a screen reader reach.
   return (
-    <tr>
+    <tr className={[styles.row, current ? styles.rowCurrent : ''].join(' ')} onClick={onOpen}>
       <th scope="row">
         <span className={styles.company}>
           <CompanyMark name={company.companyName} logoUrl={company.logoUrl} size="sm" />
           <span className={styles.stack}>
-            <span className={styles.name}>{company.companyName}</span>
+            <button
+              type="button"
+              className={styles.name}
+              onClick={(event) => {
+                event.stopPropagation()
+                onOpen()
+              }}
+              aria-haspopup="dialog"
+            >
+              {company.companyName}
+            </button>
             {site && <span className={styles.note}>{site}</span>}
           </span>
         </span>
