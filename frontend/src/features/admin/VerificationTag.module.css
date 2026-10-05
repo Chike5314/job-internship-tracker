@@ -1,0 +1,59 @@
+.tag {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 24px;
+  padding: 0 9px;
+  border-radius: var(--radius-xs);
+  font-size: var(--type-caption-size);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.pending {
+  background: var(--color-attention-wash);
+  color: var(--color-attention-text);
+}
+
+.verified {
+  background: var(--color-active-wash);
+  color: var(--color-state-active-text);
+}
+
+.closed {
+  background: var(--color-state-closed-bg);
+  color: var(--color-state-closed-text);
+}
+
+/* The same sizes the monogram takes, so a logo and an initial line up. */
+.logo {
+  flex: none;
+  object-fit: cover;
+  background: var(--color-glass-solid);
+}
+
+.sm {
+  width: 36px;
+  height: 36px;
+  border-radius: 9px;
+}
+
+.md {
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-sm);
+}
+
+.lg {
+  width: 48px;
+  height: 48px;
+  border-radius: var(--radius-md);
+}

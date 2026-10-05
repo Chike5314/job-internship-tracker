@@ -1,0 +1,90 @@
+/* Takes the column's remaining height, so its foot lines up with the card at
+   the bottom of the other column. */
+.card {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 22px;
+  border-radius: var(--radius-lg);
+  min-width: 0;
+}
+
+.lead {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+}
+
+.icon {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 11px;
+  background: var(--color-active-wash);
+  color: var(--color-brand-forest);
+}
+
+.text {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  min-width: 0;
+}
+
+.title {
+  color: var(--color-text-primary);
+  font-size: var(--type-heading-sm-size);
+  font-weight: 600;
+  line-height: normal;
+}
+
+.prompt {
+  color: var(--color-text-muted);
+  font-size: 14px;
+  line-height: 1.45;
+}
+
+.progress {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.progressRow {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-3);
+  font-size: var(--type-body-sm-size);
+  line-height: normal;
+}
+
+.progressLabel {
+  color: var(--color-text-muted);
+}
+
+.count {
+  color: var(--color-text-primary);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.track {
+  height: 6px;
+  border-radius: 3px;
+  background: var(--color-state-open-bg);
+  overflow: hidden;
+}
+
+.bar {
+  display: block;
+  height: 100%;
+  border-radius: 3px;
+  background: var(--color-brand-forest);
+}
+
+.action {
+  align-self: flex-start;
+}

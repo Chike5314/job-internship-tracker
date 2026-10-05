@@ -2,16 +2,19 @@ import { useQueries } from '@tanstack/react-query'
 import { getApplication } from '@/api/applications'
 import { queryKeys } from '@/api/queryKeys'
 import type { ApplicationSummary, Interview } from '@/api/types'
+import { interviewRound } from '@/lib/interviews'
 import { useMyApplications } from '@/features/applications/useApplications'
 
 export type UpcomingInterview = {
   application: ApplicationSummary
   interview: Interview
+  /** Which round this is on its application, see `interviewRound`. */
+  round: number
 }
 
 /**
- * The soonest interview still ahead of the viewer, with the application it
- * belongs to.
+ * Every interview still ahead of the viewer, soonest first, with the
+ * application it belongs to.
  *
  * The list endpoint returns no interview data, so the detail of each
  * application sitting at INTERVIEW_SCHEDULED has to be read to find the times.
@@ -19,7 +22,8 @@ export type UpcomingInterview = {
  * handful of applications at most, and the queries are cached under the same
  * keys the detail page uses, so opening one afterwards costs nothing.
  */
-export function useNextInterview(): {
+export function useUpcomingInterviews(): {
+  upcoming: UpcomingInterview[]
   next?: UpcomingInterview
   isLoading: boolean
 } {
@@ -40,12 +44,13 @@ export function useNextInterview(): {
   results.forEach((result, index) => {
     const application = scheduled[index]
     if (!result.data || !application) return
-    for (const interview of result.data.application.interviews) {
+    const interviews = result.data.application.interviews
+    for (const interview of interviews) {
       // A cancelled or declined time is not something to show as next, and a
       // reschedule leaves the superseded one in the list.
       if (interview.state === 'CANCELLED' || interview.state === 'DECLINED') continue
       if (new Date(interview.scheduledAt).getTime() < now) continue
-      upcoming.push({ application, interview })
+      upcoming.push({ application, interview, round: interviewRound(interviews, interview) })
     }
   })
 
@@ -55,6 +60,7 @@ export function useNextInterview(): {
   )
 
   return {
+    upcoming,
     next: upcoming[0],
     isLoading: listLoading || results.some((r) => r.isLoading),
   }

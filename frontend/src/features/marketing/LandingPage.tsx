@@ -1,6 +1,5 @@
 import { useState, type FormEvent } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { useAuth } from '@/auth/AuthProvider'
 import { usePostingsList } from '@/features/postings/usePostings'
 import { OpeningCard } from './OpeningCard'
 import { CompanyPipelinePreview } from './CompanyPipelinePreview'
@@ -115,7 +114,6 @@ const FOR_COMPANIES: { icon: IconName; heading: string; body: string }[] = [
 ]
 
 export function LandingPage() {
-  const { status } = useAuth()
   const navigate = useNavigate()
   const [query, setQuery] = useState('')
   const [city, setCity] = useState('')

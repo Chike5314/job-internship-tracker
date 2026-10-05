@@ -1,272 +1,607 @@
 .page {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  gap: var(--space-5);
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  min-width: 0;
 }
 
-.muted {
-  color: var(--color-text-muted);
-}
+/* ----------------------------------------------------------------------
+   Header
+   ---------------------------------------------------------------------- */
 
 .head {
+  position: relative;
   display: flex;
   flex-wrap: wrap;
-  align-items: end;
+  align-items: flex-end;
   justify-content: space-between;
-  gap: var(--space-4);
+  gap: var(--space-4) var(--space-5);
 }
 
-.headText {
-  display: grid;
+.titles {
+  display: flex;
+  flex-direction: column;
   gap: var(--space-2);
   min-width: 0;
+}
+
+.back {
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--color-text-muted);
+  font-size: var(--type-body-sm-size);
+  font-weight: 600;
+}
+
+.back:hover {
+  color: var(--color-text-primary);
+}
+
+/* The sprite has no left chevron, so the right one is turned round. */
+.backMark {
+  display: flex;
+  transform: scaleX(-1);
+}
+
+.titleRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2) var(--space-3);
+}
+
+.title {
+  color: var(--color-text-primary);
+  font-family: var(--font-serif);
+  font-size: 30px;
+  font-weight: 400;
+  line-height: 1.15;
+  letter-spacing: -0.01em;
+}
+
+.status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 24px;
+  padding: 0 9px;
+  border-radius: var(--radius-xs);
+  font-size: var(--type-caption-size);
+  font-weight: 600;
+}
+
+.statusDot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.draft {
+  background: var(--color-state-open-bg);
+  color: var(--color-state-open-text);
+}
+
+.published {
+  background: var(--color-active-wash);
+  color: var(--color-state-active-text);
+}
+
+.closed,
+.expired {
+  background: var(--color-state-closed-bg);
+  color: var(--color-state-closed-text);
+}
+
+.meta {
+  color: var(--color-text-muted);
+  font-size: 14px;
+  line-height: normal;
 }
 
 .headActions {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: var(--space-3);
+  gap: 10px;
 }
 
 .total {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  padding-right: 10px;
+}
+
+.totalValue {
   color: var(--color-text-primary);
+  font-size: 24px;
+  font-weight: 700;
+  line-height: 1.1;
   font-variant-numeric: tabular-nums;
 }
 
-/* The bulk bar appears only when something is selected, so it never takes room
-   from the board while nothing is happening. */
-.bulk {
+.totalLabel {
+  color: var(--color-text-muted);
+  font-size: var(--type-caption-size);
+}
+
+.headButton,
+.headLink {
+  height: 42px;
+  padding: 0 var(--space-4);
+  border-radius: var(--radius-sm);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.headLink {
+  display: flex;
+  align-items: center;
+  background: var(--color-glass-solid);
+  box-shadow: var(--shadow-inset-edge), 0 0 0 1px var(--color-rule-strong) inset;
+  color: var(--color-text-primary);
+}
+
+.headLink:hover {
+  background-image: linear-gradient(var(--color-glass-hover), var(--color-glass-hover));
+}
+
+.closePosting {
+  height: 42px;
+  padding: 0 var(--space-3);
+  border-radius: var(--radius-sm);
+  color: var(--color-attention-text);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.closePosting:hover:not(:disabled) {
+  background: var(--color-attention-wash);
+}
+
+.closePosting:disabled {
+  opacity: var(--opacity-disabled);
+}
+
+/* ----------------------------------------------------------------------
+   Board
+   ---------------------------------------------------------------------- */
+
+/* All five stages fit at the design's 1440 width. Narrower than that the
+   board scrolls sideways inside itself, which keeps every name on a card
+   readable; squeezed further, a column cut names down to two letters. */
+.board {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(208px, 1fr));
+  gap: var(--space-3);
+  overflow-x: auto;
+}
+
+.column {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+  border-radius: var(--radius-md);
+}
+
+.columnHead {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 14px 14px 10px;
+}
+
+.columnTitleRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+.columnTitle {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--color-text-primary);
+  font-size: 14px;
+  font-weight: 600;
+  line-height: normal;
+}
+
+.dot {
+  flex: none;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.count {
+  color: var(--color-text-subtle);
+  font-size: var(--type-caption-size);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.hint {
+  color: var(--color-text-subtle);
+  font-size: var(--type-caption-size);
+  line-height: normal;
+}
+
+.cards {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-1) var(--space-2) 10px;
+}
+
+.none {
+  padding: 20px var(--space-2);
+  color: var(--color-text-subtle);
+  font-size: var(--type-body-sm-size);
+  text-align: center;
+}
+
+/* ----------------------------------------------------------------------
+   The bulk bar and its result, floating over the foot of the board
+   ---------------------------------------------------------------------- */
+
+.float {
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  z-index: 5;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  width: min(672px, 100%);
+  padding: var(--space-3) var(--space-3) var(--space-3) 20px;
+  border-radius: var(--radius-lg);
+  box-shadow:
+    inset 0 0 0 1px var(--color-n-400),
+    var(--shadow-soft-xl);
+  transform: translateX(-50%);
+}
+
+:global([data-theme='ink']) .float,
+:global([data-theme='ink']) .exportPanel {
+  box-shadow:
+    inset 0 0 0 1px var(--color-rule-strong),
+    var(--shadow-soft-xl);
+}
+
+.bulkRow {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  justify-content: space-between;
-  gap: var(--space-4);
-  padding: var(--space-4) var(--space-5);
+  gap: var(--space-3);
+}
+
+.bulkText {
+  flex: 1;
+  min-width: 180px;
+  display: flex;
+  flex-direction: column;
+}
+
+.bulkCount {
+  color: var(--color-text-primary);
+  font-size: 15px;
+  font-weight: 600;
+  line-height: normal;
+}
+
+.bulkHint {
+  color: var(--color-text-muted);
+  font-size: var(--type-caption-size);
+  line-height: normal;
 }
 
 .bulkActions {
   display: flex;
-  flex-wrap: wrap;
   gap: var(--space-2);
 }
 
-/* The board scrolls sideways in its own container at narrow widths rather than
-   taking the page with it. */
-.board {
-  display: grid;
-  grid-auto-flow: column;
-  /* Narrow enough that all five stages fit a laptop without scrolling. The
-     column that needs attention is the fourth, so a board that clips at three
-     hides exactly the thing a recruiter came to see. */
-  grid-auto-columns: minmax(200px, 1fr);
-  gap: var(--space-4);
-  overflow-x: auto;
-  padding-bottom: var(--space-3);
-}
-
-.column {
-  display: grid;
-  grid-template-rows: auto minmax(0, 1fr);
-  gap: var(--space-3);
-  align-content: start;
-  min-width: 0;
-}
-
-.columnHead {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  gap: var(--space-1) var(--space-2);
-  padding-bottom: var(--space-3);
-  border-bottom: 2px solid var(--color-rule-hairline);
-}
-
-.columnHead p:last-child {
-  grid-column: 1 / -1;
-}
-
-.count {
-  color: var(--color-text-muted);
-  font-variant-numeric: tabular-nums;
-}
-
-.cards {
-  display: grid;
-  gap: var(--space-2);
-  align-content: start;
-}
-
-/* The checkbox and avatar sit on the card's own top line, so the text below
-   them gets the full column width. Side by side they took a third of a 236px
-   column and pushed every name onto two lines. */
-.card {
-  display: grid;
-  grid-template-columns: auto auto minmax(0, 1fr);
-  grid-template-areas:
-    'pick avatar .'
-    'text text text';
-  align-items: center;
-  gap: var(--space-2) var(--space-3);
-  padding: var(--space-3);
-}
-
-.pick {
-  grid-area: pick;
-}
-
-.avatar {
-  grid-area: avatar;
-}
-
-.cardText {
-  grid-area: text;
-  width: 100%;
-}
-
-.cardPicked {
-  box-shadow: var(--shadow-inset-edge), 0 0 0 1.5px var(--color-brand-forest) inset;
-}
-
-/* The checkbox keeps its label for a screen reader and loses it on screen,
-   where the name is already in the row beside it. */
-.pick span {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  margin: -1px;
-  padding: 0;
-  overflow: hidden;
-  clip-path: inset(50%);
+.bulkReview,
+.bulkReject,
+.bulkQuiet {
+  height: 40px;
+  padding: 0 14px;
+  border-radius: var(--radius-sm);
+  font-size: var(--type-body-sm-size);
+  font-weight: 600;
   white-space: nowrap;
 }
 
-.avatar {
-  flex: none;
-  display: grid;
-  place-items: center;
-  width: 32px;
-  height: 32px;
-  border-radius: 999px;
-  background: var(--color-active-wash);
-  color: var(--color-state-active-text);
-  font-size: var(--type-caption-size);
-  font-weight: 600;
-}
-
-.cardText {
-  display: grid;
-  gap: var(--space-2);
-  justify-items: start;
-  min-width: 0;
-}
-
-.cardText a:hover {
-  text-decoration: underline;
-}
-
-.none {
-  padding: var(--space-4);
-  color: var(--color-text-subtle);
-  text-align: center;
-}
-
-.closedBlock {
-  display: grid;
-  gap: var(--space-3);
-  padding-top: var(--space-5);
-  border-top: 1px solid var(--color-rule-hairline);
-}
-
-.closedList {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(min(100%, 280px), 1fr));
-  gap: var(--space-2) var(--space-6);
-}
-
-.closedRow {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: var(--space-3);
-}
-
-.closedRow a {
-  color: var(--color-text-secondary);
-}
-
-.closedRow a:hover {
+.bulkReview {
+  background: var(--color-glass-solid);
+  box-shadow: inset 0 0 0 1px var(--color-n-400);
   color: var(--color-text-primary);
-  text-decoration: underline;
 }
 
-.dialogActions {
-  display: flex;
-  justify-content: flex-end;
-  gap: var(--space-2);
+:global([data-theme='ink']) .bulkReview {
+  box-shadow: inset 0 0 0 1px var(--color-rule-strong);
 }
 
-/* ----------------------------------------------------------------------
-   Card detail the board needs to be read at a glance
-   ---------------------------------------------------------------------- */
-
-.nameRow {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-  min-width: 0;
+.bulkReview:hover:not(:disabled) {
+  background-image: linear-gradient(var(--color-glass-hover), var(--color-glass-hover));
 }
 
-/* The one mark on a card that means nobody has read this yet. It is a dot
-   rather than a word because the column header already says the stage. */
-.unread {
-  flex: none;
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  background: var(--color-brand-verm);
-}
-
-.chip {
-  align-self: start;
-  padding: 2px 8px;
-  border-radius: var(--radius-xs);
-  font-size: var(--type-caption-size);
-  font-weight: 600;
-  font-variant-numeric: tabular-nums;
-}
-
-/* A time still waiting on a reply takes the signal hue; one already agreed is
-   a settled fact and takes the structural one. */
-.chipAwaiting {
+.bulkReject {
   background: var(--color-attention-wash);
   color: var(--color-attention-text);
 }
 
-.chipConfirmed {
+.bulkReject:hover {
+  box-shadow: inset 0 0 0 1px var(--color-verm-500);
+}
+
+.bulkQuiet {
+  padding: 0 var(--space-3);
+  background: transparent;
+  color: var(--color-text-muted);
+}
+
+.bulkQuiet:hover {
+  color: var(--color-text-primary);
+}
+
+.bulkReview:disabled,
+.rejectConfirm:disabled {
+  opacity: var(--opacity-disabled);
+}
+
+.rejectRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 10px;
+}
+
+.rejectField {
+  flex: 1;
+  min-width: 220px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.rejectLabel {
+  color: var(--color-text-muted);
+  font-size: var(--type-body-sm-size);
+}
+
+.rejectInput {
+  height: 42px;
+  padding: 0 var(--space-3);
+  border: none;
+  border-radius: var(--radius-sm);
+  background: var(--color-glass-dense);
+  box-shadow: inset 0 0 0 1px var(--color-rule-strong);
+  color: var(--color-text-primary);
+  font-size: 14px;
+}
+
+.rejectInput::placeholder {
+  color: var(--color-text-subtle);
+}
+
+.rejectInput:focus-visible {
+  box-shadow: inset 0 0 0 1.5px var(--color-rule-focus);
+}
+
+.rejectConfirm {
+  height: 42px;
+  padding: 0 var(--space-4);
+  border-radius: var(--radius-sm);
+  background: var(--color-attention-text);
+  color: var(--color-on-brand);
+  font-size: 14px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.rejectConfirm:hover:not(:disabled) {
+  background: var(--color-verm-700);
+}
+
+:global([data-theme='ink']) .rejectConfirm {
+  background: var(--color-verm-600);
+}
+
+.result {
+  flex-direction: row;
+  align-items: flex-start;
+  gap: 14px;
+  padding: var(--space-4) var(--space-4) var(--space-4) 20px;
+}
+
+.resultMark {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
   background: var(--color-active-wash);
   color: var(--color-state-active-text);
 }
 
-.decidedTag {
+.resultText {
+  flex: 1;
+  min-width: 0;
   display: flex;
+  flex-direction: column;
+  gap: 6px;
 }
 
-.cardFoot {
+.resultDone {
+  color: var(--color-text-primary);
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+.refused {
+  color: var(--color-attention-text);
+  font-size: var(--type-body-sm-size);
+  line-height: 1.4;
+}
+
+.dismiss {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-sm);
+  background: var(--color-glass-solid);
+  color: var(--color-text-primary);
+}
+
+.dismiss:hover {
+  background: var(--color-active-wash);
+}
+
+/* ----------------------------------------------------------------------
+   Export, under the header's own buttons
+   ---------------------------------------------------------------------- */
+
+.exportPanel {
+  position: absolute;
+  top: calc(100% + var(--space-3));
+  right: 0;
+  z-index: 6;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  width: min(380px, 100%);
+  padding: 18px;
+  border-radius: var(--radius-lg);
+  box-shadow:
+    inset 0 0 0 1px var(--color-n-400),
+    var(--shadow-soft-xl);
+}
+
+.exportHead {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.exportTitle {
+  color: var(--color-text-primary);
+  font-size: 15px;
+  font-weight: 600;
+  line-height: normal;
+}
+
+.exportFile {
+  color: var(--color-text-muted);
+  font-size: var(--type-body-sm-size);
+}
+
+.exportBody {
+  color: var(--color-text-secondary);
+  font-size: var(--type-body-sm-size);
+  line-height: 1.5;
+}
+
+.exportFoot {
   display: flex;
   flex-wrap: wrap;
-  align-items: baseline;
+  align-items: center;
   justify-content: space-between;
-  width: 100%;
   gap: var(--space-2);
-  margin-top: var(--space-1);
-  padding-top: var(--space-2);
-  border-top: 1px solid var(--color-rule-hairline);
 }
 
-/* A pill that wraps keeps its padding on both lines rather than splitting the
-   background open at the break. */
-.chip,
-.decidedTag :global(*) {
-  box-decoration-break: clone;
-  -webkit-box-decoration-break: clone;
+.exportExpiry {
+  color: var(--color-text-subtle);
+  font-size: var(--type-caption-size);
+}
+
+.download {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 38px;
+  padding: 0 14px;
+  border-radius: var(--radius-sm);
+  background: var(--color-action-fill);
+  color: var(--color-on-brand);
+  font-size: var(--type-body-sm-size);
+  font-weight: 600;
+}
+
+.download:hover {
+  background: var(--color-action-fill-hover);
+}
+
+/* ----------------------------------------------------------------------
+   Widths
+   ---------------------------------------------------------------------- */
+
+/* Exactly one screen tall, so each column scrolls inside itself and the
+   header never leaves view. 128px is the bar and the main area's padding,
+   set in CompanyShell. */
+@media (min-width: 900px) {
+  .page {
+    height: calc(100vh - 128px);
+    min-height: 520px;
+  }
+
+  .board {
+    flex: 1;
+    min-height: 0;
+  }
+}
+
+/* Below that the page scrolls as a whole, so the bulk bar holds to the
+   bottom of the screen rather than the bottom of a long page. */
+@media (max-width: 899px) {
+  .board {
+    grid-template-columns: repeat(5, minmax(232px, 1fr));
+    padding-bottom: var(--space-2);
+  }
+
+  .float {
+    position: fixed;
+    right: var(--space-4);
+    bottom: var(--space-4);
+    left: var(--space-4);
+    width: auto;
+    transform: none;
+  }
+}
+
+@media (max-width: 640px) {
+  .board {
+    grid-template-columns: repeat(5, 82vw);
+    scroll-snap-type: x mandatory;
+  }
+
+  .column {
+    scroll-snap-align: start;
+  }
+
+  .headActions {
+    width: 100%;
+  }
+
+  .total {
+    margin-right: auto;
+    align-items: flex-start;
+  }
 }

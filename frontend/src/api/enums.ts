@@ -52,8 +52,21 @@ export const APPLICATION_STATUS_LABEL: Record<ApplicationStatus, string> = {
   WITHDRAWN: 'Withdrawn',
 }
 
+export type VerificationStatus = 'PENDING_VERIFICATION' | 'VERIFIED' | 'REJECTED' | 'SUSPENDED'
+
+/** Where a company account stands with verification, in the order an admin
+ *  works through them. */
+export const VERIFICATION_STATUSES: VerificationStatus[] = ['PENDING_VERIFICATION', 'VERIFIED', 'REJECTED', 'SUSPENDED']
+
+export const VERIFICATION_STATUS_LABEL: Record<VerificationStatus, string> = {
+  PENDING_VERIFICATION: 'Waiting for verification',
+  VERIFIED: 'Verified',
+  REJECTED: 'Rejected',
+  SUSPENDED: 'Suspended',
+}
+
 export const OPPORTUNITY_TYPE_LABEL: Record<OpportunityType, string> = {
-  FULL_TIME_JOB: 'Full time job',
+  FULL_TIME_JOB: 'Full-time job',
   PROFESSIONAL_INTERNSHIP: 'Professional internship',
   ACADEMIC_INTERNSHIP: 'Academic internship',
 }

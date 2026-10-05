@@ -1,4 +1,5 @@
 import {
+  confirmResetPassword,
   confirmSignUp,
   fetchAuthSession,
   getCurrentUser,
@@ -7,6 +8,7 @@ import {
   signOut,
   signUp,
   autoSignIn,
+  resetPassword,
   signInWithRedirect,
 } from 'aws-amplify/auth'
 import type { AccountType } from './accountType'
@@ -130,6 +132,29 @@ export async function confirmSignUpWithCode(params: { email: string; code: strin
   if (result.nextStep.signUpStep === 'COMPLETE_AUTO_SIGN_IN') {
     await autoSignIn()
   }
+}
+
+/**
+ * Starts a password reset by emailing a code. The pool has
+ * prevent_user_existence_errors=True and account recovery by email only
+ * (persistence_stack.py), so this answers the same way whether or not the
+ * address has an account, and the screen must not claim otherwise.
+ */
+export async function requestPasswordReset(params: { email: string }): Promise<void> {
+  await resetPassword({ username: params.email })
+}
+
+/** Finishes a reset with the emailed code. It does not sign the person in. */
+export async function confirmPasswordReset(params: {
+  email: string
+  code: string
+  newPassword: string
+}): Promise<void> {
+  await confirmResetPassword({
+    username: params.email,
+    confirmationCode: params.code,
+    newPassword: params.newPassword,
+  })
 }
 
 export async function resendCode(params: { email: string }): Promise<void> {

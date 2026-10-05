@@ -22,9 +22,10 @@ export function NotificationBell({ to = '/notifications' }: { to?: string }) {
         type="button"
         className={styles.trigger}
         onClick={() => setOpen((v) => !v)}
+        aria-expanded={open}
         aria-label={`Notifications${unreadCount > 0 ? `, ${unreadCount} unread` : ''}`}
       >
-        <Icon name="bell" size={18} />
+        <Icon name="bell" size={20} />
         {unreadCount > 0 && <span className={styles.badge}>{unreadCount}</span>}
       </button>
 

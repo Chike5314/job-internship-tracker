@@ -2,37 +2,40 @@ import { Link } from 'react-router-dom'
 import type { ApplicationSummary } from '@/api/types'
 import { OPPORTUNITY_TYPE_LABEL } from '@/api/enums'
 import { StatusTag } from '@/ui/StatusTag'
-import { formatDate } from '@/lib/formatDate'
+import { Monogram } from '@/ui/Monogram'
+import { formatDay } from '@/lib/formatDate'
 import styles from './ApplicationRow.module.css'
 
-// glass-dense: this row carries metadata (company, dates) in text-muted,
-// which needs glass-dense beneath it.
-export function ApplicationRow({ application }: { application: ApplicationSummary }) {
+/** One row of the applications list. Its grid matches the column headings
+ *  above it, which share `--application-columns` with it. */
+export function ApplicationRow({
+  application,
+  to,
+  selected,
+}: {
+  application: ApplicationSummary
+  to: string
+  selected?: boolean
+}) {
   return (
-    <Link to={`/applications/${application.applicationId}`} className={['glass-dense', styles.row].join(' ')}>
-      <div>
-        <p className="t-heading-sm">{application.jobTitle}</p>
-        <p className="t-body-sm" style={{ color: 'var(--color-text-muted)' }}>
-          {application.companyName} · {OPPORTUNITY_TYPE_LABEL[application.opportunityType]}
-        </p>
-        <p className="t-caption" style={{ color: 'var(--color-text-subtle)' }}>
-          Applied {formatDate(application.appliedAt)}
-          {application.lastEditedAt && ` · edited ${formatDate(application.lastEditedAt)}`}
-        </p>
-      </div>
-      <div className={styles.right}>
-        <StatusTag status={application.status} />
-        {application.status === 'OFFER_EXTENDED' && (
-          <p className="t-caption" style={{ color: 'var(--color-attention-text)' }}>
-            Answer the offer
-          </p>
-        )}
-        {application.canEdit && (
-          <p className="t-caption" style={{ color: 'var(--color-text-subtle)' }}>
-            Editable
-          </p>
-        )}
-      </div>
+    <Link
+      to={to}
+      aria-current={selected ? 'true' : undefined}
+      className={[styles.row, selected ? styles.selected : ''].join(' ')}
+    >
+      <span className={styles.role}>
+        <Monogram name={application.companyName} />
+        <span className={styles.text}>
+          <span className={styles.title}>{application.jobTitle}</span>
+          <span className={styles.meta}>
+            {application.companyName} · {OPPORTUNITY_TYPE_LABEL[application.opportunityType]}
+          </span>
+        </span>
+      </span>
+      <span className={styles.status}>
+        <StatusTag status={application.status} compact />
+      </span>
+      <span className={styles.date}>{formatDay(application.appliedAt)}</span>
     </Link>
   )
 }

@@ -1,10 +1,23 @@
 .tag {
+  flex: none;
   display: inline-flex;
   align-items: center;
-  height: 26px;
-  padding: 0 var(--space-2);
+  gap: 6px;
+  height: 24px;
+  padding: 0 9px;
   border-radius: var(--radius-xs);
   font-weight: 600;
+  white-space: nowrap;
+}
+
+/* Takes the text colour, so each tone's dot is its own ink with no second
+   token to keep in step. */
+.dot {
+  flex: none;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
 }
 
 .open {

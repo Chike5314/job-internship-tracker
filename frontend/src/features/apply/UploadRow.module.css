@@ -1,0 +1,205 @@
+.input {
+  display: none;
+}
+
+.drop {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  padding: 20px;
+  border-radius: var(--radius-md);
+  background: var(--color-ground);
+  box-shadow: inset 0 0 0 1.5px var(--color-n-400);
+  transition: box-shadow 120ms ease;
+}
+
+:global([data-theme='ink']) .drop {
+  box-shadow: inset 0 0 0 1.5px var(--color-n-700);
+}
+
+.prominent {
+  gap: 18px;
+  padding: var(--space-5);
+}
+
+.dragOver,
+:global([data-theme='ink']) .dragOver {
+  box-shadow: inset 0 0 0 1.5px var(--color-brand-forest);
+}
+
+.invalid,
+:global([data-theme='ink']) .invalid {
+  box-shadow: inset 0 0 0 1.5px var(--color-brand-verm);
+}
+
+.icon {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  border-radius: var(--radius-md);
+  background: var(--color-active-wash);
+  color: var(--color-brand-forest);
+}
+
+.text {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.title,
+.titleLarge {
+  color: var(--color-text-primary);
+  font-size: var(--type-body-size);
+  font-weight: 600;
+  line-height: normal;
+}
+
+.hint,
+.error {
+  font-size: var(--type-body-sm-size);
+  line-height: normal;
+}
+
+.hint {
+  color: var(--color-text-muted);
+}
+
+.error {
+  color: var(--color-attention-text);
+  font-weight: 600;
+}
+
+.choose {
+  flex: none;
+  height: 42px;
+  padding: 0 18px;
+}
+
+/* A chosen file: the same sunken ground, now with a firmer edge, since it is
+   something the viewer has added rather than a slot waiting for it. */
+.file {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px var(--space-4);
+  border-radius: var(--radius-md);
+  background: var(--color-ground);
+  box-shadow: inset 0 0 0 1px var(--color-n-400);
+  color: var(--color-text-primary);
+}
+
+:global([data-theme='ink']) .file {
+  box-shadow: inset 0 0 0 1px var(--color-n-700);
+}
+
+/* Already on the profile: nothing was added here, so the quieter edge. */
+.kept,
+:global([data-theme='ink']) .kept {
+  box-shadow: inset 0 0 0 1px var(--color-rule-hairline);
+}
+
+.keptLine {
+  color: var(--color-text-muted);
+  font-size: var(--type-caption-size);
+  line-height: normal;
+}
+
+.profileLink {
+  flex: none;
+  color: var(--color-text-link);
+  font-size: var(--type-body-sm-size);
+  font-weight: 600;
+}
+
+.profileLink:hover {
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.file > svg {
+  flex: none;
+}
+
+.name {
+  overflow: hidden;
+  color: var(--color-text-primary);
+  font-size: 14px;
+  font-weight: 600;
+  line-height: normal;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.done {
+  color: var(--color-state-active-text);
+  font-size: var(--type-caption-size);
+  line-height: normal;
+}
+
+.remove,
+.replace {
+  flex: none;
+  height: 36px;
+  padding: 0 var(--space-3);
+  border-radius: var(--radius-sm);
+  font-size: var(--type-body-sm-size);
+  font-weight: 600;
+}
+
+.remove {
+  color: var(--color-attention-text);
+}
+
+.remove:hover {
+  background: var(--color-attention-wash);
+}
+
+.replace {
+  color: var(--color-text-link);
+}
+
+.replace:hover {
+  background: var(--color-active-wash);
+}
+
+.progress {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-top: var(--space-1);
+}
+
+.track {
+  flex: 1;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--color-state-open-bg);
+  overflow: hidden;
+}
+
+.bar {
+  display: block;
+  height: 100%;
+  background: var(--color-brand-forest);
+  transition: width 120ms ease;
+}
+
+.percent {
+  color: var(--color-text-muted);
+  font-size: var(--type-caption-size);
+  font-variant-numeric: tabular-nums;
+}
+
+@media (max-width: 640px) {
+  .drop {
+    flex-wrap: wrap;
+  }
+
+  .choose {
+    width: 100%;
+  }
+}

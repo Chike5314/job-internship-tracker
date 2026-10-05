@@ -5,6 +5,17 @@ html {
   font-family: var(--font-sans);
 }
 
+/* The chosen theme, not the operating system, decides how native controls
+   draw: checkboxes, select menus and scrollbars. Left to "light dark", ink
+   chosen on a light system wore white checkboxes on a dark card. */
+html[data-theme='paper'] {
+  color-scheme: light;
+}
+
+html[data-theme='ink'] {
+  color-scheme: dark;
+}
+
 body {
   min-height: 100vh;
 }

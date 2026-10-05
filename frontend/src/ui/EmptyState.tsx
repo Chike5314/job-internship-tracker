@@ -7,8 +7,8 @@ interface EmptyStateProps {
   action?: ReactNode
 }
 
-// glass-dense, not glass-soft: this carries muted body text, and text-muted
-// needs glass-dense beneath it per the token's own usage note.
+// This carries muted body text, and text-muted needs glass-dense beneath it
+// per the token's own usage note.
 export function EmptyState({ heading, body, action }: EmptyStateProps) {
   return (
     <div className={['glass-dense', styles.wrapper].join(' ')}>

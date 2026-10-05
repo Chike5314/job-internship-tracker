@@ -1,10 +1,9 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useAuth } from '@/auth/AuthProvider'
 import { Icon } from '@/ui/Icon'
 import { NotificationBell } from '@/features/notifications/NotificationBell'
 import { AccountMenu } from './AccountMenu'
-import { ThemeToggle } from './ThemeToggle'
 import styles from './AppBar.module.css'
 
 type Props = {
@@ -12,20 +11,45 @@ type Props = {
   placeholder: string
   /** Where a search goes, with the term added as `q`. */
   searchTo: string
-  /** Where the bell links, since each side keeps its own notifications route. */
-  notificationsTo: string
+  /**
+   * Set on a page that filters its own list. The field then edits `q` on the
+   * current URL as the viewer types and nothing navigates, so the filter
+   * survives selecting a row and the back button.
+   */
+  filtersPage?: boolean
+  /** Where the bell links, since each side keeps its own notifications route.
+   *  Left out on a side that receives no notifications, which then has no bell. */
+  notificationsTo?: string
 }
 
 /**
  * The bar above the content on every signed-in screen: search, the bell and the
- * account. It sits beside a rail rather than replacing it, which is how the
- * canvas draws both the applicant and the company boards.
+ * account. It sits beside a rail, which is how the canvas draws both the
+ * applicant and the company boards. The theme switch lives in the account menu,
+ * so the bar carries exactly what the boards draw.
  */
-export function AppBar({ placeholder, searchTo, notificationsTo }: Props) {
+export function AppBar({ placeholder, searchTo, filtersPage = false, notificationsTo }: Props) {
   const { identity } = useAuth()
   const navigate = useNavigate()
   const inputRef = useRef<HTMLInputElement>(null)
   const [term, setTerm] = useState('')
+  const [searchParams, setSearchParams] = useSearchParams()
+  const value = filtersPage ? (searchParams.get('q') ?? '') : term
+
+  function onChange(next: string) {
+    if (!filtersPage) {
+      setTerm(next)
+      return
+    }
+    setSearchParams(
+      (params) => {
+        if (next) params.set('q', next)
+        else params.delete('q')
+        return params
+      },
+      { replace: true },
+    )
+  }
 
   // The shortcut the bar advertises has to work, or the hint is a lie.
   useEffect(() => {
@@ -41,6 +65,7 @@ export function AppBar({ placeholder, searchTo, notificationsTo }: Props) {
 
   function onSubmit(event: FormEvent) {
     event.preventDefault()
+    if (filtersPage) return
     const trimmed = term.trim()
     navigate(trimmed ? `${searchTo}?q=${encodeURIComponent(trimmed)}` : searchTo)
   }
@@ -52,8 +77,8 @@ export function AppBar({ placeholder, searchTo, notificationsTo }: Props) {
         <input
           ref={inputRef}
           type="search"
-          value={term}
-          onChange={(event) => setTerm(event.target.value)}
+          value={value}
+          onChange={(event) => onChange(event.target.value)}
           placeholder={placeholder}
           aria-label={placeholder}
           className={styles.field}
@@ -64,8 +89,7 @@ export function AppBar({ placeholder, searchTo, notificationsTo }: Props) {
       </form>
 
       <div className={styles.actions}>
-        <ThemeToggle />
-        <NotificationBell to={notificationsTo} />
+        {notificationsTo && <NotificationBell to={notificationsTo} />}
         {identity && <AccountMenu identity={identity} />}
       </div>
     </header>

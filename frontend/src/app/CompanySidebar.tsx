@@ -13,18 +13,16 @@ export function CompanySidebar() {
   const { data: notifications } = useNotifications(true)
 
   const verified = company?.company.verificationStatus === 'VERIFIED'
-  const published = (postings?.jobs ?? []).filter((job) => job.postingStatus === 'PUBLISHED').length
+  // Every posting, drafts and closed ones included, as the company boards count it.
+  const postingCount = postings?.jobs.length ?? 0
   const unread = notifications?.count ?? 0
 
   const destinations: RailDestination[] = [
     { to: '/company', label: 'Overview', icon: 'analytics', end: true },
-    { to: '/company/postings', label: 'Postings', icon: 'posting', count: published },
+    { to: '/company/postings', label: 'Postings', icon: 'posting', count: postingCount },
     { to: '/company/interviews', label: 'Interviews', icon: 'interview' },
     { to: '/company/analytics', label: 'Analytics', icon: 'trend' },
     { to: '/company/notifications', label: 'Notifications', icon: 'bell', count: unread, urgent: true },
-  ]
-
-  const secondary: RailDestination[] = [
     { to: '/company/profile', label: 'Company profile', icon: 'company' },
   ]
 
@@ -32,12 +30,12 @@ export function CompanySidebar() {
     <SideRail
       home="/company"
       homeLabel="Offerline company home"
-      section="Company"
+      section="COMPANY"
       destinations={destinations}
-      secondary={secondary}
       navLabel="Company"
       identity={
         <RailIdentity
+          organisation
           name={company?.company.companyName ?? identity?.fullName ?? ''}
           subtitle={
             company ? (

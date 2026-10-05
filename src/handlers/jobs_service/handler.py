@@ -182,6 +182,8 @@ def update_job(event: Dict[str, Any], _context: Any) -> Dict[str, Any]:
         changes["openings"] = optional_int(errors, body, "openings", minimum=1, maximum=1000)
     if "skills" in body:
         changes["skills"] = optional_string_list(body, "skills", limit=30)
+    if "startDate" in body:
+        changes["startDate"] = optional_iso_datetime(errors, body, "startDate")
 
     target_status = None
     if "postingStatus" in body:

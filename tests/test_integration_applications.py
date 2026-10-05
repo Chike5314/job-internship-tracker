@@ -320,6 +320,110 @@ def test_a_cv_key_belonging_to_someone_else_is_refused(posting):
 
 
 # ----------------------------------------------------------------------
+# The transcript kept on the profile
+# ----------------------------------------------------------------------
+@pytest.fixture
+def academic_posting(posting):
+    """A second posting from the same company that also asks for a transcript."""
+    _, created = call(
+        jobs_handler(),
+        "POST",
+        "/jobs",
+        user="co_1",
+        groups=RECRUITER,
+        body={
+            "title": "Field Engineering Intern",
+            "description": "Six months on the network team.",
+            "opportunityType": "ACADEMIC_INTERNSHIP",
+            "workModality": "ONSITE",
+            "documentRequirements": [
+                {"key": "cv", "label": "CV", "kind": "FILE", "required": True},
+                {"key": "transcript", "label": "Transcript", "kind": "FILE", "required": True},
+            ],
+        },
+    )
+    job_id = created["job"]["jobId"]
+    call(
+        jobs_handler(),
+        "PATCH",
+        "/jobs/{id}",
+        user="co_1",
+        groups=RECRUITER,
+        path={"id": job_id},
+        body={"postingStatus": "PUBLISHED"},
+    )
+    return job_id
+
+
+def put_profile_transcript(applicant="app_1"):
+    """Upload a transcript to the profile the way the profile page does."""
+    _, issued = call(
+        auth_handler(),
+        "POST",
+        "/profile/upload-url",
+        user=applicant,
+        groups=APPLICANT,
+        body={"documentKind": "transcript", "fileName": "transcript.pdf"},
+    )
+    boto3.client("s3", region_name=REGION).put_object(
+        Bucket="test-documents", Key=issued["s3Key"], Body=b"%PDF-1.4 transcript"
+    )
+    call(
+        auth_handler(),
+        "POST",
+        "/profile",
+        user=applicant,
+        groups=APPLICANT,
+        body={"transcriptS3Key": issued["s3Key"]},
+    )
+    return issued["s3Key"]
+
+
+def stored_documents(application_id):
+    table = boto3.resource("dynamodb", region_name=REGION).Table("test-applications")
+    return table.get_item(Key={"applicationId": application_id})["Item"]["documents"]
+
+
+def test_the_profile_transcript_goes_with_an_application_that_asks_for_one(academic_posting):
+    transcript_key = put_profile_transcript()
+    _, upload = upload_cv(job_id=academic_posting)
+
+    status, payload = submit(academic_posting, cv_key=upload["s3Key"])
+
+    assert status == 202
+    assert stored_documents(payload["application"]["applicationId"])["transcript"] == transcript_key
+
+
+def test_a_transcript_attached_to_the_application_is_kept_over_the_profile_one(academic_posting):
+    put_profile_transcript()
+    _, cv = upload_cv(job_id=academic_posting)
+    _, own = call(
+        app_handler(),
+        "POST",
+        "/applications/upload-url",
+        user="app_1",
+        groups=APPLICANT,
+        body={"jobId": academic_posting, "documentKey": "transcript", "fileName": "latest.pdf"},
+    )
+
+    status, payload = submit(
+        academic_posting, documents={"cv": cv["s3Key"], "transcript": own["s3Key"]}
+    )
+
+    assert status == 202
+    assert stored_documents(payload["application"]["applicationId"])["transcript"] == own["s3Key"]
+
+
+def test_without_a_profile_transcript_one_is_still_required(academic_posting):
+    _, upload = upload_cv(job_id=academic_posting)
+
+    status, payload = submit(academic_posting, cv_key=upload["s3Key"])
+
+    assert status == 400
+    assert payload["error"]["code"] == "REQUIRED_DOCUMENTS_MISSING"
+
+
+# ----------------------------------------------------------------------
 # The edit window and the freeze point
 # ----------------------------------------------------------------------
 def submitted_application(job_id):

@@ -1,5 +1,12 @@
 import { http } from './http'
-import type { ApplicationDetail, ApplicationStatusView, ApplicationSummary, Interview, UploadUrlResponse } from './types'
+import type {
+  ApplicationDetail,
+  ApplicationStatusView,
+  ApplicationSummary,
+  Interview,
+  RecruiterApplication,
+  UploadUrlResponse,
+} from './types'
 import type { InterviewMode } from './enums'
 
 export function listMyApplications(): Promise<{ count: number; applications: ApplicationSummary[] }> {
@@ -7,6 +14,17 @@ export function listMyApplications(): Promise<{ count: number; applications: App
 }
 
 export function getApplication(applicationId: string): Promise<{ application: ApplicationDetail }> {
+  return http.get(`/applications/${applicationId}`)
+}
+
+/**
+ * The same route as getApplication, read by the company. Opening a SUBMITTED
+ * application this way is what moves it to UNDER_REVIEW and freezes it, so
+ * this read changes the pipeline.
+ */
+export function getApplicationForRecruiter(
+  applicationId: string,
+): Promise<{ application: RecruiterApplication }> {
   return http.get(`/applications/${applicationId}`)
 }
 
@@ -61,4 +79,13 @@ export function scheduleInterview(
   params: { scheduledAt: string; mode: InterviewMode; durationMinutes: number; locationOrLink: string },
 ): Promise<{ interview: Interview; status: string }> {
   return http.post(`/applications/${applicationId}/interview`, { body: params })
+}
+
+/** The company moves a time that still stands. The old entry is kept, marked
+ *  CANCELLED, and the new one names it in replacesInterviewId. */
+export function rescheduleInterview(
+  applicationId: string,
+  params: { scheduledAt: string; mode: InterviewMode; durationMinutes: number; locationOrLink: string },
+): Promise<{ interviews: Interview[] }> {
+  return http.patch(`/applications/${applicationId}/interview`, { body: { action: 'RESCHEDULE', ...params } })
 }

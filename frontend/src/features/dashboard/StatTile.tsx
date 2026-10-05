@@ -17,17 +17,21 @@ export function StatTile({ label, value, icon, note, urgent, to }: Props) {
   const body = (
     <>
       <span className={styles.head}>
-        <span className={['t-body-sm', styles.label].join(' ')}>{label}</span>
+        <span className={styles.label}>{label}</span>
         <span className={styles.icon} aria-hidden="true">
-          <Icon name={icon} size={17} />
+          <Icon name={icon} size={18} />
         </span>
       </span>
-      <span className={['t-figure-xl', styles.value].join(' ')}>{value}</span>
-      <span className={['t-caption', styles.note].join(' ')}>{note}</span>
+      <span className={styles.value}>{value}</span>
+      <span className={styles.note}>{note}</span>
     </>
   )
 
-  const className = ['glass-soft', styles.tile, urgent ? styles.urgent : ''].join(' ')
+  // The urgent tile sits on a solid ground with its own ring, so it takes no
+  // glass recipe: the vermilion edge is what sets it apart from the row.
+  const className = [urgent ? styles.urgent : 'glass-soft', styles.tile, to ? styles.link : '']
+    .filter(Boolean)
+    .join(' ')
 
   return to ? (
     <Link to={to} className={className}>

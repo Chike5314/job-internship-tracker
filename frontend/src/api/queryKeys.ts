@@ -32,6 +32,10 @@ export const queryKeys = {
   notifications: {
     list: (unreadOnly: boolean) => ['notifications', 'list', unreadOnly] as const,
   },
+  admin: {
+    overview: () => ['admin', 'overview'] as const,
+    companies: (status: string) => ['admin', 'companies', status] as const,
+  },
   company: {
     all: ['company'] as const,
     mine: () => ['company', 'mine'] as const,
@@ -39,6 +43,7 @@ export const queryKeys = {
     posting: (jobId: string) => ['company', 'posting', jobId] as const,
     pipeline: (jobId: string, status?: string) =>
       ['company', 'pipeline', jobId, status ?? 'all'] as const,
+    application: (applicationId: string) => ['company', 'application', applicationId] as const,
     jobAnalytics: (jobId: string) => ['company', 'analytics', 'job', jobId] as const,
     analytics: (companyId: string) => ['company', 'analytics', companyId] as const,
     interviews: (companyId: string, from?: string, to?: string) =>

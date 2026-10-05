@@ -1,21 +1,24 @@
 .bar {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: var(--space-4);
-  padding: var(--space-4) var(--space-6);
+  height: 72px;
+  flex: none;
+  padding: 0 var(--space-6);
   border-bottom: 1px solid var(--color-rule-hairline);
 }
 
 .search {
   display: flex;
   align-items: center;
-  gap: var(--space-3);
-  flex: 1;
+  gap: 10px;
+  flex: 0 1 440px;
   min-width: 0;
-  max-width: 440px;
   height: 44px;
-  padding: 0 var(--space-4);
-  border-radius: var(--radius-md);
+  padding: 0 10px 0 14px;
+  /* An input, so the button and input radius rather than the card one. */
+  border-radius: var(--radius-sm);
   color: var(--color-text-muted);
 }
 
@@ -25,35 +28,49 @@
   border: none;
   background: transparent;
   color: var(--color-text-primary);
-  font-size: var(--type-body-size);
+  font-size: 14px;
+}
+
+.field::placeholder {
+  color: var(--color-text-subtle);
 }
 
 .field:focus {
   outline: none;
 }
 
-/* The field already carries a focus ring from the controls layer; the hint is
-   decoration and steps aside once the viewer is typing in it. */
+/* The ring goes on the whole field, the way the boards draw a focused input,
+   since the bare input inside it has its outline turned off. */
+.search:focus-within {
+  box-shadow:
+    var(--shadow-inset-edge),
+    inset 0 0 0 1.5px var(--color-rule-focus),
+    var(--shadow-soft-sm);
+}
+
+/* The hint is decoration and needs no state of its own. */
 .shortcut {
   flex: none;
-  padding: 2px 6px;
+  padding: 3px 7px;
   border-radius: var(--radius-xs);
   background: var(--color-state-open-bg);
-  color: var(--color-text-subtle);
-  font-family: var(--font-mono);
+  color: var(--color-text-muted);
+  font-family: var(--font-sans);
   font-size: var(--type-caption-size);
+  font-weight: 600;
 }
 
 .actions {
   display: flex;
   align-items: center;
-  gap: var(--space-2);
+  gap: var(--space-3);
   margin-left: auto;
 }
 
 @media (max-width: 640px) {
   .bar {
-    padding: var(--space-3) var(--space-4);
+    height: 64px;
+    padding: 0 var(--space-4);
     gap: var(--space-3);
   }
 

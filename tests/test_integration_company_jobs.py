@@ -202,6 +202,52 @@ def test_one_company_cannot_edit_another_posting(aws):
     assert status == 403
 
 
+def test_a_start_date_set_after_creation_is_kept(aws):
+    """The editor saves a start date on a posting that already exists, and the
+    update route used to read every optional field except this one."""
+    register()
+    _, created = create_posting()
+    job_id = created["job"]["jobId"]
+
+    status, payload = call(
+        jobs_handler(),
+        "PATCH",
+        "/jobs/{id}",
+        user="co_1",
+        groups=RECRUITER,
+        path={"id": job_id},
+        body={"startDate": "2027-01-04T08:00:00.000Z"},
+    )
+    assert status == 200
+    assert payload["job"]["startDate"] == "2027-01-04T08:00:00.000Z"
+
+    _, mine = call(
+        jobs_handler(),
+        "GET",
+        "/jobs/mine/{id}",
+        user="co_1",
+        groups=RECRUITER,
+        path={"id": job_id},
+    )
+    assert mine["job"]["startDate"] == "2027-01-04T08:00:00.000Z"
+
+
+def test_a_start_date_that_is_not_a_date_is_refused_on_update(aws):
+    register()
+    _, created = create_posting()
+
+    status, _ = call(
+        jobs_handler(),
+        "PATCH",
+        "/jobs/{id}",
+        user="co_1",
+        groups=RECRUITER,
+        path={"id": created["job"]["jobId"]},
+        body={"startDate": "next spring"},
+    )
+    assert status == 400
+
+
 def test_suspension_unpublishes_the_active_postings(aws):
     register()
     verify()

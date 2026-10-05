@@ -39,6 +39,7 @@ export function EditApplicationPanel({ application, onDone }: EditApplicationPan
     setSubmitError(null)
     setSubmitting(true)
     try {
+      await form.confirmCv()
       const body = buildSubmitBody(form.state, application.jobId)
       await amendApplication(application.applicationId, {
         documents: body.documents,

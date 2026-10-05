@@ -4,7 +4,7 @@ export type FieldUpload =
   | { kind: 'idle' }
   | { kind: 'selected'; file: File }
   | { kind: 'uploading'; file: File; progress: number }
-  | { kind: 'uploaded'; s3Key: string; fileName: string }
+  | { kind: 'uploaded'; s3Key: string; fileName: string; size?: number }
   | { kind: 'failed'; file: File; message: string }
   // Edit mode only: a file already on the application from an earlier
   // submission, not touched this session. Satisfies a required-file check
@@ -13,6 +13,15 @@ export type FieldUpload =
   // backend's PATCH merges, so leaving the key out entirely keeps the
   // existing one as it was).
   | { kind: 'onFile' }
+  // The transcript kept on the profile. Satisfies the requirement and is left
+  // out of the submit body, because the backend attaches the profile's own key
+  // to any application whose posting asks for a transcript (FR-2.1).
+  | { kind: 'profile'; fileName?: string }
+
+/** A file the application will carry, whichever way it got there. */
+export function isAttached(upload: FieldUpload | undefined): boolean {
+  return upload?.kind === 'uploaded' || upload?.kind === 'onFile' || upload?.kind === 'profile'
+}
 
 export interface ApplyFormState {
   uploads: Record<string, FieldUpload>
@@ -25,13 +34,22 @@ export interface ApplyFormState {
   serverFieldErrors: Record<string, string>
 }
 
-export function deriveInitialState(requirements: DocumentRequirement[], cvs: CvEntry[]): ApplyFormState {
+/** `profileTranscript` is the transcript on the applicant's profile, if any. */
+export function deriveInitialState(
+  requirements: DocumentRequirement[],
+  cvs: CvEntry[],
+  profileTranscript?: { fileName?: string } | null,
+): ApplyFormState {
   const uploads: Record<string, FieldUpload> = {}
   const answers: Record<string, string> = {}
   for (const requirement of requirements) {
     if (requirement.key === 'cv') continue
-    if (requirement.kind === 'FILE') uploads[requirement.key] = { kind: 'idle' }
-    else answers[requirement.key] = ''
+    if (requirement.kind === 'FILE') {
+      uploads[requirement.key] =
+        requirement.key === 'transcript' && profileTranscript
+          ? { kind: 'profile', ...(profileTranscript.fileName ? { fileName: profileTranscript.fileName } : {}) }
+          : { kind: 'idle' }
+    } else answers[requirement.key] = ''
   }
 
   return {
@@ -48,14 +66,42 @@ export function deriveInitialState(requirements: DocumentRequirement[], cvs: CvE
   }
 }
 
-function cvSatisfied(state: ApplyFormState): boolean {
-  // Checked before the mode: an 'onFile' CV (edit mode, untouched) or a
-  // fresh 'uploaded' one satisfies the requirement regardless of which
-  // mode is currently selected, since switching modes doesn't clear
-  // whatever was already uploaded.
+/** Checked before the mode: an 'onFile' CV (edit mode, untouched) or a
+ * fresh 'uploaded' one satisfies the requirement regardless of which mode
+ * is currently selected, since switching modes doesn't clear whatever was
+ * already uploaded. */
+export function cvSatisfied(state: ApplyFormState): boolean {
   const upload = state.uploads.cv
   if (upload?.kind === 'uploaded' || upload?.kind === 'onFile') return true
   return state.cvMode === 'reuse' && Boolean(state.reuseCvId)
+}
+
+function requirementSatisfied(state: ApplyFormState, requirement: DocumentRequirement): boolean {
+  if (requirement.key === 'cv') return cvSatisfied(state)
+  if (requirement.kind === 'FILE') return isAttached(state.uploads[requirement.key])
+  return Boolean(state.answers[requirement.key]?.trim())
+}
+
+/** One row per requirement, in posting order, for a live checklist next to
+ * the form: what the posting asks for and whether it is satisfied yet. */
+export function requirementChecklist(
+  state: ApplyFormState,
+  requirements: DocumentRequirement[],
+): { requirement: DocumentRequirement; done: boolean }[] {
+  return requirements.map((requirement) => ({
+    requirement,
+    done: requirementSatisfied(state, requirement),
+  }))
+}
+
+/** "N of M required items done", for the checklist's own progress line. */
+export function requiredProgress(
+  state: ApplyFormState,
+  requirements: DocumentRequirement[],
+): { done: number; total: number } {
+  const required = requirements.filter((requirement) => requirement.required)
+  const done = required.filter((requirement) => requirementSatisfied(state, requirement)).length
+  return { done, total: required.length }
 }
 
 /**
@@ -114,8 +160,7 @@ export function outstandingItems(state: ApplyFormState, requirements: DocumentRe
     }
 
     if (requirement.kind === 'FILE') {
-      const upload = state.uploads[requirement.key]
-      if (upload?.kind !== 'uploaded' && upload?.kind !== 'onFile') {
+      if (!isAttached(state.uploads[requirement.key])) {
         items.push({ fieldId: `field-${requirement.key}`, message: `${requirement.label} is required.` })
       }
     } else {

@@ -34,9 +34,9 @@ export function AuthLayout() {
           </span>
           <div className={styles.brandBody}>
             <div className={styles.pitch}>
-              <p className="t-eyebrow">Real opportunities. Right here.</p>
-              <h2 className={['t-display-md', styles.headline].join(' ')}>
-                Every application, from sent to signed.
+              <p className="t-eyebrow">REAL OPPORTUNITIES. RIGHT HERE.</p>
+              <h2 className={['t-display-lg', styles.headline].join(' ')}>
+                Every application, from sent to <em className={styles.signed}>signed.</em>
               </h2>
             </div>
             <ol className={styles.stages}>
@@ -56,13 +56,19 @@ export function AuthLayout() {
           {/* The positioning line and the mark of ownership, which is how the
               board closes the brand panel. */}
           <div className={styles.brandFoot}>
-            <p className="t-body-sm">Opportunity, organized. Success, accelerated.</p>
-            <p className="t-body-sm">© 2026 Offerline</p>
+            <p>Opportunity, organized. Success, accelerated.</p>
+            <p>© 2026 Offerline</p>
           </div>
         </div>
       </section>
 
       <section className={styles.form}>
+        {/* Its own quiet bloom, so the form side is paper with depth rather than
+            a flat sheet beside the forest. */}
+        <div className={styles.formBloom} aria-hidden="true">
+          <span className={styles.formBloomForest} />
+          <span className={styles.formBloomWarm} />
+        </div>
         <header className={styles.formHeader}>
           <span className={styles.compactLogo}>
             <Logo height={24} />

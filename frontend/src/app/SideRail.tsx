@@ -10,9 +10,9 @@ export type RailDestination = {
   icon: IconName
   /** Matches only the exact path, for a parent route such as `/company`. */
   end?: boolean
-  /** A plain count, set apart from the destinations above it. */
+  /** A plain count in the subtle ink, at the end of the row. */
   count?: number
-  /** Draws the count in vermilion, for anything waiting on the viewer. */
+  /** Draws the count as a vermilion pill, for anything waiting on the viewer. */
   urgent?: boolean
   /**
    * Decides the active state when the path alone cannot. Jobs and Internships
@@ -29,7 +29,8 @@ type Props = {
   /** Names the side of the product this rail belongs to. */
   section?: string
   destinations: RailDestination[]
-  /** Destinations set below the rule, for the ones that are not daily work. */
+  /** Destinations pinned to the foot above the identity card, for the ones
+   *  that are not daily work. */
   secondary?: RailDestination[]
   /** The identity card, pinned to the bottom of the rail. */
   identity?: ReactNode
@@ -75,8 +76,10 @@ export function SideRail({
     )
   }
 
+  const hasSecondary = Boolean(secondary && secondary.length > 0)
+
   return (
-    <div className={['glass-sheer', styles.rail].join(' ')}>
+    <div className={styles.rail}>
       <div className={styles.head}>
         <NavLink to={home} className={styles.brand} aria-label={homeLabel}>
           <Logo height={24} />
@@ -88,13 +91,16 @@ export function SideRail({
         {destinations.map(renderLink)}
       </nav>
 
-      {secondary && secondary.length > 0 && (
-        <nav className={[styles.nav, styles.secondary].join(' ')} aria-label={`${navLabel} settings`}>
-          {secondary.map(renderLink)}
-        </nav>
+      {(hasSecondary || identity) && (
+        <div className={styles.foot}>
+          {hasSecondary && (
+            <nav className={[styles.nav, styles.secondary].join(' ')} aria-label={`${navLabel} settings`}>
+              {secondary!.map(renderLink)}
+            </nav>
+          )}
+          {identity && <div className={styles.identity}>{identity}</div>}
+        </div>
       )}
-
-      {identity && <div className={styles.foot}>{identity}</div>}
     </div>
   )
 }

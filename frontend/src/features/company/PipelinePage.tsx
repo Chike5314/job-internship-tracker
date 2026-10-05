@@ -1,78 +1,79 @@
 import { useMemo, useState } from 'react'
-import { Link, useParams } from 'react-router-dom'
-import {
-  APPLICATION_STATUS_LABEL,
-  OPPORTUNITY_TYPE_LABEL,
-  WORK_MODALITY_LABEL,
-  type ApplicationStatus,
-} from '@/api/enums'
-import type { PipelineRow } from '@/api/types'
-import { BackLink } from '@/ui/BackLink'
+import { Link, useParams, useSearchParams } from 'react-router-dom'
+import { ApiError } from '@/api/errors'
+import { OPPORTUNITY_TYPE_LABEL, WORK_MODALITY_LABEL, type ApplicationStatus } from '@/api/enums'
+import type { ExportResult, JobSummary, PipelineRow } from '@/api/types'
 import { Button } from '@/ui/Button'
-import { ButtonLink } from '@/ui/ButtonLink'
-import { Checkbox } from '@/ui/Checkbox'
-import { Dialog } from '@/ui/Dialog'
-import { EmptyState } from '@/ui/EmptyState'
 import { ErrorState } from '@/ui/ErrorState'
 import { Icon } from '@/ui/Icon'
 import { Skeleton } from '@/ui/Skeleton'
-import { StatusTag } from '@/ui/StatusTag'
-import { Textarea } from '@/ui/Textarea'
 import { useToast } from '@/ui/ToastProvider'
-import { formatDate, formatDateShort } from '@/lib/formatDate'
-import { useBulkStatus, useExportPipeline, useMyPosting, usePipeline } from './useCompany'
+import { formatDateShort } from '@/lib/formatDate'
+import { formatSalary } from '@/lib/formatSalary'
+import { ApplicationDrawer } from './ApplicationDrawer'
+import { PipelineCard } from './PipelineCard'
+import { BULK_LIMIT, COLUMNS, RECRUITER_STATUS_LABEL, refusalReason } from './pipeline'
+import {
+  useBulkStatus,
+  useExportPipeline,
+  useMyCompany,
+  useMyPosting,
+  usePipeline,
+  useUpdatePosting,
+} from './useCompany'
 import styles from './PipelinePage.module.css'
 
-/**
- * The board's columns, in the order an application moves through them.
- *
- * The column is not the status: every decided application shares the last
- * column, because a decision is one place on a board even though the state
- * machine records four different ones. A column per ending would read as four
- * more places still to go.
- */
-const COLUMNS: { key: string; label: string; hint: string; statuses: ApplicationStatus[] }[] = [
-  { key: 'new', label: 'New', hint: 'Not opened yet', statuses: ['SUBMITTED'] },
-  {
-    key: 'review',
-    label: 'Under review',
-    hint: 'Opened and being read',
-    statuses: ['UNDER_REVIEW'],
-  },
-  {
-    key: 'interview',
-    label: 'Interview',
-    hint: 'Interview booked',
-    statuses: ['INTERVIEW_SCHEDULED'],
-  },
-  {
-    key: 'offer',
-    label: 'Offer extended',
-    hint: 'Waiting on the applicant',
-    statuses: ['OFFER_EXTENDED'],
-  },
-  {
-    key: 'decided',
-    label: 'Decided',
-    hint: 'Closed, kept for records',
-    statuses: ['OFFER_ACCEPTED', 'REJECTED', 'OFFER_DECLINED', 'WITHDRAWN'],
-  },
-]
+const POSTING_STATUS_LABEL: Record<JobSummary['postingStatus'], string> = {
+  DRAFT: 'Draft',
+  PUBLISHED: 'Published',
+  CLOSED: 'Closed',
+  EXPIRED: 'Expired',
+}
 
-/** Fifty is the API's own limit on one bulk call. */
-const BULK_LIMIT = 50
+/** "Full-time job · Hybrid, Douala · XAF 650k–850k / month · 2 openings · Closes 30 Sep" */
+function metaLine(job: JobSummary): string {
+  const where =
+    job.workModality === 'REMOTE'
+      ? WORK_MODALITY_LABEL.REMOTE
+      : [WORK_MODALITY_LABEL[job.workModality], job.city].filter(Boolean).join(', ')
+  const salary = job.salary?.disclosed ? formatSalary(job.salary, { compact: true }) : ''
+  const openings = job.openings ? `${job.openings} opening${job.openings === 1 ? '' : 's'}` : ''
+  const deadline = job.applicationDeadline
+    ? `${new Date(job.applicationDeadline).getTime() < Date.now() ? 'Closed' : 'Closes'} ${formatDateShort(job.applicationDeadline)}`
+    : ''
+  return [OPPORTUNITY_TYPE_LABEL[job.opportunityType], where, salary, openings, deadline]
+    .filter(Boolean)
+    .join(' · ')
+}
+
+type BulkResult = { done: string; refused: string[] }
+
+/** "2 applications moved to under review. Each applicant has been emailed." */
+function bulkSummary(moved: number, target: ApplicationStatus): string {
+  const where = RECRUITER_STATUS_LABEL[target].toLowerCase()
+  if (moved === 0) return 'No applications were changed.'
+  if (moved === 1) return `1 application moved to ${where}. The applicant has been emailed.`
+  return `${moved} applications moved to ${where}. Each applicant has been emailed.`
+}
 
 export function PipelinePage() {
   const { jobId } = useParams<{ jobId: string }>()
+  const [params, setParams] = useSearchParams()
+  const openId = params.get('application') ?? undefined
+
   const posting = useMyPosting(jobId)
   const pipeline = usePipeline(jobId)
+  const company = useMyCompany()
   const bulk = useBulkStatus(jobId ?? '')
   const exportCsv = useExportPipeline()
+  const update = useUpdatePosting(jobId ?? '')
   const { showToast } = useToast()
 
   const [picked, setPicked] = useState<Set<string>>(new Set())
   const [rejecting, setRejecting] = useState(false)
-  const [note, setNote] = useState('')
+  const [bulkNote, setBulkNote] = useState('')
+  const [result, setResult] = useState<BulkResult | null>(null)
+  const [exported, setExported] = useState<ExportResult | null>(null)
 
   const rows = useMemo(() => pipeline.data?.applications ?? [], [pipeline.data])
 
@@ -82,7 +83,9 @@ export function PipelinePage() {
       for (const status of column.statuses) where.set(status, column.key)
     }
     const map = new Map<string, PipelineRow[]>()
-    for (const row of rows) {
+    // Newest first in every column, so the one most recently sent is on top.
+    const ordered = [...rows].sort((a, b) => new Date(b.appliedAt).getTime() - new Date(a.appliedAt).getTime())
+    for (const row of ordered) {
       const key = where.get(row.status)
       if (!key) continue
       const bucket = map.get(key)
@@ -93,6 +96,7 @@ export function PipelinePage() {
   }, [rows])
 
   function toggle(applicationId: string) {
+    setResult(null)
     setPicked((current) => {
       const next = new Set(current)
       if (next.has(applicationId)) next.delete(applicationId)
@@ -101,262 +105,315 @@ export function PipelinePage() {
     })
   }
 
-  async function run(status: ApplicationStatus, withNote?: string) {
-    const applicationIds = Array.from(picked)
-    if (applicationIds.length === 0) return
-    const result = await bulk.mutateAsync({ applicationIds, status, note: withNote || undefined })
+  function clearPicked() {
     setPicked(new Set())
     setRejecting(false)
-    setNote('')
-    if (result.refused.length === 0) {
-      showToast(`${result.updated.length} moved to ${APPLICATION_STATUS_LABEL[status].toLowerCase()}.`)
-    } else {
-      showToast(
-        `${result.updated.length} moved, ${result.refused.length} left where they were. Each one is checked on its own.`,
-      )
-    }
+    setBulkNote('')
+  }
+
+  function runBulk(status: ApplicationStatus, note?: string) {
+    const applicationIds = Array.from(picked)
+    if (applicationIds.length === 0) return
+    bulk.mutate(
+      { applicationIds, status, note: note || undefined },
+      {
+        onSuccess: (outcome) => {
+          const byId = new Map(rows.map((row) => [row.applicationId, row]))
+          clearPicked()
+          setResult({
+            done: bulkSummary(outcome.updated.length, status),
+            refused: outcome.refused.map(
+              (item) => `Not changed: ${refusalReason(byId.get(item.applicationId), status, item.reason)}`,
+            ),
+          })
+        },
+        onError: (error) =>
+          showToast(error instanceof ApiError ? error.message : 'Nothing was changed. Try again.', 'error'),
+      },
+    )
+  }
+
+  function runExport() {
+    if (!jobId) return
+    exportCsv.mutate(
+      { jobId },
+      {
+        onSuccess: setExported,
+        onError: (error) =>
+          showToast(error instanceof ApiError ? error.message : 'The export did not finish. Try again.', 'error'),
+      },
+    )
+  }
+
+  function closePosting(job: JobSummary) {
+    update.mutate(
+      { postingStatus: 'CLOSED' },
+      {
+        onSuccess: () => showToast(`${job.title} is closed.`),
+        onError: (error) =>
+          showToast(error instanceof ApiError ? error.message : 'The posting did not close. Try again.', 'error'),
+      },
+    )
+  }
+
+  // Opening adds a history entry, so Back closes the drawer; closing replaces
+  // it, so Back after that does not open it again.
+  function open(applicationId: string) {
+    setParams((current) => {
+      const next = new URLSearchParams(current)
+      next.set('application', applicationId)
+      return next
+    })
+  }
+
+  function close() {
+    setParams(
+      (current) => {
+        const next = new URLSearchParams(current)
+        next.delete('application')
+        return next
+      },
+      { replace: true },
+    )
   }
 
   if (!jobId) return <ErrorState />
 
   const job = posting.data?.job
-  const place = [job?.city, job?.country].filter(Boolean).join(', ')
+  const total = pipeline.data?.count ?? rows.length
+  const openRow = openId ? rows.find((row) => row.applicationId === openId) : undefined
 
   return (
     <div className={styles.page}>
-      <BackLink to="/company/postings">All postings</BackLink>
-
       <header className={styles.head}>
-        <div className={styles.headText}>
+        <div className={styles.titles}>
+          <Link to="/company/postings" className={styles.back}>
+            <span className={styles.backMark}>
+              <Icon name="chevron-right" size={14} />
+            </span>
+            All postings
+          </Link>
           {posting.isPending ? (
-            <Skeleton width={320} height={34} />
-          ) : (
             <>
-              <h1 className="t-display-md">{job?.title}</h1>
-              <p className={['t-body-sm', styles.muted].join(' ')}>
-                {job && OPPORTUNITY_TYPE_LABEL[job.opportunityType]}
-                {job && ` · ${WORK_MODALITY_LABEL[job.workModality]}`}
-                {place && ` · ${place}`}
-                {job?.openings ? ` · ${job.openings} opening${job.openings === 1 ? '' : 's'}` : ''}
-                {job?.applicationDeadline ? ` · Closes ${formatDate(job.applicationDeadline)}` : ''}
-              </p>
+              <Skeleton width={320} height={34} />
+              <Skeleton width={420} height={18} />
             </>
+          ) : job ? (
+            <>
+              <div className={styles.titleRow}>
+                <h1 className={styles.title}>{job.title}</h1>
+                <span className={[styles.status, styles[job.postingStatus.toLowerCase()]].join(' ')}>
+                  <span className={styles.statusDot} aria-hidden="true" />
+                  {POSTING_STATUS_LABEL[job.postingStatus]}
+                </span>
+              </div>
+              <p className={styles.meta}>{metaLine(job)}</p>
+            </>
+          ) : (
+            <h1 className={styles.title}>Applications</h1>
           )}
         </div>
 
         <div className={styles.headActions}>
-          <span className={['t-figure', styles.total].join(' ')}>
-            {pipeline.data?.count ?? 0}
-            <span className={['t-caption', styles.muted].join(' ')}> applicants</span>
-          </span>
-          <Button
-            variant="secondary"
-            loading={exportCsv.isPending}
-            onClick={async () => {
-              const result = await exportCsv.mutateAsync({ jobId })
-              window.open(result.downloadUrl, '_blank', 'noopener')
-              showToast(`${result.rows} rows exported. The link expires shortly.`)
-            }}
-          >
-            <Icon name="export" size={16} />
+          <p className={styles.total}>
+            <span className={styles.totalValue}>{total}</span>
+            <span className={styles.totalLabel}>applicant{total === 1 ? '' : 's'}</span>
+          </p>
+          <Button variant="secondary" className={styles.headButton} loading={exportCsv.isPending} onClick={runExport}>
+            <Icon name="download" size={16} />
             Export CSV
           </Button>
-          <ButtonLink variant="secondary" to={`/company/postings/${jobId}/edit`}>
+          <Link to={`/company/postings/${jobId}/edit`} className={styles.headLink}>
             Edit posting
-          </ButtonLink>
+          </Link>
+          {job?.postingStatus === 'PUBLISHED' && (
+            <button
+              type="button"
+              className={styles.closePosting}
+              onClick={() => closePosting(job)}
+              disabled={update.isPending}
+            >
+              Close posting
+            </button>
+          )}
         </div>
+
+        {exported && (
+          <div className={['glass-dense', styles.exportPanel].join(' ')} role="status">
+            <div className={styles.exportHead}>
+              <div>
+                <p className={styles.exportTitle}>Export ready</p>
+                <p className={styles.exportFile}>applications.csv</p>
+              </div>
+              <button type="button" className={styles.dismiss} onClick={() => setExported(null)} aria-label="Dismiss">
+                <Icon name="close" size={14} />
+              </button>
+            </div>
+            <p className={styles.exportBody}>
+              Applicant, current status, key dates and full history for {exported.rows} application
+              {exported.rows === 1 ? '' : 's'}. Documents are not included.
+            </p>
+            <div className={styles.exportFoot}>
+              <span className={styles.exportExpiry}>The download link expires shortly.</span>
+              <a href={exported.downloadUrl} className={styles.download} target="_blank" rel="noopener noreferrer">
+                <Icon name="download" size={14} />
+                Download
+              </a>
+            </div>
+          </div>
+        )}
       </header>
 
-      {picked.size > 0 && (
-        <div className={['glass-dense', styles.bulk].join(' ')} role="region" aria-label="Bulk actions">
-          <p className="t-body-sm">
-            <strong>{picked.size} selected.</strong> Up to {BULK_LIMIT} at a time. Each one is
-            checked on its own, so some may stay where they are.
-          </p>
-          <div className={styles.bulkActions}>
-            <Button variant="secondary" loading={bulk.isPending} onClick={() => void run('UNDER_REVIEW')}>
-              Mark under review
-            </Button>
-            <Button variant="danger" onClick={() => setRejecting(true)}>
-              Reject
-            </Button>
-            <Button variant="quiet" onClick={() => setPicked(new Set())}>
-              Clear
-            </Button>
-          </div>
-        </div>
-      )}
-
-      {pipeline.isPending ? (
-        <div className={styles.board}>
-          {COLUMNS.map((column) => (
-            <Skeleton key={column.key} height={220} />
-          ))}
-        </div>
-      ) : pipeline.isError ? (
+      {pipeline.isError ? (
         <ErrorState />
-      ) : rows.length === 0 ? (
-        <EmptyState
-          heading="No applications yet"
-          body="They appear here as they arrive, newest in the first column."
-        />
       ) : (
-        <>
-          <div className={styles.board}>
-            {COLUMNS.map((column) => {
-              const items = byColumn.get(column.key) ?? []
-              return (
-                <section key={column.key} className={styles.column}>
-                  <header className={styles.columnHead}>
-                    <p className="t-heading-sm">{column.label}</p>
-                    <span className={['t-figure', styles.count].join(' ')}>{items.length}</span>
-                    <p className={['t-caption', styles.muted].join(' ')}>{column.hint}</p>
-                  </header>
-                  <ul className={styles.cards}>
-                    {items.map((row) => (
-                      <ApplicantCard
+        <div className={styles.board}>
+          {COLUMNS.map((column) => {
+            const items = byColumn.get(column.key) ?? []
+            return (
+              <section
+                key={column.key}
+                className={['glass-soft', styles.column].join(' ')}
+                aria-labelledby={`column-${column.key}`}
+              >
+                <header className={styles.columnHead}>
+                  <p className={styles.columnTitleRow}>
+                    <span id={`column-${column.key}`} className={styles.columnTitle}>
+                      <span className={styles.dot} style={{ background: column.dot }} aria-hidden="true" />
+                      {column.label}
+                    </span>
+                    <span className={styles.count}>{pipeline.isPending ? '' : items.length}</span>
+                  </p>
+                  <p className={styles.hint}>{column.hint}</p>
+                </header>
+                <ul className={styles.cards}>
+                  {pipeline.isPending ? (
+                    <>
+                      <li>
+                        <Skeleton height={92} radius="var(--radius-md)" />
+                      </li>
+                      <li>
+                        <Skeleton height={92} radius="var(--radius-md)" />
+                      </li>
+                    </>
+                  ) : items.length === 0 ? (
+                    <li className={styles.none}>No one here yet</li>
+                  ) : (
+                    items.map((row) => (
+                      <PipelineCard
                         key={row.applicationId}
                         row={row}
-                        decided={column.key === 'decided'}
                         picked={picked.has(row.applicationId)}
+                        current={row.applicationId === openId}
+                        pickDisabled={!picked.has(row.applicationId) && picked.size >= BULK_LIMIT}
                         onToggle={() => toggle(row.applicationId)}
+                        onOpen={() => open(row.applicationId)}
                       />
-                    ))}
-                    {items.length === 0 && (
-                      <li className={['t-body-sm', styles.none].join(' ')}>No one here yet</li>
-                    )}
-                  </ul>
-                </section>
-              )
-            })}
-          </div>
-
-        </>
+                    ))
+                  )}
+                </ul>
+              </section>
+            )
+          })}
+        </div>
       )}
 
-      <Dialog
-        open={rejecting}
-        onClose={() => setRejecting(false)}
-        title={`Reject ${picked.size} application${picked.size === 1 ? '' : 's'}`}
-        footer={
-          <div className={styles.dialogActions}>
-            <Button variant="quiet" onClick={() => setRejecting(false)}>
-              Cancel
-            </Button>
-            <Button variant="danger" loading={bulk.isPending} onClick={() => void run('REJECTED', note)}>
-              Reject {picked.size}
-            </Button>
+      {picked.size > 0 && !result && (
+        <div className={['glass-dense', styles.float].join(' ')} role="region" aria-label="Bulk actions">
+          <div className={styles.bulkRow}>
+            <p className={styles.bulkText}>
+              <span className={styles.bulkCount}>
+                {picked.size === 1 ? '1 application selected' : `${picked.size} applications selected`}
+              </span>
+              <span className={styles.bulkHint}>Up to {BULK_LIMIT} at a time. Each one is checked on its own.</span>
+            </p>
+            {!rejecting && (
+              <span className={styles.bulkActions}>
+                <button
+                  type="button"
+                  className={styles.bulkReview}
+                  onClick={() => runBulk('UNDER_REVIEW')}
+                  disabled={bulk.isPending}
+                >
+                  Mark under review
+                </button>
+                <button type="button" className={styles.bulkReject} onClick={() => setRejecting(true)}>
+                  Reject…
+                </button>
+              </span>
+            )}
+            <button type="button" className={styles.bulkQuiet} onClick={clearPicked}>
+              Clear
+            </button>
           </div>
-        }
-      >
-        <p className={['t-body-sm', styles.muted].join(' ')}>
-          Each applicant is told, and the note below is sent to all of them. An application that
-          cannot move is left exactly where it is.
-        </p>
-        <Textarea
-          value={note}
-          onChange={(event) => setNote(event.target.value)}
-          placeholder="Shared note, sent to each applicant (optional)"
-          aria-label="Shared note sent to each applicant"
-          rows={4}
-        />
-      </Dialog>
-    </div>
-  )
-}
-
-/** How long the application has sat where it is, in the board's shorthand. */
-function timeInStage(iso: string): string {
-  const hours = Math.floor((Date.now() - new Date(iso).getTime()) / 3_600_000)
-  if (hours < 1) return 'just now'
-  if (hours < 24) return `${hours}h in stage`
-  return `${Math.floor(hours / 24)}d in stage`
-}
-
-const CHIP_TIME = new Intl.DateTimeFormat('en', {
-  day: 'numeric',
-  month: 'short',
-  hour: '2-digit',
-  minute: '2-digit',
-  hour12: false,
-})
-
-/** "4 Oct, 01:43" reads as one unit on a card; the comma earns nothing here. */
-function chipTime(iso: string): string {
-  return CHIP_TIME.format(new Date(iso)).replace(',', '')
-}
-
-function ApplicantCard({
-  row,
-  decided,
-  picked,
-  onToggle,
-}: {
-  row: PipelineRow
-  decided: boolean
-  picked: boolean
-  onToggle: () => void
-}) {
-  const initials = (row.applicantName || row.applicantEmail || '?')
-    .split(/\s+/)
-    .slice(0, 2)
-    .map((part) => part[0]?.toUpperCase() ?? '')
-    .join('')
-
-  // Opening an application is what moves it off SUBMITTED, so sitting at that
-  // status is exactly what "nobody has read this yet" means.
-  const unread = row.status === 'SUBMITTED'
-  const interview = row.nextInterview
-  const awaiting = interview?.state === 'PROPOSED'
-
-  return (
-    <li className={['glass-dense', styles.card, picked ? styles.cardPicked : ''].join(' ')}>
-      {/* The label names the applicant so a screen reader hears which row the
-          checkbox belongs to; it is hidden visually because the name is already
-          beside it. */}
-      <Checkbox
-        checked={picked}
-        onChange={onToggle}
-        label={`Select ${row.applicantName || row.applicantEmail}`}
-        className={styles.pick}
-      />
-      <span className={styles.avatar} aria-hidden="true">
-        {initials}
-      </span>
-      <span className={styles.cardText}>
-        <span className={styles.nameRow}>
-          {/* The applicant's own detail route, which a recruiter may read.
-              Opening it is what moves a SUBMITTED application to UNDER_REVIEW
-              and freezes it, so this link is the act, not just a view. */}
-          <Link to={`/applications/${row.applicationId}`} className="t-body">
-            {row.applicantName || row.applicantEmail}
-          </Link>
-          {unread && <span className={styles.unread} aria-label="Not opened yet" role="img" />}
-        </span>
-
-        {interview && (
-          <span className={[styles.chip, awaiting ? styles.chipAwaiting : styles.chipConfirmed].join(' ')}>
-            {chipTime(interview.scheduledAt)} · {awaiting ? 'Awaiting' : 'Confirmed'}
-          </span>
-        )}
-
-        {decided && (
-          <span className={styles.decidedTag}>
-            <StatusTag status={row.status} />
-          </span>
-        )}
-
-        <span className={styles.cardFoot}>
-          <span className={['t-caption', styles.muted].join(' ')}>
-            Applied {formatDateShort(row.appliedAt)}
-          </span>
-          {!decided && (
-            <span className={['t-caption', styles.muted].join(' ')}>
-              {timeInStage(row.statusChangedAt)}
-            </span>
+          {rejecting && (
+            <div className={styles.rejectRow}>
+              <label className={styles.rejectField}>
+                <span className={styles.rejectLabel}>Shared note for each applicant (optional)</span>
+                <input
+                  type="text"
+                  value={bulkNote}
+                  onChange={(event) => setBulkNote(event.target.value)}
+                  maxLength={500}
+                  placeholder="Thank you for applying. We have chosen to move forward with other candidates."
+                  className={styles.rejectInput}
+                  autoFocus
+                />
+              </label>
+              <button
+                type="button"
+                className={styles.rejectConfirm}
+                onClick={() => runBulk('REJECTED', bulkNote.trim())}
+                disabled={bulk.isPending}
+              >
+                Reject {picked.size}
+              </button>
+              <button
+                type="button"
+                className={styles.bulkQuiet}
+                onClick={() => {
+                  setRejecting(false)
+                  setBulkNote('')
+                }}
+              >
+                Cancel
+              </button>
+            </div>
           )}
-        </span>
-      </span>
-    </li>
+        </div>
+      )}
+
+      {result && (
+        <div className={['glass-dense', styles.float, styles.result].join(' ')} role="status">
+          <span className={styles.resultMark} aria-hidden="true">
+            <Icon name="confirm" size={16} />
+          </span>
+          <p className={styles.resultText}>
+            <span className={styles.resultDone}>{result.done}</span>
+            {result.refused.map((line) => (
+              <span key={line} className={styles.refused}>
+                {line}
+              </span>
+            ))}
+          </p>
+          <button type="button" className={styles.dismiss} onClick={() => setResult(null)} aria-label="Dismiss">
+            <Icon name="close" size={14} />
+          </button>
+        </div>
+      )}
+
+      {openId && (
+        <ApplicationDrawer
+          key={openId}
+          applicationId={openId}
+          jobId={jobId}
+          statusWhenOpened={openRow?.status}
+          requirements={job?.documentRequirements ?? []}
+          companyName={company.data?.company.companyName ?? job?.companyName ?? 'The company'}
+          officeAddress={company.data?.company.officeAddress}
+          onClose={close}
+        />
+      )}
+    </div>
   )
 }

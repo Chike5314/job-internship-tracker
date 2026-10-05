@@ -77,7 +77,12 @@ export function CompanyInterviewsPage() {
                     </span>
 
                     <span className={styles.who}>
-                      <Link to={`/applications/${row.applicationId}`} className="t-body">
+                      {/* Opens the application in its posting's board drawer. The
+                          applicant's own route is behind the applicant guard. */}
+                      <Link
+                        to={`/company/postings/${row.jobId}/pipeline?application=${row.applicationId}`}
+                        className="t-body"
+                      >
                         {row.applicantName ?? 'Applicant'}
                       </Link>
                       <span className={['t-body-sm', styles.muted].join(' ')}>

@@ -1,4 +1,5 @@
 import { Component, type ErrorInfo, type ReactNode } from 'react'
+import { CrashScreen } from './CrashScreen'
 
 interface Props {
   children: ReactNode
@@ -8,6 +9,8 @@ interface State {
   error: Error | null
 }
 
+/** The outermost catch, for a failure in the providers themselves. A failing
+ *  route is caught first by the router's own error page, RouteErrorPage. */
 export class ErrorBoundary extends Component<Props, State> {
   state: State = { error: null }
 
@@ -20,18 +23,7 @@ export class ErrorBoundary extends Component<Props, State> {
   }
 
   render() {
-    if (this.state.error) {
-      return (
-        <div style={{ padding: 'var(--space-6)' }}>
-          <div className="glass-dense" style={{ padding: 'var(--space-5)' }} role="alert">
-            <p className="t-heading-sm">Something went wrong</p>
-            <p className="t-body-sm" style={{ color: 'var(--color-text-muted)' }}>
-              Reload the page and try again.
-            </p>
-          </div>
-        </div>
-      )
-    }
+    if (this.state.error) return <CrashScreen />
     return this.props.children
   }
 }

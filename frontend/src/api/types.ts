@@ -28,9 +28,8 @@ export interface Salary {
   period?: SalaryPeriod
 }
 
-// From _job_view(full=False) in jobs_service/handler.py. `full=True` (only
-// ever seen by the owning company, out of scope for the applicant phase)
-// additionally carries unpublishedAt.
+// From _job_view(full=False) in jobs_service/handler.py. `full=True`, which
+// only the owning company sees, additionally carries unpublishedAt.
 export interface JobSummary {
   jobId: string
   companyId: string
@@ -54,6 +53,8 @@ export interface JobSummary {
   skills?: string[]
   additionalDetails?: LabelValue[]
   updatedAt?: string
+  /** Set when a suspension closed the posting. Owner view only. */
+  unpublishedAt?: string
 }
 
 // From _company_snippet in jobs_service/handler.py. Address/map fields are
@@ -111,6 +112,41 @@ export interface ApplicationDetail extends ApplicationSummary {
   documentUrls: Record<string, string>
   documentRequirements: DocumentRequirement[]
   coverLetter?: string
+}
+
+// From _recruiter_view in application_service/handler.py: what the company
+// reads on GET /applications/{id}. It carries no documentRequirements, so the
+// labels for documentUrls come from the posting.
+export interface RecruiterApplication {
+  applicationId: string
+  jobId: string
+  jobTitle?: string
+  companyName?: string
+  applicant: {
+    userId: string
+    fullName?: string
+    email?: string
+    phone?: string
+    skills?: string[]
+    academicInfo?: AcademicInfo
+  }
+  status: ApplicationStatus
+  statusHistory: StatusHistoryEntry[]
+  appliedAt: string
+  lastEditedAt?: string
+  coverLetter?: string
+  answers: Record<string, string>
+  interviews: Interview[]
+  documentUrls: Record<string, string>
+}
+
+// From admin_overview in company_service/handler.py. The four totals come
+// from table metadata DynamoDB refreshes about every six hours, so they are
+// approximate; the queue is counted exactly off its index.
+export interface AdminOverview {
+  approximateCounts: { users: number; companies: number; postings: number; applications: number }
+  countsAreApproximate: boolean
+  awaitingVerification: number
 }
 
 // The narrower shape PATCH /applications/{id}/status returns.
@@ -192,13 +228,22 @@ export interface CompanyFull extends CompanySnippet {
   /** A presigned link, not a key: the API swaps the key for one on read. */
   logoUrl?: string
   officeAddress?: string
-  createdByAdmin?: boolean
+  /** The admin who created the account, when one did (FR-9.6). */
+  createdByAdmin?: string
+  /** The latest decision: who took it, when, and the note given. */
+  verifiedBy?: string
+  verifiedAt?: string
+  moderationNote?: string
   moderationHistory?: ModerationEntry[]
 }
 
+/** One decision, as set_verification_status and admin_create_company append it
+ *  (FR-9.8). `from` is NONE on the entry written when an admin creates the
+ *  account, since there was no standing before it. */
 export interface ModerationEntry {
-  status: CompanySnippet['verificationStatus']
-  changedBy: string
+  from: CompanySnippet['verificationStatus'] | 'NONE'
+  to: CompanySnippet['verificationStatus']
+  by: string
   timestamp: string
   note?: string
 }

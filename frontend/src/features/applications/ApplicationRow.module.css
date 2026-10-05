@@ -1,15 +1,99 @@
 .row {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
+  display: grid;
+  grid-template-columns: var(--application-columns);
   gap: var(--space-4);
-  padding: var(--space-4);
+  align-items: center;
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-md);
+  color: var(--color-text-primary);
+  min-width: 0;
 }
 
-.right {
+.row:hover {
+  background-image: linear-gradient(var(--color-glass-hover), var(--color-glass-hover));
+}
+
+/* The open application: a forest tint with a hairline, so it reads as the one
+   the panel beside it is showing. */
+.selected,
+.selected:hover {
+  background: var(--color-forest-50);
+  box-shadow: inset 0 0 0 1px var(--color-n-400);
+}
+
+:global([data-theme='ink']) .selected,
+:global([data-theme='ink']) .selected:hover {
+  background: var(--color-active-wash);
+  box-shadow: inset 0 0 0 1px var(--color-n-700);
+}
+
+.role {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-width: 0;
+}
+
+.text {
   display: flex;
   flex-direction: column;
-  align-items: flex-end;
-  gap: var(--space-1);
-  flex: none;
+  gap: 2px;
+  min-width: 0;
+}
+
+.title,
+.meta {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  line-height: normal;
+}
+
+.title {
+  font-size: var(--type-body-size);
+  font-weight: 600;
+}
+
+.meta {
+  color: var(--color-text-muted);
+  font-size: var(--type-body-sm-size);
+}
+
+.status {
+  display: flex;
+  min-width: 0;
+}
+
+.date {
+  color: var(--color-text-muted);
+  font-size: var(--type-body-sm-size);
+  line-height: normal;
+  text-align: right;
+  white-space: nowrap;
+}
+
+/* Too narrow for three columns: the role takes the whole first line, and the
+   status and date share a second one, lined up under the title. 52px is the
+   monogram and the gap after it. */
+@media (max-width: 640px) {
+  .row {
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas:
+      'role role'
+      'status date';
+    row-gap: var(--space-2);
+  }
+
+  .role {
+    grid-area: role;
+  }
+
+  .status {
+    grid-area: status;
+    padding-left: 52px;
+  }
+
+  .date {
+    grid-area: date;
+  }
 }

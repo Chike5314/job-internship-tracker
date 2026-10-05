@@ -1,0 +1,67 @@
+.bar {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-4) 20px var(--space-3);
+}
+
+.brand {
+  display: flex;
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.bell {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: var(--radius-md);
+  color: var(--color-text-primary);
+}
+
+.badge {
+  position: absolute;
+  top: 7px;
+  right: 7px;
+  display: grid;
+  place-items: center;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  border-radius: var(--radius-round);
+  background: var(--color-brand-verm);
+  color: var(--color-on-brand);
+  font-size: 10px;
+  font-weight: 700;
+  box-shadow: 0 0 0 2px var(--color-n-0);
+}
+
+:global([data-theme='ink']) .badge {
+  box-shadow: 0 0 0 2px var(--color-glass-solid);
+}
+
+.avatar {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+}
+
+.avatar span {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-round);
+  background: var(--color-active-wash);
+  color: var(--color-state-active-text);
+  font-size: var(--type-body-sm-size);
+  font-weight: 700;
+}

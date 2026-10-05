@@ -1,220 +1,149 @@
-import { Link } from 'react-router-dom'
 import { useAuth } from '@/auth/AuthProvider'
+import type { ApplicationSummary } from '@/api/types'
 import { useMyApplications } from '@/features/applications/useApplications'
 import { usePostingsList } from '@/features/postings/usePostings'
 import { useProfile } from '@/features/profile/useProfile'
-import { StatusTag } from '@/ui/StatusTag'
 import { Skeleton } from '@/ui/Skeleton'
-import { EmptyState } from '@/ui/EmptyState'
-import { ButtonLink } from '@/ui/ButtonLink'
-import { Icon } from '@/ui/Icon'
-import { formatRelativeTime } from '@/lib/formatDate'
-import { OPPORTUNITY_TYPE_LABEL } from '@/api/enums'
+import { formatInterviewMoment, formatLongDate } from '@/lib/formatDate'
+import { PHONE_QUERY, useMediaQuery } from '@/lib/useMediaQuery'
 import { StatTile } from './StatTile'
 import { NextInterviewPanel } from './NextInterviewPanel'
-import { useApplicationCounts, useNextInterview } from './useDashboard'
+import { NewOpportunities } from './NewOpportunities'
+import { RecentApplications } from './RecentApplications'
+import { ProfileNudge } from './ProfileNudge'
+import { PhoneHome } from './PhoneHome'
+import { useApplicationCounts, useUpcomingInterviews, type UpcomingInterview } from './useDashboard'
 import styles from './DashboardPage.module.css'
 
-const TODAY = new Intl.DateTimeFormat('en', {
-  weekday: 'long',
-  day: 'numeric',
-  month: 'long',
-  year: 'numeric',
-})
+const NUMBER_WORD = ['No', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine', 'Ten']
 
-/** How many of the five things the profile asks for are filled in. */
-function profileProgress(profile?: {
-  fullName: string
-  phone?: string
-  skills?: string[]
-  cvCount: number
-  hasTranscript?: boolean
-}) {
-  if (!profile) return { done: 0, total: 5 }
-  const done = [
-    Boolean(profile.fullName),
-    Boolean(profile.phone),
-    Boolean(profile.skills?.length),
-    profile.cvCount > 0,
-    Boolean(profile.hasTranscript),
-  ].filter(Boolean).length
-  return { done, total: 5 }
+function count(n: number): string {
+  return NUMBER_WORD[n] ?? String(n)
+}
+
+function several(n: number, noun: string): string {
+  return n === 1 ? `an ${noun}` : `${count(n).toLowerCase()} ${noun}s`
+}
+
+/**
+ * The line under the greeting names what is owed rather than greeting twice.
+ * Only a time still waiting for a reply counts: a confirmed interview is on the
+ * calendar, not on the viewer.
+ */
+function headline(interviews: UpcomingInterview[], offers: ApplicationSummary[]): string {
+  const total = interviews.length + offers.length
+  if (total === 0) return 'Nothing is waiting on your answer right now.'
+  if (total === 1) {
+    return offers[0]
+      ? `One thing is waiting on your answer: the offer from ${offers[0].companyName}.`
+      : `One thing is waiting on your answer: the interview with ${interviews[0]!.application.companyName}.`
+  }
+  const owed: string[] = []
+  if (interviews.length > 0) owed.push(several(interviews.length, 'interview'))
+  if (offers.length > 0) owed.push(several(offers.length, 'offer'))
+  return `${count(total)} things are waiting on your answer: ${owed.join(' and ')}.`
+}
+
+/** The same count, said in the phone board's shorter line. */
+function owedShort(total: number): string {
+  if (total === 0) return 'nothing needs your answer right now'
+  if (total === 1) return 'one thing needs your answer'
+  return `${count(total).toLowerCase()} things need your answer`
 }
 
 export function DashboardPage() {
   const { identity } = useAuth()
   const { data, isLoading } = useMyApplications()
-  const { next, isLoading: interviewLoading } = useNextInterview()
-  const { data: postings } = usePostingsList({})
+  const { upcoming, next, isLoading: interviewsLoading } = useUpcomingInterviews()
+  const { data: postings, isLoading: postingsLoading } = usePostingsList({})
   const { data: profile } = useProfile()
+  const phone = useMediaQuery(PHONE_QUERY)
 
   const applications = data?.applications ?? []
   const counts = useApplicationCounts(applications)
-  const progress = profileProgress(profile?.profile)
+  const offers = applications.filter((application) => application.status === 'OFFER_EXTENDED')
+  const offer = offers[0]
+  const awaitingReply = upcoming.filter((item) => item.interview.state === 'PROPOSED')
 
   const firstName = (identity?.fullName ?? '').trim().split(/\s+/)[0]
   const recent = [...applications]
     .sort((a, b) => new Date(b.appliedAt).getTime() - new Date(a.appliedAt).getTime())
     .slice(0, 5)
-  const openings = (postings?.jobs ?? []).slice(0, 4)
 
-  // The subtitle names what is owed rather than greeting twice.
-  const owed: string[] = []
-  if (counts.interviews > 0) owed.push(counts.interviews === 1 ? 'an interview' : 'interviews')
-  if (counts.offers > 0) owed.push(counts.offers === 1 ? 'an offer' : 'offers')
+  // Newest first, and only what is still open to this applicant: a posting they
+  // have already applied to is not an opportunity any more.
+  const appliedTo = new Set(applications.map((application) => application.jobId))
+  const allOpenings = (postings?.jobs ?? [])
+    .filter((job) => job.isOpen && !appliedTo.has(job.jobId))
+    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+  const openings = allOpenings.slice(0, 4)
+  const settled = !isLoading && !interviewsLoading
+
+  if (phone) {
+    return (
+      <PhoneHome
+        firstName={firstName ?? ''}
+        owed={settled ? owedShort(awaitingReply.length + offers.length) : ''}
+        next={interviewsLoading ? undefined : next}
+        openings={allOpenings}
+      />
+    )
+  }
 
   return (
     <div className={styles.page}>
       <header className={styles.greeting}>
-        <div>
-          <h1 className="t-heading-lg">Welcome back{firstName ? `, ${firstName}` : ''}</h1>
-          <p className={['t-body', styles.subtitle].join(' ')}>
-            {owed.length > 0
-              ? `Waiting on your answer: ${owed.join(' and ')}.`
-              : 'Nothing is waiting on you right now.'}
+        <div className={styles.welcome}>
+          <h1 className={styles.title}>Welcome back{firstName ? `, ${firstName}` : ''}</h1>
+          <p className={styles.subtitle}>
+            {settled ? headline(awaitingReply, offers) : ' '}
           </p>
         </div>
-        <p className={['t-body-sm', styles.today].join(' ')}>{TODAY.format(new Date())}</p>
+        <p className={styles.today}>{formatLongDate(new Date())}</p>
       </header>
 
       <div className={styles.tiles}>
         <StatTile
           label="Applications"
           value={counts.total}
-          icon="document"
-          note={counts.thisWeek > 0 ? `${counts.thisWeek} sent this week` : 'Across every posting'}
+          icon="file"
+          note={`${counts.thisWeek} sent this week`}
           to="/applications"
         />
         <StatTile
           label="In progress"
           value={counts.inProgress}
-          icon="pending"
+          icon="deadline"
           note="Waiting on a company's decision"
         />
         <StatTile
           label="Interviews"
           value={counts.interviews}
-          icon="interview"
-          note={next ? `Next ${formatRelativeTime(next.interview.scheduledAt)}` : 'None scheduled'}
+          icon="date"
+          note={next ? `Next: ${formatInterviewMoment(next.interview.scheduledAt)}` : 'None scheduled'}
         />
         <StatTile
           label="Offers"
           value={counts.offers}
-          icon="offer"
-          note={counts.offers > 0 ? 'Waiting for your answer' : 'None yet'}
-          urgent={counts.offers > 0}
-          to="/applications"
+          icon="star"
+          note={offer ? `${offer.companyName} is waiting for your answer →` : 'None yet'}
+          urgent={Boolean(offer)}
+          to={offer ? `/applications/${offer.applicationId}` : undefined}
         />
       </div>
 
       <div className={styles.split}>
         <div className={styles.column}>
-          {interviewLoading && <Skeleton height={190} radius="var(--radius-lg)" />}
-          {!interviewLoading && next && <NextInterviewPanel next={next} />}
-
-          <section className={styles.block} aria-labelledby="new-opportunities">
-            <header className={styles.blockHead}>
-              <h2 id="new-opportunities" className="t-heading-sm">
-                New opportunities
-              </h2>
-              <Link to="/postings" className={styles.more}>
-                Browse all
-                <Icon name="chevron-right" size={15} />
-              </Link>
-            </header>
-
-            <div className={['glass-soft', styles.list].join(' ')}>
-              {openings.length === 0 ? (
-                <EmptyState heading="Nothing open yet" body="New postings will appear here." />
-              ) : (
-                openings.map((job) => (
-                  <Link key={job.jobId} to={`/postings/${job.jobId}`} className={styles.row}>
-                    <span className={styles.rowMain}>
-                      <span className="t-body-sm">{job.title}</span>
-                      <span className={['t-caption', styles.muted].join(' ')}>
-                        {job.companyName} · {job.city}
-                      </span>
-                    </span>
-                    <span className={styles.type}>
-                      {OPPORTUNITY_TYPE_LABEL[job.opportunityType]}
-                    </span>
-                  </Link>
-                ))
-              )}
-            </div>
-          </section>
+          {interviewsLoading && counts.interviews > 0 && (
+            <Skeleton height={214} radius="var(--radius-lg)" />
+          )}
+          {!interviewsLoading && next && <NextInterviewPanel next={next} />}
+          <NewOpportunities jobs={openings} isLoading={postingsLoading} />
         </div>
 
         <div className={styles.column}>
-          <section className={styles.block} aria-labelledby="recent-applications">
-            <header className={styles.blockHead}>
-              <h2 id="recent-applications" className="t-heading-sm">
-                Recent applications
-              </h2>
-              <Link to="/applications" className={styles.more}>
-                View all
-                <Icon name="chevron-right" size={15} />
-              </Link>
-            </header>
-
-            <div className={['glass-soft', styles.list].join(' ')}>
-              {isLoading && <Skeleton height={64} radius="var(--radius-sm)" />}
-              {!isLoading && recent.length === 0 && (
-                <EmptyState
-                  heading="No applications yet"
-                  body="Browse postings and apply to the ones that fit."
-                />
-              )}
-              {recent.map((application) => (
-                <Link
-                  key={application.applicationId}
-                  to={`/applications/${application.applicationId}`}
-                  className={styles.row}
-                >
-                  <span className={styles.rowMain}>
-                    <span className="t-body-sm">{application.jobTitle}</span>
-                    <span className={['t-caption', styles.muted].join(' ')}>
-                      {application.companyName} · {formatRelativeTime(application.appliedAt)}
-                    </span>
-                  </span>
-                  <StatusTag status={application.status} />
-                </Link>
-              ))}
-            </div>
-          </section>
-
-          {progress.done < progress.total && (
-            <section className={['glass-soft', styles.profile].join(' ')} aria-labelledby="finish-profile">
-              <h2 id="finish-profile" className="t-heading-sm">
-                Finish your profile
-              </h2>
-              <p className={['t-body-sm', styles.muted].join(' ')}>
-                A complete profile fills in more of every application you send.
-              </p>
-              <div className={styles.progressRow}>
-                <span className={['t-caption', styles.muted].join(' ')}>Profile complete</span>
-                <span className={['t-caption', styles.count].join(' ')}>
-                  {progress.done} of {progress.total}
-                </span>
-              </div>
-              <div
-                className={styles.track}
-                role="progressbar"
-                aria-valuenow={progress.done}
-                aria-valuemin={0}
-                aria-valuemax={progress.total}
-                aria-labelledby="finish-profile"
-              >
-                <span
-                  className={styles.bar}
-                  style={{ width: `${(progress.done / progress.total) * 100}%` }}
-                />
-              </div>
-              <ButtonLink variant="secondary" to="/profile">
-                Update profile
-              </ButtonLink>
-            </section>
-          )}
+          <RecentApplications applications={recent} isLoading={isLoading} />
+          {profile && <ProfileNudge profile={profile.profile} />}
         </div>
       </div>
     </div>

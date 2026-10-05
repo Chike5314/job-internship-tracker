@@ -1,35 +1,40 @@
 import type { DocumentRequirement } from '@/api/types'
-import { FileDrop } from '@/ui/FileDrop'
 import { ALLOWED_DOCUMENT_EXTENSIONS } from '@/api/enums'
 import type { FieldUpload } from './applyForm'
-import { toFileDropStatus } from './uploadStatus'
+import { UploadRow } from './UploadRow'
+import styles from './RequirementField.module.css'
 
 interface FileRequirementFieldProps {
   requirement: DocumentRequirement
   upload: FieldUpload
   onSelect: (file: File) => void
+  onRemove?: () => void
+  invalid?: boolean
 }
 
-export function FileRequirementField({ requirement, upload, onSelect }: FileRequirementFieldProps) {
+export function FileRequirementField({ requirement, upload, onSelect, onRemove, invalid }: FileRequirementFieldProps) {
   return (
-    <div>
-      <p className="t-body-sm" style={{ fontWeight: 600, marginBottom: 'var(--space-1)' }}>
-        {requirement.label}
-        {!requirement.required && (
-          <span className="t-caption" style={{ color: 'var(--color-text-subtle)' }}>
-            {' '}
-            (optional)
-          </span>
-        )}
-      </p>
-      <FileDrop
+    <>
+      <UploadRow
         id={`field-${requirement.key}`}
+        title={
+          requirement.required ? (
+            `Upload the ${requirement.label.charAt(0).toLowerCase()}${requirement.label.slice(1)}`
+          ) : (
+            <>
+              {requirement.label} <span className={styles.optional}>optional</span>
+            </>
+          )
+        }
+        hint={`${ALLOWED_DOCUMENT_EXTENSIONS.join(', ').toUpperCase().replace(/, (?=[^,]*$)/, ' or ')}, up to 10 MB`}
         accept={ALLOWED_DOCUMENT_EXTENSIONS.map((extension) => `.${extension}`).join(',')}
-        help={`${[...ALLOWED_DOCUMENT_EXTENSIONS].join(', ').toUpperCase()}, up to 10 MB.`}
-        status={toFileDropStatus(upload)}
+        upload={upload}
         onSelect={onSelect}
-        onRetry={upload.kind === 'failed' ? () => onSelect(upload.file) : undefined}
+        onRemove={() => onRemove?.()}
+        invalid={invalid}
+        label={requirement.label}
       />
-    </div>
+      {invalid && <p className={styles.error}>Upload the {requirement.label.toLowerCase()}.</p>}
+    </>
   )
 }

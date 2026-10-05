@@ -8,8 +8,14 @@ export interface PasswordRule {
   test: (password: string) => boolean
 }
 
+export const MIN_PASSWORD_LENGTH = 10
+
 export const PASSWORD_RULES: PasswordRule[] = [
-  { key: 'length', label: 'At least 10 characters', test: (p) => p.length >= 10 },
+  {
+    key: 'length',
+    label: `At least ${MIN_PASSWORD_LENGTH} characters`,
+    test: (p) => p.length >= MIN_PASSWORD_LENGTH,
+  },
   { key: 'lower', label: 'One lowercase letter', test: (p) => /[a-z]/.test(p) },
   { key: 'upper', label: 'One uppercase letter', test: (p) => /[A-Z]/.test(p) },
   { key: 'digit', label: 'One number', test: (p) => /[0-9]/.test(p) },

@@ -214,3 +214,27 @@ describe('deriveEditState (edit mode)', () => {
     expect(body.reuseCvId).toBeUndefined()
   })
 })
+
+describe('the transcript kept on the profile', () => {
+  it('counts as supplied and is left out of the submit body, which the backend fills in', () => {
+    const state = deriveInitialState(ACADEMIC_INTERNSHIP, [], { fileName: 'Transcript_2026.pdf' })
+    expect(state.uploads.transcript).toEqual({ kind: 'profile', fileName: 'Transcript_2026.pdf' })
+    expect(outstandingItems(state, ACADEMIC_INTERNSHIP).map((item) => item.fieldId)).not.toContain(
+      'field-transcript',
+    )
+    expect(buildSubmitBody(state, 'job_1').documents.transcript).toBeUndefined()
+  })
+
+  it('without one on the profile, the transcript is still asked for', () => {
+    const state = deriveInitialState(ACADEMIC_INTERNSHIP, [], null)
+    expect(state.uploads.transcript).toEqual({ kind: 'idle' })
+    expect(outstandingItems(state, ACADEMIC_INTERNSHIP).map((item) => item.fieldId)).toContain(
+      'field-transcript',
+    )
+  })
+
+  it('is only used for a posting that asks for a transcript', () => {
+    const state = deriveInitialState(FULL_TIME_JOB, [], { fileName: 'Transcript_2026.pdf' })
+    expect(state.uploads.transcript).toBeUndefined()
+  })
+})

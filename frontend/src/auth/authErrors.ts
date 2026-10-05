@@ -11,6 +11,7 @@ const MESSAGES: Record<string, string> = {
   LimitExceededException: 'Too many attempts. Wait a few minutes and try again.',
   TooManyRequestsException: 'Too many attempts. Wait a few minutes and try again.',
   UserLambdaValidationException: 'We could not finish creating the account. Try again.',
+  InvalidPasswordException: 'That password does not meet every rule below.',
 }
 
 export function authErrorMessage(error: unknown): string {

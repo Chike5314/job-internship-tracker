@@ -1,4 +1,5 @@
 import { useEffect, useState, type FormEvent } from 'react'
+import { VERIFICATION_STATUS_LABEL } from '@/api/enums'
 import { Button } from '@/ui/Button'
 import { EmptyState } from '@/ui/EmptyState'
 import { ErrorSummary } from '@/ui/ErrorSummary'
@@ -13,12 +14,7 @@ import { CompanyLogoCard } from './CompanyLogoCard'
 import { useMyCompany, useUpdateCompany } from './useCompany'
 import styles from './CompanyProfilePage.module.css'
 
-const VERIFICATION_LABEL = {
-  PENDING_VERIFICATION: 'Waiting for verification',
-  VERIFIED: 'Verified',
-  REJECTED: 'Rejected',
-  SUSPENDED: 'Suspended',
-} as const
+const VERIFICATION_LABEL = VERIFICATION_STATUS_LABEL
 
 export function CompanyProfilePage() {
   const { data, isPending, isError } = useMyCompany()
@@ -177,8 +173,8 @@ export function CompanyProfilePage() {
           </p>
           <ol className={styles.entries}>
             {[...company.moderationHistory].reverse().map((entry) => (
-              <li key={`${entry.timestamp}-${entry.status}`} className={styles.entry}>
-                <p className="t-body-sm">{VERIFICATION_LABEL[entry.status]}</p>
+              <li key={`${entry.timestamp}-${entry.to}`} className={styles.entry}>
+                <p className="t-body-sm">{VERIFICATION_LABEL[entry.to]}</p>
                 <p className={['t-caption', styles.muted].join(' ')}>
                   {formatDate(entry.timestamp)}
                 </p>

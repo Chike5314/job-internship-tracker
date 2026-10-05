@@ -1,4 +1,4 @@
-import { Outlet } from 'react-router-dom'
+import { Outlet, useLocation } from 'react-router-dom'
 import { useAuth } from '@/auth/AuthProvider'
 import { BloomField } from './BloomField'
 import { SkipToContent } from './SkipToContent'
@@ -6,6 +6,9 @@ import { TopBar } from './TopBar'
 import { AppBar } from './AppBar'
 import { ApplicantSidebar } from './ApplicantSidebar'
 import { Footer } from './Footer'
+import { PhoneHeader } from './PhoneHeader'
+import { PhoneTabBar } from './PhoneTabBar'
+import { PHONE_QUERY, useMediaQuery } from '@/lib/useMediaQuery'
 import styles from './AppShell.module.css'
 
 /**
@@ -16,6 +19,29 @@ import styles from './AppShell.module.css'
  */
 export function AppShell() {
   const { status } = useAuth()
+  const { pathname } = useLocation()
+  const phone = useMediaQuery(PHONE_QUERY)
+  // The applications board searches the viewer's own list in place; every
+  // other screen searches the postings.
+  const onApplications = pathname === '/applications' || pathname.startsWith('/applications/')
+
+  // On a phone the rail and the search bar give way to the canvas's phone
+  // chrome: the mark and the bell on top, four tabs along the bottom.
+  if (status === 'signedIn' && phone) {
+    return (
+      <div className={styles.shell}>
+        <BloomField />
+        <div className={styles.phoneForeground}>
+          <SkipToContent />
+          <PhoneHeader />
+          <main id="main" className={styles.phoneMain}>
+            <Outlet />
+          </main>
+          <PhoneTabBar />
+        </div>
+      </div>
+    )
+  }
 
   if (status === 'signedIn') {
     return (
@@ -26,8 +52,9 @@ export function AppShell() {
           <ApplicantSidebar />
           <div className={styles.column}>
             <AppBar
-              placeholder="Search roles or companies"
+              placeholder={onApplications ? 'Search your applications' : 'Search roles or companies'}
               searchTo="/postings"
+              filtersPage={onApplications}
               notificationsTo="/notifications"
             />
             <main id="main" className={styles.appMain}>

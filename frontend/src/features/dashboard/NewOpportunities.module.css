@@ -1,0 +1,142 @@
+/* Takes the column's remaining height, so its foot lines up with the card at
+   the bottom of the other column. */
+.fill {
+  flex: 1;
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+/* Each row is a well sunk into the card, the page ground showing through,
+   and the gap between wells is what separates one row from the next. */
+.row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 10px var(--space-3);
+  border-radius: var(--radius-md);
+  background: var(--color-ground);
+  min-width: 0;
+  transition: box-shadow 120ms ease;
+}
+
+.row:hover {
+  box-shadow: inset 0 0 0 1px var(--color-rule-hairline);
+}
+
+.main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.role {
+  color: var(--color-text-primary);
+  font-size: var(--type-body-size);
+  font-weight: 600;
+  line-height: normal;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.company {
+  color: var(--color-text-muted);
+  font-size: var(--type-body-sm-size);
+  line-height: normal;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.type {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  height: 24px;
+  padding: 0 9px;
+  border-radius: 7px;
+  font-size: var(--type-caption-size);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.job {
+  background: var(--color-active-wash);
+  color: var(--color-state-active-text);
+}
+
+.professional {
+  background: var(--color-n-200);
+  color: var(--color-n-800);
+}
+
+:global([data-theme='ink']) .professional {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--color-n-300);
+}
+
+.academic {
+  background: var(--color-state-open-bg);
+  color: var(--color-text-primary);
+}
+
+.terms {
+  flex: none;
+  width: 150px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+  text-align: right;
+}
+
+.salary,
+.undisclosed {
+  font-size: 14px;
+  font-weight: 600;
+  line-height: normal;
+  white-space: nowrap;
+}
+
+.salary {
+  color: var(--color-text-primary);
+}
+
+.undisclosed {
+  color: var(--color-text-muted);
+}
+
+.closes {
+  color: var(--color-text-subtle);
+  font-size: var(--type-caption-size);
+  line-height: normal;
+  white-space: nowrap;
+}
+
+/* Too narrow for four columns: the title takes the first line and the tag and
+   the terms share the second, lined up under the title. */
+@media (max-width: 600px) {
+  .row {
+    flex-wrap: wrap;
+    row-gap: var(--space-2);
+  }
+
+  .main {
+    flex-basis: calc(100% - 54px);
+  }
+
+  .type {
+    margin-left: 54px;
+  }
+
+  .terms {
+    width: auto;
+    margin-left: auto;
+  }
+}

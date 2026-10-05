@@ -1,4 +1,5 @@
 import { createBrowserRouter, Navigate } from 'react-router-dom'
+import { homeFor } from '@/auth/home'
 import { RequireApplicant, RequireGroup, RedirectIfSignedIn } from '@/auth/RouteGuards'
 import { useAuth } from '@/auth/AuthProvider'
 import { LandingPage } from '@/features/marketing/LandingPage'
@@ -6,11 +7,11 @@ import { DashboardPage } from '@/features/dashboard/DashboardPage'
 import { SignInPage } from '@/features/auth/SignInPage'
 import { SignUpPage } from '@/features/auth/SignUpPage'
 import { ConfirmSignUpPage } from '@/features/auth/ConfirmSignUpPage'
+import { ResetPasswordPage } from '@/features/auth/ResetPasswordPage'
 import { BrowsePostingsPage } from '@/features/postings/BrowsePostingsPage'
 import { PostingDetailPage } from '@/features/postings/PostingDetailPage'
 import { ApplyPage } from '@/features/apply/ApplyPage'
 import { MyApplicationsPage } from '@/features/applications/MyApplicationsPage'
-import { ApplicationDetailPage } from '@/features/applications/ApplicationDetailPage'
 import { ProfilePage } from '@/features/profile/ProfilePage'
 import { CvLibraryPage } from '@/features/profile/CvLibraryPage'
 import { NotificationsPage } from '@/features/notifications/NotificationsPage'
@@ -21,10 +22,16 @@ import { PipelinePage } from '@/features/company/PipelinePage'
 import { CompanyInterviewsPage } from '@/features/company/CompanyInterviewsPage'
 import { CompanyAnalyticsPage } from '@/features/company/CompanyAnalyticsPage'
 import { CompanyProfilePage } from '@/features/company/CompanyProfilePage'
+import { AdminOverviewPage } from '@/features/admin/AdminOverviewPage'
+import { AdminCompaniesPage } from '@/features/admin/AdminCompaniesPage'
+import { AdminPostingsPage } from '@/features/admin/AdminPostingsPage'
 import { AppShell } from './AppShell'
+import { FocusLayout } from './FocusLayout'
 import { CompanyShell } from './CompanyShell'
+import { AdminShell } from './AdminShell'
 import { AuthLayout } from './AuthLayout'
 import { NotFoundPage } from './NotFoundPage'
+import { RouteErrorPage } from './CrashScreen'
 
 /**
  * "/" serves two people. A visitor is being sold the product and gets the hero;
@@ -32,14 +39,15 @@ import { NotFoundPage } from './NotFoundPage'
  * showing them the sales page inside the app's own chrome would be wrong.
  */
 function Home() {
-  const { status } = useAuth()
-  if (status === 'signedIn') return <Navigate to="/dashboard" replace />
+  const { status, identity } = useAuth()
+  if (status === 'signedIn') return <Navigate to={homeFor(identity)} replace />
   return <LandingPage />
 }
 
 export const router = createBrowserRouter([
   {
     element: <AppShell />,
+    errorElement: <RouteErrorPage />,
     children: [
       { path: '/', element: <Home /> },
       {
@@ -53,14 +61,6 @@ export const router = createBrowserRouter([
       { path: '/postings', element: <BrowsePostingsPage /> },
       { path: '/postings/:jobId', element: <PostingDetailPage /> },
       {
-        path: '/postings/:jobId/apply',
-        element: (
-          <RequireApplicant>
-            <ApplyPage />
-          </RequireApplicant>
-        ),
-      },
-      {
         path: '/applications',
         element: (
           <RequireApplicant>
@@ -72,7 +72,7 @@ export const router = createBrowserRouter([
         path: '/applications/:applicationId',
         element: (
           <RequireApplicant>
-            <ApplicationDetailPage />
+            <MyApplicationsPage />
           </RequireApplicant>
         ),
       },
@@ -104,6 +104,22 @@ export const router = createBrowserRouter([
     ],
   },
   {
+    // Sending an application is one sitting's work, so it leaves the rail and
+    // the search bar behind and keeps only a way back.
+    element: <FocusLayout />,
+    errorElement: <RouteErrorPage />,
+    children: [
+      {
+        path: '/postings/:jobId/apply',
+        element: (
+          <RequireApplicant>
+            <ApplyPage />
+          </RequireApplicant>
+        ),
+      },
+    ],
+  },
+  {
     // The company app. One guard on the shell rather than one per route: every
     // destination under /company is for recruiters and admins, so the check
     // belongs where the branch starts.
@@ -112,11 +128,10 @@ export const router = createBrowserRouter([
         <CompanyShell />
       </RequireGroup>
     ),
+    errorElement: <RouteErrorPage />,
     children: [
       { path: '/company', element: <CompanyOverviewPage /> },
       { path: '/company/postings', element: <CompanyPostingsPage /> },
-      { path: '/company/postings/new', element: <PostingEditorPage /> },
-      { path: '/company/postings/:jobId/edit', element: <PostingEditorPage /> },
       { path: '/company/postings/:jobId/pipeline', element: <PipelinePage /> },
       { path: '/company/interviews', element: <CompanyInterviewsPage /> },
       { path: '/company/analytics', element: <CompanyAnalyticsPage /> },
@@ -125,7 +140,38 @@ export const router = createBrowserRouter([
     ],
   },
   {
+    // The admin app, behind one guard on the shell like the company app. The
+    // Admins group is written by hand in the Cognito console and by nothing in
+    // the code (FR-9.9), so this branch only ever opens for those accounts.
+    element: (
+      <RequireGroup group="Admins">
+        <AdminShell />
+      </RequireGroup>
+    ),
+    errorElement: <RouteErrorPage />,
+    children: [
+      { path: '/admin', element: <AdminOverviewPage /> },
+      { path: '/admin/companies', element: <AdminCompaniesPage /> },
+      { path: '/admin/postings', element: <AdminPostingsPage /> },
+    ],
+  },
+  {
+    // The posting editor is one sitting's work as well, so it leaves the rail
+    // and the search bar behind and brings its own header and steps.
+    element: (
+      <RequireGroup group="Recruiters">
+        <FocusLayout />
+      </RequireGroup>
+    ),
+    errorElement: <RouteErrorPage />,
+    children: [
+      { path: '/company/postings/new', element: <PostingEditorPage /> },
+      { path: '/company/postings/:jobId/edit', element: <PostingEditorPage /> },
+    ],
+  },
+  {
     element: <AuthLayout />,
+    errorElement: <RouteErrorPage />,
     children: [
       {
         path: '/sign-in',
@@ -144,10 +190,16 @@ export const router = createBrowserRouter([
         ),
       },
       {
+        // Not behind RedirectIfSignedIn: confirming signs the person in, and the
+        // page has to stay to say what comes next. It redirects by itself.
         path: '/sign-up/confirm',
+        element: <ConfirmSignUpPage />,
+      },
+      {
+        path: '/sign-in/reset',
         element: (
           <RedirectIfSignedIn>
-            <ConfirmSignUpPage />
+            <ResetPasswordPage />
           </RedirectIfSignedIn>
         ),
       },

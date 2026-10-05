@@ -1,6 +1,7 @@
 import type { Salary } from '@/api/types'
 
 const PERIOD_WORD: Record<string, string> = { HOUR: 'hour', MONTH: 'month', YEAR: 'year' }
+const PERIOD_SHORT: Record<string, string> = { HOUR: 'hr', MONTH: 'mo', YEAR: 'yr' }
 
 /**
  * Intl's currency style writes XAF as "FCFA" and repeats the symbol on both
@@ -35,12 +36,19 @@ function amounts(salary: Salary, compact: boolean) {
  * `compact` is for cards, where the figure is a signal and the space is one
  * line. A posting's own page leaves it off and shows the exact number, which
  * is what somebody deciding whether to apply is actually reading.
+ *
+ * `shortPeriod` writes "/ mo" for a list row, where the figure sits in a fixed
+ * column beside the title and "/ month" would wrap it.
  */
-export function formatSalary(salary: Salary, options: { compact?: boolean } = {}): string {
+export function formatSalary(
+  salary: Salary,
+  options: { compact?: boolean; shortPeriod?: boolean } = {},
+): string {
   if (!salary.disclosed) return ''
   const figure = amounts(salary, options.compact ?? false)
   if (figure == null) return ''
   const currency = salary.currency ?? 'USD'
-  const period = salary.period ? ` / ${PERIOD_WORD[salary.period]}` : ''
+  const words = options.shortPeriod ? PERIOD_SHORT : PERIOD_WORD
+  const period = salary.period ? ` / ${words[salary.period]}` : ''
   return `${currency} ${figure}${period}`
 }

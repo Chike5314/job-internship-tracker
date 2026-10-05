@@ -84,6 +84,27 @@ GROUPS = {
         "suspend": "circle-slash",
         "approve": "thumbs-up",
     },
+    # The applicant dashboard board: its rail, its stat tiles, the interview
+    # card's calendar action and the profile nudge.
+    "Applicant dashboard": {
+        "dashboard": "layout-grid",
+        "applications": "file-check",
+        "file": "file",
+        "folder": "folder",
+        "date": "calendar",
+        "star": "star",
+        "send": "send",
+        "save": "arrow-down-to-line",
+    },
+    # The phone board's bottom tab bar.
+    "Phone navigation": {
+        "home": "house",
+        "person": "user",
+    },
+    # The posting editor board: the CV row that cannot be removed.
+    "Posting editor": {
+        "lock": "lock",
+    },
 }
 
 BODY = re.compile(r"<svg[^>]*>(.*)</svg>", re.S)

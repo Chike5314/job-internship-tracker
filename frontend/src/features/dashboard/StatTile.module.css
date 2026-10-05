@@ -1,22 +1,10 @@
 .tile {
-  display: grid;
-  gap: var(--space-2);
-  align-content: start;
-  padding: var(--space-5);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 20px;
   border-radius: var(--radius-lg);
   min-width: 0;
-}
-
-/* The one tile holding something the viewer has to answer. The vermilion is an
-   outline rather than a fill, so a count stays a count and the tile does not
-   read as a button. */
-.urgent {
-  box-shadow: inset 0 0 0 1px var(--color-brand-verm);
-}
-
-.urgent .note {
-  color: var(--color-attention-text);
-  font-weight: 600;
 }
 
 .head {
@@ -28,23 +16,59 @@
 
 .label {
   color: var(--color-text-muted);
+  font-size: 14px;
+  line-height: normal;
 }
 
 .icon {
+  flex: none;
   display: grid;
   place-items: center;
-  width: 28px;
-  height: 28px;
-  border-radius: var(--radius-xs);
-  background: var(--color-state-open-bg);
-  color: var(--color-text-muted);
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-sm);
+  background: var(--color-active-wash);
+  color: var(--color-brand-forest);
 }
 
 .value {
   color: var(--color-text-primary);
+  font-family: var(--type-figure-xl-family);
+  font-size: 34px;
+  line-height: 1;
+  font-weight: var(--type-figure-xl-weight);
+  letter-spacing: var(--type-figure-xl-spacing);
   font-variant-numeric: tabular-nums;
 }
 
 .note {
   color: var(--color-text-muted);
+  font-size: var(--type-body-sm-size);
+  line-height: normal;
+}
+
+/* The one tile holding something the viewer has to answer. It keeps the same
+   figure as the rest of the row and moves the signal into the edge, the icon
+   and the line that names who is waiting. */
+.urgent {
+  background: var(--color-glass-solid);
+  box-shadow: inset 0 0 0 1px var(--color-verm-200);
+}
+
+:global([data-theme='ink']) .urgent {
+  box-shadow: inset 0 0 0 1px var(--color-verm-700);
+}
+
+.urgent .icon {
+  background: var(--color-attention-wash);
+  color: var(--color-brand-verm);
+}
+
+.urgent .note {
+  color: var(--color-attention-text);
+  font-weight: 600;
+}
+
+.urgent.link:hover {
+  background-image: linear-gradient(var(--color-attention-wash), var(--color-attention-wash));
 }

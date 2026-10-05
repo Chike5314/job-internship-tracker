@@ -24,7 +24,7 @@ development account: AWS account `400294419066`, region `us-east-1`, stacks
 against it twice, confirming idempotency, and populated it with a verified
 company, three published postings, two applicants with CVs, and five
 applications spread across the pipeline including one scheduled interview.
-Everything has been verified by `cdk synth` and by 106 tests.
+Everything has been verified by `cdk synth` and by 116 tests.
 
 Cognito hosted UI: `https://jiat-dev.auth.us-east-1.amazoncognito.com`. The app
 client only allows the authorization code OAuth flow with callback
@@ -114,8 +114,8 @@ The company app lives under `/company` in `src/features/company/`, behind one
 a left rail (`CompanyShell`, `CompanySidebar`) rather than the applicant side's
 top bar, because a recruiter moves between seven destinations all day and an
 applicant between three. Seven screens: Overview, Postings, the posting editor,
-the pipeline board, Interviews, Analytics and Company profile. Admin views do
-not exist yet.
+the pipeline board, Interviews, Analytics and Company profile. The admin app
+is described under "The admin app" below.
 
 Design tokens are generated, not hand authored: `frontend/scripts/build-tokens.mjs`
 reads `docs/brand/tokens.json` directly and writes `frontend/src/styles/tokens.css`,
@@ -142,10 +142,20 @@ There are two Offerline artifacts and they do different jobs.
   the screens live: a landing board, a brand kit, positioning, four applicant
   boards, three company boards and sign in.
 
-The built applicant side follows the system but not the canvas: a top bar where
-the canvas has a sidebar, no Dashboard screen, and one combined postings list
-where the canvas separates Jobs from Internships. That gap is known and was left
-deliberately. The company side and the landing page were built to the canvas.
+The signed-in applicant side uses the canvas's rail and app bar, and the
+Dashboard is built to `Dashboard.dc.html` measure for measure (checked at
+1440x1024 against the board in both themes). Postings stay one combined list
+where the canvas separates Jobs from Internships; the rail's two links filter
+it by type. The company side and the landing page were built to the canvas.
+
+The canvas source can be read file by file from the "Offerline, Product UI"
+artifact (`project/<Board>.dc.html`), which beats measuring screenshots. Three
+things on the dashboard differ from the board on purpose: a rejected
+application reads "Not taken forward" (it matches the email wording, see
+`api/enums.ts`), the interview card is titled by round ("First interview")
+because an interview record carries no kind, and an onsite interview reads
+"In person" from `INTERVIEW_MODE_LABEL`. The theme switch sits in the account
+menu, because no board draws one in the bar.
 
 ### Looking at the company screens without a backend
 
@@ -177,6 +187,176 @@ nothing. Only `opacity` and `transform` are animated, and `animation-timeline` i
 declared after the `animation` shorthand, which would otherwise reset it. The
 hero and the strip under it never animate: the first screen is solid at rest.
 
+### The phone layout
+
+Built to the Mobile board. At 640px and below a signed-in applicant gets the
+phone chrome instead of the rail and the search bar: `PhoneHeader` (the mark,
+the bell, the avatar) and `PhoneTabBar` (Home, Applications, Alerts, Profile)
+pinned to the bottom. The dashboard renders `PhoneHome` there: the greeting, a
+search over the newest openings, the All, Jobs and Internships chips, the next
+interview and posting cards. The tiles, the recent list and the profile nudge
+stay on wider screens. Both switches go through `useMediaQuery(PHONE_QUERY)`
+and render one tree or the other, rather than hiding a second copy with CSS, so
+there is only ever one `main` and no repeated ids. Tablets keep the rail as a
+band. The applications page carries its own search on a phone, since the bar's
+is gone.
+
+### Sign in, sign up and password reset
+
+Built to the Login board. Where an account lands after signing in, and when it
+opens `/` or a page meant for the other kind of account, comes from the groups
+in its token (`homeFor` in `auth/home.ts`), never from the "I'm looking for
+work" and "I'm hiring" tabs, which only shape the form's wording. Sign in used
+to follow the tab, so a company signing in on the default tab was sent to the
+applicant dashboard and turned away there.
+
+Three routes behave differently from the rest:
+
+- `/sign-up/confirm` is not behind `RedirectIfSignedIn`. Confirming the code
+  signs the person in (auto sign in), and the page has to stay up to show the
+  board's next screen: "You're in" for an applicant, "Pending verification" for
+  a company. It redirects a signed-in visitor itself, unless it is mid
+  confirmation. If the company record fails to save after the account is
+  confirmed, it offers to save it again.
+- `/sign-in/reset` asks for a code, then a new password, through Amplify's
+  `resetPassword` and `confirmResetPassword`. The pool hides whether an address
+  has an account, so the screen says a code is on its way "if an account
+  exists". An account made through Google has no password to reset.
+
+### The pipeline board
+
+Built to the Recruiter board, at `/company/postings/:jobId/pipeline`: five
+columns, a card per application, a floating bulk bar, an export panel, and a
+drawer that opens one application. Things that are not obvious from the code:
+
+- **Opening a card is an action.** The drawer reads `GET /applications/{id}`,
+  and that read is what moves a `SUBMITTED` application to `UNDER_REVIEW` and
+  freezes it. `useRecruiterApplication` invalidates the pipeline after the read
+  so the card leaves New, and never retries on its own. The drawer remembers
+  the card's status at the moment it opened, which is how it knows to say that
+  this opening moved it.
+- **The drawer lives in the URL** as `?application=<id>`. Opening pushes a
+  history entry and closing replaces it, so Back closes the drawer. The
+  Interviews page links there; the applicant's `/applications/:id` route is
+  behind the applicant guard and a recruiter cannot use it.
+- **Moving a time and proposing a new one are different calls.** A time still
+  `PROPOSED` or `CONFIRMED` is moved with `PATCH .../interview`
+  `{action: 'RESCHEDULE'}`. Once the applicant has declined, nothing is open, so
+  `_latest_open_interview` would refuse that, and the drawer sends a new
+  `POST .../interview` instead.
+- **"On opening it"** in the history comes from matching the note
+  `_open_for_review` writes, "Opened by the recruiter.", which is the only thing
+  that tells an opening apart from a bulk move to the same status.
+- **The company reads "Rejected"** where the applicant reads "Not taken
+  forward" (`RECRUITER_STATUS_LABEL` in `features/company/pipeline.ts`).
+- **Native controls follow the theme.** `styles/base.css` sets `color-scheme`
+  from `data-theme`, where it used to follow the operating system, which left
+  white checkboxes and select menus on ink when ink was chosen on a light
+  system. That fix is app wide.
+
+Three places where the board shows something the API cannot supply yet:
+
+- A card's second line is the applicant's email, where the board shows the CV's
+  library label. `_pipeline_row` carries no CV information.
+- The interview form has no note for the applicant. Neither interview route
+  accepts one.
+- A note on an offer or a rejection goes into the application's history, which
+  the applicant sees, but not into the status email: `_announce_status` sends
+  the status wording only. The drawer's copy says so.
+
+### The posting editor
+
+Built to the Posting editor board, at `/company/postings/new` and
+`/company/postings/:jobId/edit`. It sits outside the company rail, in its own
+route group (`RequireGroup("Recruiters")` around `FocusLayout`), because it is
+one sitting's work: a header with the save, four steps down the left, the step
+in the middle and a live "what applicants will see" preview on the right. The
+step is in the URL as `?step=2`. `PostingEditorPage` loads the posting and only
+then mounts `PostingEditor`, which takes its starting draft from it once.
+
+- **Saving needs a description.** `POST /jobs` refuses a posting without one,
+  and the board puts "About the role" in step 2, so a save from step 1 lists it
+  as a blocker with a link to step 2 (`blockers` in `postingDraft.ts`).
+- **Publishing happens in step 4 only**, and needs a city (unless remote) and a
+  deadline that has not passed. The API only refuses a past deadline; requiring
+  one at all is the board's rule, so every posting closes itself. An expired
+  posting is published again through Closed, the one route the API allows.
+- **A publish that fails after the save** (an unverified company, most often)
+  comes back from `useSavePosting` as `publishError` beside the saved posting,
+  so the editor still moves to the posting that now exists and a retry cannot
+  create a second one.
+- **The deadline is a day.** The editor stores the last second of the chosen
+  local day, since it tells the recruiter the posting closes at the end of it.
+- **The type is fixed once saved.** `PATCH /jobs/{id}` ignores
+  `opportunityType`, so the editor locks the type cards on a saved posting and
+  says so. The earlier editor let the type change and then dropped it silently.
+- **Nothing optional can be cleared once saved.** `dynamo.build_update` only
+  ever writes SET, and the update route drops a field sent as empty. Choosing
+  "Flexible" for a start date that was set, or emptying a city, reverts to the
+  stored value after the save. `PATCH /jobs/{id}` did not read `startDate` at
+  all until it was added; it now keeps one set after creation.
+
+Steps 2, 3 and 4 follow the board, with these choices made on purpose:
+
+- **A hidden salary keeps no figures.** `validate_salary` stores
+  `{disclosed: false}` alone, so the figures grey out while "Show salary to
+  applicants" is unticked rather than pretending to be kept.
+- **Duration is a fixed row** in "Anything else applicants should know", since
+  `duration` is its own field and the posting page shows it as a fact. It shows
+  for internships, or wherever a posting has one, but not when a detail called
+  "Duration" already says it.
+- **A document added in step 3 is a file to upload.** The board offers no
+  choice of kind, and "a document" means a file to the applicant. The written
+  answers in the default sets keep their kind.
+- **Start dates on offer** are the first Monday of each of the next twelve
+  months, which is where the board's own examples fall.
+- **Step 4** reviews the three parts with an Edit link each, marks anything
+  missing in the signal colour, and each item in "Before you can publish" links
+  to its step. An extra detail left completely empty is dropped on save
+  (`toSave`), not refused.
+
+### The admin app
+
+No board draws it, so it is the company app's anatomy with the admin's own
+destinations, built from SRS section 3.9 (FR-9.1 to FR-9.9). It lives under
+`/admin` in `src/features/admin/`, behind one `RequireGroup("Admins")` on
+`AdminShell`, which reuses `CompanyShell.module.css` for the same frame. The
+rail carries Overview, Companies and Postings, with the size of the
+verification queue as the count on Companies (from `GET /admin/overview`).
+
+- **Admins have no notifications**, so the app bar draws its bell only when a
+  side passes `notificationsTo`, and the admin side passes none.
+- **The account menu shows "CVs" to applicants only.** It used to show it to
+  every account, and for a company it led nowhere.
+- **An admin is never made in the code.** FR-9.9: the Admins group is written
+  by hand in the Cognito console, and nothing in the API or the frontend can
+  put an account in it.
+- **The overview** shows the four platform totals from `GET /admin/overview`
+  and says they are approximate, since they come from table metadata refreshed
+  about every six hours; the queue size beside them is exact. Below sit the
+  companies waiting for verification, longest waiting first, and the count at
+  each standing, one `GET /companies?status=` per standing. Those four lists
+  are cached under `queryKeys.admin.companies(status)` and shared with the
+  companies page. A list returns at most 200, so a full one reads as "200+".
+- **The companies list** is tabs for Pending, Verified, Rejected, Suspended
+  and All, the tab in the URL as `?status=`. The queue is longest waiting
+  first, a decided list newest decision first, and All alphabetical. Search
+  is the app bar, which filters the table in place on this page through `?q=`
+  (matching name, contact email and website). A search arriving from the bar
+  with no tab chosen looks in All.
+- **A moderation entry is `{from, to, by, note, timestamp}`**, as
+  `set_verification_status` writes it. The frontend type used to say
+  `{status, changedBy}`, so the company's own profile page showed every past
+  decision with a blank label. `ModerationEntry` in `api/types.ts` now matches,
+  and the labels live in `VERIFICATION_STATUS_LABEL` in `api/enums.ts`.
+
+Every admin route the SRS lists already exists in the backend:
+`PATCH /companies/{id}/status` decides, `GET /companies?status=` lists,
+`POST /admin/companies` creates an account, `GET /admin/overview` counts, and
+an admin may close any posting through `PATCH /jobs/{id}` and read a company's
+postings through `GET /companies/{id}/analytics` (`perPosting`), since
+`assert_owns_job` and `assert_owns_company` both let an admin through.
+
 ### The company logo
 
 `POST /companies/logo-upload-url` issues a presigned PUT under the company's own
@@ -206,9 +386,13 @@ tests, and by screenshots in both themes at 1280, 900, 760 and 390 wide:
   inlines them with `?raw` instead of pointing an `img` at them: an SVG loaded
   through `img` is its own document, so `currentColor` inside it resolves to
   black and the wordmark stayed black on the dark panel. Inlined, the ink
-  inherits and one file serves both themes. The four
-  `offerline-*-{dark,light}.png` files still sitting in `src/assets/brand/` are
-  the old bright blue mark and nothing imports them now.
+  inherits and one file serves both themes. The mark is the browser tab icon
+  (`public/favicon.svg`, the traced mark in a square frame, with
+  `favicon-32.png` and a 180px `apple-touch-icon.png` on paper rendered from
+  it) and sits above the spinner while a session is read. The wordmark heads
+  the crash screen, which is also every route group's `errorElement`, since
+  React Router otherwise catches a failing route before the app's own error
+  boundary and shows its unbranded default.
 - **Icons.** `public/icons.svg` is the 58 icon sprite, replacing a starter
   template's Bluesky and Discord leftovers. `src/ui/Icon.tsx` carries a union of
   every symbol name, so a misspelled icon fails typecheck rather than rendering
@@ -282,7 +466,7 @@ Two things worth knowing before touching this code again:
   account directly, and a platform overview. Moderation decisions append to a
   history rather than overwriting.
 - Company interview calendar on a sparse GSI.
-- 106 tests in two layers. 30 unit tests over the pure rules, 76 integration tests
+- 116 tests in two layers. 30 unit tests over the pure rules, 86 integration tests
   running the real handlers against moto with DynamoDB and its indexes, S3, SQS,
   SNS, SES and Cognito standing up in process.
 
@@ -320,8 +504,17 @@ reverse an earlier approach.
   behind them, and the reuse list then offered CVs that could not be downloaded.
   Confirming twice is idempotent on the key, because a client retries. Both
   frontend sites that upload a CV do all three steps:
-  `features/profile/useProfile.ts` and `features/apply/useApplyForm.ts`.
+  `features/profile/useProfile.ts` and `features/apply/useApplyForm.ts`. The
+  apply form runs the third step when the application is sent, not when the
+  upload lands, because its label field comes after the file and a second
+  confirm does not rename an entry.
   `POST /applications/upload-url` never had this problem and writes nothing.
+- The transcript lives on the profile and goes with every application whose
+  posting asks for one (FR-2.1). Submission and amendment copy the profile's
+  `transcriptS3Key` onto the application when none was attached, in
+  `_attach_profile_transcript` in the application service. The apply form shows
+  it as already supplied and leaves it out of the request. An applicant can
+  still attach a different one to a single application, and that one is kept.
 - The company interview calendar is a sparse GSI. An application carries
   `nextInterviewAt` and a `nextInterview` snapshot only while it has an interview
   still ahead of it, so rows enter and leave the index by themselves. Every place
@@ -358,8 +551,9 @@ untouched by the applicant frontend, so recruiter registration has never been
 exercised against the deployed API.
 
 **The deployed dev stack is behind everything above until the next `cdk deploy`.**
-The company routes, the company logo upload and the SQS consumer switch all exist
-only in source. Recruiter registration has still never been exercised against the
+The company routes, the company logo upload, the SQS consumer switch, an
+application picking up the transcript kept on the profile, and a posting's
+start date being kept on update all exist only in source. Recruiter registration has still never been exercised against the
 deployed API, so the company app's first real run is also the first real test of
 `POST /companies`.
 

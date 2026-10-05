@@ -1,25 +1,38 @@
+/* The whole column: the account tabs, the form, the note under it. */
 .panel {
-  display: grid;
-  gap: var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+
+/* The form itself, a little tighter than the column around it. */
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+}
+
+.fields {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
 }
 
 .tabs {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 2px;
-  padding: 4px;
+  gap: var(--space-1);
+  padding: var(--space-1);
   border-radius: var(--radius-md);
-  margin-bottom: var(--space-2);
 }
 
 .tab {
-  height: 40px;
-  padding: 0 var(--space-3);
-  border: none;
+  height: 44px;
   border-radius: var(--radius-sm);
+  text-align: center;
   background: transparent;
   color: var(--color-text-muted);
-  font-size: var(--type-body-sm-size);
+  font-size: 14px;
   font-weight: 600;
 }
 
@@ -27,29 +40,44 @@
   color: var(--color-text-primary);
 }
 
-.tabActive {
+.tabActive,
+.tabActive:hover {
   background: var(--color-glass-solid);
-  box-shadow: 0 0 0 1px var(--color-brand-forest) inset;
+  box-shadow:
+    inset 0 0 0 1px var(--color-brand-forest),
+    0 1px 2px rgba(28, 26, 21, 0.06);
   color: var(--color-state-active-text);
 }
 
 .lead {
-  display: grid;
-  gap: var(--space-1);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.title {
+  color: var(--color-text-primary);
+  font-family: var(--font-serif);
+  font-size: 30px;
+  font-weight: 400;
+  line-height: 1.15;
+  letter-spacing: -0.01em;
 }
 
 .subtitle {
   color: var(--color-text-muted);
+  font-size: var(--type-body-size);
+  line-height: 1.55;
 }
 
-/* A rule with the word sitting in it, which is how the board separates the
+/* A rule with the words sitting in it, which is how the board separates the
    federated route from the email one. */
 .divider {
   display: flex;
   align-items: center;
-  gap: var(--space-3);
+  gap: 14px;
   color: var(--color-text-subtle);
-  font-size: var(--type-caption-size);
+  font-size: var(--type-body-sm-size);
 }
 
 .divider::before,
@@ -67,13 +95,16 @@
   gap: var(--space-3);
   width: 100%;
   height: 48px;
-  border: none;
   border-radius: var(--radius-sm);
   background: var(--color-glass-solid);
-  box-shadow: var(--shadow-inset-edge), 0 0 0 1px var(--color-rule-strong) inset;
+  box-shadow: inset 0 0 0 1px var(--color-n-400);
   color: var(--color-text-primary);
   font-size: var(--type-body-size);
   font-weight: 600;
+}
+
+:global([data-theme='ink']) .google {
+  box-shadow: inset 0 0 0 1px var(--color-n-700);
 }
 
 .google:hover:not(:disabled) {
@@ -84,22 +115,15 @@
   opacity: var(--opacity-disabled);
 }
 
-/* The label row carries the rule for the field beside its name, so the form
-   stays one column of fields rather than a column of fields and a list. */
-.labelRow {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: var(--space-3);
-}
-
-.hint {
-  color: var(--color-text-subtle);
-  font-size: var(--type-caption-size);
+.input {
+  height: 46px;
+  padding: 0 14px;
+  font-size: var(--type-body-size);
 }
 
 .forgot {
-  justify-self: end;
+  align-self: flex-end;
+  margin-top: calc(var(--space-1) * -1);
   color: var(--color-text-link);
   font-size: var(--type-body-sm-size);
   font-weight: 600;
@@ -110,38 +134,134 @@
   text-underline-offset: 2px;
 }
 
+.submit {
+  width: 100%;
+  height: 48px;
+  font-size: var(--type-body-size);
+}
+
 .swap {
   text-align: center;
   color: var(--color-text-muted);
+  font-size: 14px;
 }
 
-.swap button {
-  border: none;
-  background: none;
-  padding: 0;
+.swap button,
+.swap a {
   color: var(--color-text-link);
   font: inherit;
   font-weight: 600;
 }
 
-.swap button:hover {
+.swap button:hover,
+.swap a:hover {
   text-decoration: underline;
   text-underline-offset: 2px;
 }
 
 .note {
   color: var(--color-text-subtle);
+  font-size: var(--type-caption-size);
   text-align: center;
 }
 
 .aside {
-  color: var(--color-text-muted);
+  color: var(--color-text-subtle);
+  font-size: var(--type-body-sm-size);
+  line-height: 1.5;
 }
 
 .error {
-  padding: var(--space-3);
+  padding: var(--space-3) 14px;
   border-radius: var(--radius-sm);
   background: var(--color-attention-wash);
+  color: var(--color-attention-text);
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.45;
+}
+
+.notice {
+  color: var(--color-feedback-ok-text);
+  font-size: var(--type-body-sm-size);
+  font-weight: 600;
+}
+
+.quiet {
+  align-self: center;
+  color: var(--color-text-link);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.quiet:hover {
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+/* What a person sees once the account exists: the step they are on and the one
+   thing to do next. */
+.done {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.chip {
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 26px;
+  padding: 0 10px;
+  border-radius: var(--radius-xs);
+  font-size: var(--type-caption-size);
+  font-weight: 600;
+}
+
+.chip::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.chipCreated {
+  background: var(--color-active-wash);
+  color: var(--color-state-active-text);
+}
+
+.chipPending {
+  background: var(--color-attention-wash);
+  color: var(--color-attention-text);
+}
+
+.facts {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: 18px;
+  border-radius: var(--radius-md);
+  color: var(--color-text-primary);
+  font-size: 14px;
+  line-height: 1.45;
+}
+
+.fact {
+  display: flex;
+  gap: 10px;
+}
+
+.fact > svg {
+  flex: none;
+}
+
+.factYes > svg {
+  color: var(--color-state-active-text);
+}
+
+.factWait > svg {
   color: var(--color-attention-text);
 }
 

@@ -1,24 +1,46 @@
 .page {
-  display: grid;
-  gap: var(--space-6);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
   min-width: 0;
 }
 
 .greeting {
   display: flex;
   flex-wrap: wrap;
-  align-items: baseline;
+  align-items: flex-end;
   justify-content: space-between;
-  gap: var(--space-3);
+  gap: var(--space-2) var(--space-4);
+}
+
+.welcome {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  min-width: 0;
+}
+
+/* The display face at a heading's size: the one serif line on the screen,
+   which is what makes it read as a greeting and the rest as the work. */
+.title {
+  color: var(--color-text-primary);
+  font-family: var(--font-serif);
+  font-size: 30px;
+  line-height: 1.15;
+  font-weight: 400;
+  letter-spacing: -0.01em;
 }
 
 .subtitle {
-  margin-top: var(--space-1);
   color: var(--color-text-muted);
+  font-size: var(--type-body-size);
+  line-height: normal;
 }
 
 .today {
-  color: var(--color-text-subtle);
+  color: var(--color-text-muted);
+  font-size: 14px;
+  line-height: normal;
 }
 
 .tiles {
@@ -27,138 +49,22 @@
   gap: var(--space-4);
 }
 
+/* Both columns stretch to the taller one, and the last card in each takes up
+   the slack, so the two columns end on one line. */
 .split {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  gap: var(--space-5);
-  align-items: start;
+  gap: 20px;
 }
 
 .column {
-  display: grid;
-  gap: var(--space-5);
-  align-content: start;
-  min-width: 0;
-}
-
-.block {
-  display: grid;
-  gap: var(--space-3);
-  min-width: 0;
-}
-
-.blockHead {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--space-3);
-}
-
-.more {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-1);
-  color: var(--color-text-link);
-  font-size: var(--type-body-sm-size);
-  font-weight: 600;
-}
-
-.more:hover {
-  text-decoration: underline;
-  text-underline-offset: 2px;
-}
-
-.list {
-  display: grid;
-  padding: var(--space-2);
-  border-radius: var(--radius-lg);
+  flex-direction: column;
+  gap: 20px;
   min-width: 0;
 }
 
-.row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--space-3);
-  padding: var(--space-3);
-  border-radius: var(--radius-sm);
-  min-width: 0;
-}
-
-.row + .row {
-  border-top: 1px solid var(--color-rule-hairline);
-}
-
-.row:hover {
-  background: var(--color-glass-hover);
-}
-
-.rowMain {
-  display: grid;
-  gap: 2px;
-  min-width: 0;
-}
-
-.rowMain > span {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.muted {
-  color: var(--color-text-muted);
-}
-
-.type {
-  flex: none;
-  padding: 3px 9px;
-  border-radius: var(--radius-xs);
-  background: var(--color-state-open-bg);
-  color: var(--color-state-open-text);
-  font-size: var(--type-caption-size);
-  font-weight: 600;
-  white-space: nowrap;
-}
-
-.profile {
-  display: grid;
-  gap: var(--space-3);
-  justify-items: start;
-  padding: var(--space-5);
-  border-radius: var(--radius-lg);
-  min-width: 0;
-}
-
-.progressRow {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: var(--space-3);
-  width: 100%;
-}
-
-.count {
-  color: var(--color-text-primary);
-  font-family: var(--font-mono);
-  font-variant-numeric: tabular-nums;
-}
-
-.track {
-  width: 100%;
-  height: 8px;
-  border-radius: 999px;
-  background: var(--color-state-open-bg);
-  overflow: hidden;
-}
-
-.bar {
-  display: block;
-  height: 100%;
-  border-radius: 999px;
-  background: var(--color-brand-forest);
-}
-
-@media (min-width: 720px) {
+@media (min-width: 560px) {
   .tiles {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
@@ -170,6 +76,14 @@
   }
 
   .split {
-    grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+    flex: 1;
+    grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr);
+  }
+
+  /* At least one screen tall, so the cards reach down to the same margin the
+     page keeps at the top. 72px is the app bar and 56px the main area's top
+     and bottom padding, both set in AppShell. */
+  .page {
+    min-height: calc(100vh - 72px - 56px);
   }
 }

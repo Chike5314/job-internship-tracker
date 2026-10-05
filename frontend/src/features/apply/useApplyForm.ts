@@ -53,6 +53,12 @@ function localValidationError(file: File): string | null {
   return null
 }
 
+/** "Field_Eng_CV_2026.pdf" becomes "Field Eng CV 2026", the label a CV
+ *  starts with until the applicant names it. */
+export function labelFromFileName(fileName: string): string {
+  return fileName.replace(/\.[^.]+$/, '').replace(/[_-]+/g, ' ').trim()
+}
+
 export function useApplyForm(
   jobId: string,
   requirements: DocumentRequirement[],
@@ -88,6 +94,10 @@ export function useApplyForm(
 
       const contentType = resolveContentType(file)
       dispatch({ type: 'SET_UPLOAD', key, upload: { kind: 'uploading', file, progress: 0 } })
+      // A CV is named after its file until the applicant types something else.
+      if (key === 'cv' && !state.newCvLabel) {
+        dispatch({ type: 'SET_NEW_CV_LABEL', label: labelFromFileName(file.name) })
+      }
 
       try {
         const upload =
@@ -111,23 +121,11 @@ export function useApplyForm(
           dispatch({ type: 'SET_UPLOAD', key, upload: { kind: 'uploading', file, progress: fraction } }),
         )
 
-        if (key === 'cv') {
-          // A CV uploaded here goes through the profile route so it joins the
-          // library for reuse later, and the library only records it once this
-          // confirms the upload landed. The application itself needs nothing but
-          // the key, so a confirm that fails costs the applicant a library entry
-          // and not the application they came here to send.
-          try {
-            await confirmCvUpload({
-              s3Key: upload.s3Key,
-              ...(state.newCvLabel ? { label: state.newCvLabel } : {}),
-            })
-          } catch {
-            // Deliberately swallowed. See above.
-          }
-        }
-
-        dispatch({ type: 'SET_UPLOAD', key, upload: { kind: 'uploaded', s3Key: upload.s3Key, fileName: file.name } })
+        dispatch({
+          type: 'SET_UPLOAD',
+          key,
+          upload: { kind: 'uploaded', s3Key: upload.s3Key, fileName: file.name, size: file.size },
+        })
       } catch {
         dispatch({
           type: 'SET_UPLOAD',
@@ -137,6 +135,33 @@ export function useApplyForm(
       }
     },
     [jobId, state.newCvLabel],
+  )
+
+  /**
+   * The third step for a CV uploaded here, run when the application is sent.
+   * The CV goes through the profile route so it joins the library for reuse
+   * later, and the library records it only once this confirms the upload
+   * landed. It waits for the send rather than the upload because the label is
+   * typed after the file is chosen, and a second confirm does not rename an
+   * entry. The application itself needs nothing but the key, so a confirm that
+   * fails costs the applicant a library entry and not the application.
+   */
+  const confirmCv = useCallback(async () => {
+    const upload = state.uploads.cv
+    if (upload?.kind !== 'uploaded') return
+    try {
+      await confirmCvUpload({
+        s3Key: upload.s3Key,
+        ...(state.newCvLabel.trim() ? { label: state.newCvLabel.trim() } : {}),
+      })
+    } catch {
+      // Deliberately swallowed. See above.
+    }
+  }, [state.uploads.cv, state.newCvLabel])
+
+  const clearUpload = useCallback(
+    (key: string) => dispatch({ type: 'SET_UPLOAD', key, upload: { kind: 'idle' } }),
+    [],
   )
 
   return {
@@ -149,5 +174,7 @@ export function useApplyForm(
     markSubmitAttempted,
     setServerFieldErrors,
     uploadField,
+    clearUpload,
+    confirmCv,
   }
 }

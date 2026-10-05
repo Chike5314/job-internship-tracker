@@ -18,7 +18,7 @@ export function ProfilePage() {
         <div style={{ display: 'grid', gap: 'var(--space-5)' }}>
           <ProfileForm profile={data.profile} />
           <TranscriptCard profile={data.profile} />
-          <div className="glass-dense" style={{ padding: 'var(--space-4)' }}>
+          <div className="glass-soft" style={{ padding: 'var(--space-4)' }}>
             <p className="t-body-sm">
               {data.profile.cvCount} {data.profile.cvCount === 1 ? 'CV' : 'CVs'} uploaded
             </p>

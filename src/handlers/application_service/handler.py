@@ -143,6 +143,7 @@ def submit_application(event: Dict[str, Any], _context: Any) -> Dict[str, Any]:
     if reuse_cv_id and not supplied_documents.get(documents.CV):
         supplied_documents[documents.CV] = _resolve_reused_cv(caller.user_id, reuse_cv_id)
 
+    _attach_profile_transcript(caller.user_id, requirements, supplied_documents)
     documents.validate_submission(requirements, supplied_documents, answers)
 
     cover_letter = optional_string(body, "coverLetter", max_length=10000)
@@ -216,6 +217,28 @@ def _resolve_reused_cv(applicant_id: str, cv_identifier: str) -> str:
         if entry.get("cvId") == cv_identifier:
             return entry["s3Key"]
     raise ValidationError("That CV is not one of your earlier uploads.")
+
+
+def _attach_profile_transcript(
+    applicant_id: str, requirements: List[Dict[str, Any]], supplied: Dict[str, str]
+) -> None:
+    """FR-2.1. The transcript kept on the profile goes with every application
+    whose posting asks for one, unless the applicant attached a different one.
+
+    The key is copied onto the application rather than looked up later, and
+    storage never overwrites a key, so the application keeps the transcript it
+    was sent with even after the profile's is replaced.
+    """
+    asks = any(
+        requirement.get("key") == documents.TRANSCRIPT
+        and requirement.get("kind", "FILE") == "FILE"
+        for requirement in requirements
+    )
+    if not asks or supplied.get(documents.TRANSCRIPT):
+        return
+    transcript_key = find_user(applicant_id).get("transcriptS3Key")
+    if transcript_key:
+        supplied[documents.TRANSCRIPT] = transcript_key
 
 
 def _assert_posting_open(job: Dict[str, Any]) -> None:
@@ -393,6 +416,7 @@ def amend_application(event: Dict[str, Any], _context: Any) -> Dict[str, Any]:
             documents.strip_unknown(requirements, body.get("answers") or {}, "TEXT")
         )
 
+    _attach_profile_transcript(caller.user_id, requirements, merged_documents)
     documents.validate_submission(requirements, merged_documents, merged_answers)
 
     changes: Dict[str, Any] = {

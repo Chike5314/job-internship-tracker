@@ -18,10 +18,29 @@ const TONE: Record<ApplicationStatus, string> = {
   WITHDRAWN: 'closed',
 }
 
-export function StatusTag({ status }: { status: ApplicationStatus }) {
+// The boards set the shorter word in a list row, where the tag shares a line
+// with a title, and the full one wherever the status is the subject.
+const SHORT_LABEL: Partial<Record<ApplicationStatus, string>> = {
+  INTERVIEW_SCHEDULED: 'Interview',
+  OFFER_ACCEPTED: 'Accepted',
+  OFFER_DECLINED: 'Declined',
+}
+
+export function StatusTag({
+  status,
+  compact,
+  label: override,
+}: {
+  status: ApplicationStatus
+  compact?: boolean
+  /** A different word in the same tone, for a reader other than the applicant. */
+  label?: string
+}) {
+  const label = override || (compact && SHORT_LABEL[status]) || APPLICATION_STATUS_LABEL[status]
   return (
     <span className={[styles.tag, styles[TONE[status]], 't-caption'].join(' ')}>
-      {APPLICATION_STATUS_LABEL[status]}
+      <span className={styles.dot} aria-hidden="true" />
+      {label}
     </span>
   )
 }

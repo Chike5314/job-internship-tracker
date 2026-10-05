@@ -17,7 +17,7 @@ export function ApplicantSidebar() {
   const isInternships = (search: string) => search.includes('INTERNSHIP')
 
   const destinations: RailDestination[] = [
-    { to: '/dashboard', label: 'Dashboard', icon: 'analytics' },
+    { to: '/dashboard', label: 'Dashboard', icon: 'dashboard' },
     {
       to: '/postings?type=FULL_TIME_JOB',
       label: 'Jobs',
@@ -30,12 +30,14 @@ export function ApplicantSidebar() {
       icon: 'internship',
       match: ({ pathname, search }) => pathname === '/postings' && isInternships(search),
     },
-    { to: '/applications', label: 'Applications', icon: 'document', count: openApplications },
-    { to: '/profile/cvs', label: 'CVs and documents', icon: 'cv' },
+    { to: '/applications', label: 'Applications', icon: 'applications', count: openApplications },
+    { to: '/profile/cvs', label: 'CVs and documents', icon: 'folder' },
     { to: '/notifications', label: 'Notifications', icon: 'bell', count: unread, urgent: true },
   ]
 
-  const secondary: RailDestination[] = [{ to: '/profile', label: 'Settings', icon: 'settings' }]
+  // end: true, or "/profile" (a prefix of "/profile/cvs") would also light up
+  // Settings while looking at CVs and documents.
+  const secondary: RailDestination[] = [{ to: '/profile', label: 'Settings', icon: 'settings', end: true }]
 
   return (
     <SideRail
