@@ -1,5 +1,5 @@
 /**
- * Reads and validates the four VITE_ variables this app needs. Failing here,
+ * Reads and validates the five VITE_ variables this app needs. Failing here,
  * at module load, beats discovering a missing one as a 401 loop later.
  */
 function required(name: keyof ImportMetaEnv): string {
@@ -17,4 +17,5 @@ export const env = Object.freeze({
   awsRegion: required('VITE_AWS_REGION'),
   cognitoUserPoolId: required('VITE_COGNITO_USER_POOL_ID'),
   cognitoUserPoolClientId: required('VITE_COGNITO_USER_POOL_CLIENT_ID'),
+  cognitoDomain: required('VITE_COGNITO_DOMAIN'),
 })
