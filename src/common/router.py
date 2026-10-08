@@ -11,7 +11,7 @@ import traceback
 from typing import Any, Callable, Dict, List, Tuple
 
 from common.errors import AppError, ValidationError
-from common.responses import respond
+from common.responses import respond, with_cors
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
@@ -59,7 +59,11 @@ def api_handler(router: Router) -> Callable:
             event.get("headers") or {}
         ).get("Origin")
         try:
-            return router.dispatch(event, context)
+            # Handlers build their responses without the request in hand, so
+            # the caller's origin is applied here, once, for every route.
+            # Otherwise a success always names the first allowed origin, and a
+            # second deployed frontend sees every request blocked by CORS.
+            return with_cors(router.dispatch(event, context), origin)
         except AppError as exc:
             # FR-11.4. Enough context to diagnose, nothing from a document.
             logger.warning(

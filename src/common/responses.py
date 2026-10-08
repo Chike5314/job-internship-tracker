@@ -31,6 +31,13 @@ def _cors_headers(origin: Optional[str] = None) -> Dict[str, str]:
     }
 
 
+def with_cors(response: Dict[str, Any], origin: Optional[str]) -> Dict[str, Any]:
+    """Names the caller's own origin on a response built without it."""
+    if isinstance(response, dict) and origin is not None:
+        response["headers"] = {**(response.get("headers") or {}), **_cors_headers(origin)}
+    return response
+
+
 def respond(
     status_code: int, body: Any, *, origin: Optional[str] = None
 ) -> Dict[str, Any]:
