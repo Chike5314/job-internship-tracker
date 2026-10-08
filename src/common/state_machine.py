@@ -4,7 +4,7 @@ FR-6.6. A transition that is not listed here is refused, and the refusal names
 the current status and what can be reached from it, which is what the validation
 table in section 3.11 asks for.
 """
-from typing import Dict, List, Set
+from typing import Dict, List, Optional, Set
 
 from common.errors import InvalidTransitionError
 
@@ -83,6 +83,23 @@ def history_entry(status: str, actor_id: str, note: str = "") -> Dict[str, str]:
     if note:
         entry["note"] = note[:500]
     return entry
+
+
+def status_before_rejection(history: List[Dict[str, str]]) -> Optional[str]:
+    """Where an application stood just before it was rejected.
+
+    Reinstating restores that status rather than guessing one, so an application
+    rejected out of an interview goes back to its interview rather than to the
+    bottom of the funnel. The history is the record, so it is also the answer.
+
+    None when the rejection is the first entry, which should not happen but is
+    cheaper to handle than to rule out: the caller falls back to UNDER_REVIEW,
+    since a recruiter has by definition already opened it.
+    """
+    for index in range(len(history) - 1, -1, -1):
+        if history[index].get("status") == REJECTED:
+            return history[index - 1].get("status") if index > 0 else None
+    return None
 
 
 def funnel_counts(statuses: List[str]) -> Dict[str, int]:

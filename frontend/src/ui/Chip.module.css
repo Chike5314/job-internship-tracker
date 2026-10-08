@@ -1,21 +1,47 @@
+/* Filter chip. Selecting one swaps the outline for a tonal fill and slides a
+   check in, so the state is readable without relying on colour alone. */
 .chip {
   display: inline-flex;
   align-items: center;
-  height: 32px;
-  padding: 0 var(--space-3);
-  border-radius: var(--radius-xs);
-  background: var(--color-glass-solid);
+  gap: 0;
+  height: 36px;
+  padding: 0 var(--space-4);
+  border-radius: var(--radius-round);
+  background: transparent;
   color: var(--color-text-secondary);
-  box-shadow: 0 0 0 1px var(--color-rule-hairline) inset;
-  transition: background-color 120ms ease;
+  box-shadow: 0 0 0 1px var(--m3-outline-variant) inset;
+  transition:
+    background-color var(--m3-dur-fast) var(--m3-effects),
+    color var(--m3-dur-fast) var(--m3-effects),
+    box-shadow var(--m3-dur-fast) var(--m3-effects),
+    padding var(--m3-dur) var(--m3-spring),
+    border-radius var(--m3-dur) var(--m3-spring);
 }
 
-.chip:hover {
-  background-image: linear-gradient(var(--color-glass-hover), var(--color-glass-hover));
+.chip::before {
+  content: '';
+  width: 0;
+  height: 14px;
+  margin-right: 0;
+  opacity: 0;
+  background: currentColor;
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M9 16.2 4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4z'/%3E%3C/svg%3E") center / contain no-repeat;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M9 16.2 4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4z'/%3E%3C/svg%3E") center / contain no-repeat;
+  transition:
+    width var(--m3-dur) var(--m3-spring),
+    margin var(--m3-dur) var(--m3-spring),
+    opacity var(--m3-dur-fast) var(--m3-effects);
 }
 
 .selected {
-  background: var(--color-active-wash);
-  color: var(--color-state-active-text);
-  box-shadow: 0 0 0 1px var(--color-brand-forest) inset;
+  background: var(--m3-primary-container);
+  color: var(--m3-on-primary-container);
+  box-shadow: none;
+  border-radius: var(--m3-shape-full);
+}
+
+.selected::before {
+  width: 14px;
+  margin-right: var(--space-2);
+  opacity: 1;
 }

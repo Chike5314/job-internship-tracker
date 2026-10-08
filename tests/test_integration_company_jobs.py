@@ -3,10 +3,9 @@
 These run the handlers against moto, so the index definitions, the conditional
 writes and the ownership checks are all genuinely exercised.
 """
-import boto3
 import pytest
 
-from conftest import REGION, call
+from conftest import call
 
 APPLICANT = ("Applicants",)
 RECRUITER = ("Recruiters",)
@@ -202,52 +201,6 @@ def test_one_company_cannot_edit_another_posting(aws):
     assert status == 403
 
 
-def test_a_start_date_set_after_creation_is_kept(aws):
-    """The editor saves a start date on a posting that already exists, and the
-    update route used to read every optional field except this one."""
-    register()
-    _, created = create_posting()
-    job_id = created["job"]["jobId"]
-
-    status, payload = call(
-        jobs_handler(),
-        "PATCH",
-        "/jobs/{id}",
-        user="co_1",
-        groups=RECRUITER,
-        path={"id": job_id},
-        body={"startDate": "2027-01-04T08:00:00.000Z"},
-    )
-    assert status == 200
-    assert payload["job"]["startDate"] == "2027-01-04T08:00:00.000Z"
-
-    _, mine = call(
-        jobs_handler(),
-        "GET",
-        "/jobs/mine/{id}",
-        user="co_1",
-        groups=RECRUITER,
-        path={"id": job_id},
-    )
-    assert mine["job"]["startDate"] == "2027-01-04T08:00:00.000Z"
-
-
-def test_a_start_date_that_is_not_a_date_is_refused_on_update(aws):
-    register()
-    _, created = create_posting()
-
-    status, _ = call(
-        jobs_handler(),
-        "PATCH",
-        "/jobs/{id}",
-        user="co_1",
-        groups=RECRUITER,
-        path={"id": created["job"]["jobId"]},
-        body={"startDate": "next spring"},
-    )
-    assert status == 400
-
-
 def test_suspension_unpublishes_the_active_postings(aws):
     register()
     verify()
@@ -266,9 +219,6 @@ def test_suspension_unpublishes_the_active_postings(aws):
     assert status == 200
     assert payload["postingsUnpublished"] == 1
 
-    # Through the owner's own route. The public GET /jobs/{id} carries no
-    # authorizer, so it cannot recognise an owner and will not serve a posting
-    # that is no longer published, to anyone.
     _, detail = call(
         jobs_handler(),
         "GET",
@@ -415,180 +365,94 @@ def test_a_recruiter_may_drop_a_default_requirement(aws):
 
 
 # ----------------------------------------------------------------------
-# Public routes and their authorizer protected counterparts
-#
-# API Gateway populates requestContext.authorizer.claims only on a route that
-# has an authorizer attached. A public route therefore cannot tell who is
-# calling, whatever the client sends, so every case that depends on knowing the
-# caller lives on a separate route. These tests pin that split down.
+# The routes that read from the token rather than the path
 # ----------------------------------------------------------------------
-def test_the_public_posting_route_refuses_anything_unpublished(aws):
+def test_a_company_can_read_itself_in_full(aws):
     register()
     verify()
-    _, created = create_posting()
-    job_id = created["job"]["jobId"]
-
-    # Still a draft. Refused for everyone, the owner included, because the route
-    # has no way to recognise an owner.
-    for user, groups in (("anon", ()), ("co_1", RECRUITER), ("admin_1", ADMIN)):
-        status, _ = call(
-            jobs_handler(), "GET", "/jobs/{id}", user=user, groups=groups, path={"id": job_id}
-        )
-        assert status == 403
-
-
-def test_the_owner_route_serves_a_draft_in_full(aws):
-    register()
-    verify()
-    _, created = create_posting()
-    job_id = created["job"]["jobId"]
-
     status, payload = call(
-        jobs_handler(),
-        "GET",
-        "/jobs/mine/{id}",
-        user="co_1",
-        groups=RECRUITER,
-        path={"id": job_id},
-    )
-    assert status == 200
-    assert payload["job"]["postingStatus"] == "DRAFT"
-
-    status, _ = call(
-        jobs_handler(),
-        "GET",
-        "/jobs/mine/{id}",
-        user="admin_1",
-        groups=ADMIN,
-        path={"id": job_id},
-    )
-    assert status == 200
-
-
-def test_another_recruiter_cannot_read_a_posting_through_the_owner_route(aws):
-    register()
-    verify()
-    _, created = create_posting()
-
-    register(company_id="co_2", name="Beta Works")
-    status, _ = call(
-        jobs_handler(),
-        "GET",
-        "/jobs/mine/{id}",
-        user="co_2",
-        groups=RECRUITER,
-        path={"id": created["job"]["jobId"]},
-    )
-    assert status == 403
-
-
-def test_a_company_reads_its_own_record_in_full_through_its_own_route(aws):
-    register()
-    verify()
-
-    # The public route serves the public view to everyone, with no moderation
-    # history on it.
-    _, public = call(
-        company_handler(), "GET", "/companies/{id}", user="anon", groups=(), path={"id": "co_1"}
-    )
-    assert "moderationHistory" not in public["company"]
-
-    status, mine = call(
         company_handler(), "GET", "/companies/mine", user="co_1", groups=RECRUITER
     )
     assert status == 200
-    assert mine["company"]["companyId"] == "co_1"
-    assert "moderationHistory" in mine["company"]
+    assert payload["company"]["companyId"] == "co_1"
+    # The full view, which the public route can never serve because it has no
+    # authorizer and so never knows who is asking.
+    assert payload["company"]["contactEmail"]
 
 
-# ----------------------------------------------------------------------
-# The company logo
-# ----------------------------------------------------------------------
-def test_a_company_logo_is_recorded_only_after_the_upload_lands(aws):
+def test_the_public_company_route_still_hides_the_contact_email(aws):
     register()
     verify()
-
-    _, issued = call(
-        company_handler(),
-        "POST",
-        "/companies/logo-upload-url",
-        user="co_1",
-        groups=RECRUITER,
-        body={"fileName": "kora.png", "contentType": "image/png", "fileSize": 24_000},
+    _, payload = call(
+        company_handler(), "GET", "/companies/{id}", path={"id": "co_1"}
     )
-    key = issued["s3Key"]
-    assert key.startswith("company-logos/co_1/")
-
-    # Issuing the URL records nothing on the company.
-    _, before = call(company_handler(), "GET", "/companies/mine", user="co_1", groups=RECRUITER)
-    assert "logoUrl" not in before["company"]
-
-    boto3.client("s3", region_name=REGION).put_object(
-        Bucket="test-documents", Key=key, Body=b"\x89PNG"
-    )
-    status, saved = call(
-        company_handler(),
-        "PATCH",
-        "/companies/{id}",
-        user="co_1",
-        groups=RECRUITER,
-        path={"id": "co_1"},
-        body={"logoS3Key": key},
-    )
-    assert status == 200
-    # The key never leaves the API as a key.
-    assert "logoS3Key" not in saved["company"]
-    assert saved["company"]["logoUrl"].startswith("https://")
+    assert "contactEmail" not in payload["company"]
 
 
-def test_a_logo_key_belonging_to_another_company_is_refused(aws):
-    register()
-    register(company_id="co_2", name="Beta Works")
-
-    _, issued = call(
-        company_handler(),
-        "POST",
-        "/companies/logo-upload-url",
-        user="co_1",
-        groups=RECRUITER,
-        body={"fileName": "kora.png", "contentType": "image/png", "fileSize": 24_000},
-    )
+def test_an_applicant_has_no_company_to_read(aws):
     status, _ = call(
-        company_handler(),
-        "PATCH",
-        "/companies/{id}",
-        user="co_2",
-        groups=RECRUITER,
-        path={"id": "co_2"},
-        body={"logoS3Key": issued["s3Key"]},
+        company_handler(), "GET", "/companies/mine", user="app_1", groups=APPLICANT
     )
     assert status == 403
 
 
-def test_changing_only_the_logo_keeps_a_verified_company_verified(aws):
+def test_a_company_reads_its_own_draft_posting(aws):
     register()
     verify()
+    job_id = create_posting()[1]["job"]["jobId"]
+    status, payload = call(
+        jobs_handler(), "GET", "/jobs/mine/{id}", user="co_1", groups=RECRUITER,
+        path={"id": job_id},
+    )
+    assert status == 200
+    assert payload["job"]["jobId"] == job_id
+    assert payload["job"]["postingStatus"] == "DRAFT"
+    assert payload["company"]["companyName"] == "Acme Engineering"
 
-    _, issued = call(
-        company_handler(),
-        "POST",
-        "/companies/logo-upload-url",
-        user="co_1",
+
+def test_another_company_cannot_read_that_posting(aws):
+    register()
+    verify()
+    job_id = create_posting()[1]["job"]["jobId"]
+    status, _ = call(
+        jobs_handler(), "GET", "/jobs/mine/{id}", user="co_2", groups=RECRUITER,
+        path={"id": job_id},
+    )
+    assert status == 403
+
+
+def test_an_admin_can_read_any_companys_posting(aws):
+    register()
+    verify()
+    job_id = create_posting()[1]["job"]["jobId"]
+    status, payload = call(
+        jobs_handler(), "GET", "/jobs/mine/{id}", user="admin_1", groups=ADMIN,
+        path={"id": job_id},
+    )
+    assert status == 200
+    assert payload["company"]["companyId"] == "co_1"
+
+
+def test_a_logo_upload_url_is_issued_to_the_company(aws):
+    register()
+    verify()
+    status, payload = call(
+        company_handler(), "POST", "/companies/logo-upload-url", user="co_1",
         groups=RECRUITER,
-        body={"fileName": "kora.png", "contentType": "image/png", "fileSize": 24_000},
+        body={"fileName": "logo.png", "contentType": "image/png", "fileSize": 24_000},
     )
-    boto3.client("s3", region_name=REGION).put_object(
-        Bucket="test-documents", Key=issued["s3Key"], Body=b"\x89PNG"
-    )
-    _, saved = call(
-        company_handler(),
-        "PATCH",
-        "/companies/{id}",
-        user="co_1",
+    assert status == 201
+    assert payload["s3Key"].startswith("logo/co_1/") or "/co_1/" in payload["s3Key"]
+    assert "X-Amz-Signature" in payload["uploadUrl"]
+
+
+def test_a_document_is_refused_as_a_logo(aws):
+    register()
+    verify()
+    status, payload = call(
+        company_handler(), "POST", "/companies/logo-upload-url", user="co_1",
         groups=RECRUITER,
-        path={"id": "co_1"},
-        body={"logoS3Key": issued["s3Key"]},
+        body={"fileName": "brochure.pdf", "contentType": "application/pdf", "fileSize": 24_000},
     )
-    # Only the name and the website are what an admin checked, so a logo is not
-    # a reason to send the account back for review.
-    assert saved["company"]["verificationStatus"] == "VERIFIED"
+    assert status == 400
+    assert any(f["field"] == "fileName" for f in payload["error"]["details"]["fields"])

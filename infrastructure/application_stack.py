@@ -59,11 +59,6 @@ class ApplicationStack(cdk.Stack):
             visibility_timeout=cdk.Duration.seconds(180),
             retention_period=cdk.Duration.days(4),
             enforce_ssl=True,
-            # Long polling. A receive that finds nothing waits up to twenty
-            # seconds instead of returning at once, which is the difference
-            # between a handful of requests a minute on an idle queue and a
-            # continuous stream of them.
-            receive_message_wait_time=cdk.Duration.seconds(20),
             dead_letter_queue=sqs.DeadLetterQueue(
                 max_receive_count=3, queue=self.submission_dlq
             ),
@@ -176,10 +171,6 @@ class ApplicationStack(cdk.Stack):
         users.grant_read_data(self.company_fn)
         notifications.grant_read_write_data(self.company_fn)
         applications.grant_read_data(self.company_fn)
-        # The company's own logo: a presigned PUT to write it and a presigned
-        # GET to read it back. Bytes never pass through the function either way.
-        bucket.grant_put(self.company_fn)
-        bucket.grant_read(self.company_fn)
         # Managing each company's filtered subscription to the alert topic, and
         # creating a recruiter account when an admin onboards a company by hand.
         self.recruiter_topic.grant_publish(self.company_fn)
@@ -259,21 +250,12 @@ class ApplicationStack(cdk.Stack):
         )
 
         # FR-5.9. The processor consumes submissions on its own schedule.
-        #
-        # The mapping can be deployed switched off. Lambda polls a queue it is
-        # mapped to around the clock, so on an idle development account the
-        # consumer spends the free tier's million requests a month on empty
-        # receives and nothing else. Off, submissions still enqueue and wait out
-        # the queue's four day retention until it is switched back on, so a demo
-        # loses nothing as long as it is on while the demo runs. See
-        # Config.submission_consumer_enabled.
         self.processor_fn.add_event_source(
             event_sources.SqsEventSource(
                 self.submission_queue,
                 batch_size=5,
                 max_batching_window=cdk.Duration.seconds(10),
                 report_batch_item_failures=True,
-                enabled=config.submission_consumer_enabled,
             )
         )
 
@@ -355,16 +337,12 @@ class ApplicationStack(cdk.Stack):
         route("/profile/cvs", "GET", self.auth_fn)
         route("/profile/cvs", "POST", self.auth_fn)
 
-        # Companies and admin moderation.
-        #
-        # Only the two read routes an anonymous applicant needs are public, and
-        # neither of them reads a caller. A route with no authorizer never has
-        # request context claims populated by API Gateway, whatever the client
-        # sends in the Authorization header, so a handler behind one cannot tell
-        # who is calling. Registration keys the record by the caller's Cognito
-        # subject, so it has to be authorizer protected or it can never succeed.
-        route("/companies", "POST", self.company_fn)
+        # Companies and admin moderation
+        route("/companies", "POST", self.company_fn, public=True)
         route("/companies", "GET", self.company_fn)
+        # Literal segments, so they resolve ahead of /companies/{id}. That
+        # route is public and therefore blind to its caller, which is the
+        # whole reason these exist separately.
         route("/companies/mine", "GET", self.company_fn)
         route("/companies/logo-upload-url", "POST", self.company_fn)
         route("/companies/{id}", "GET", self.company_fn, public=True)
@@ -385,6 +363,7 @@ class ApplicationStack(cdk.Stack):
         route("/jobs/{id}/analytics", "GET", self.jobs_fn)
         route("/companies/{id}/analytics", "GET", self.jobs_fn)
         route("/companies/{id}/interviews", "GET", self.jobs_fn)
+        route("/companies/{id}/applicants", "GET", self.jobs_fn)
         route("/companies/{id}/export", "POST", self.jobs_fn)
 
         # Applications
@@ -394,6 +373,7 @@ class ApplicationStack(cdk.Stack):
         route("/applications/{id}", "GET", self.application_fn)
         route("/applications/{id}", "PATCH", self.application_fn)
         route("/applications/{id}/status", "PATCH", self.application_fn)
+        route("/applications/{id}/reinstate", "POST", self.application_fn)
         route("/applications/{id}/interview", "POST", self.application_fn)
         route("/applications/{id}/interview", "PATCH", self.application_fn)
 

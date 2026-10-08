@@ -1,0 +1,243 @@
+/*
+ * Material 3 Expressive layer.
+ *
+ * Additive on purpose. tokens.css is generated from docs/brand/tokens.json and
+ * must not be hand-edited, so everything Material needs lives here and is
+ * derived from the brand tokens: forest is the primary role, vermilion the
+ * tertiary (attention) role, the paper/ink neutrals are the surfaces. Change a
+ * brand token and every role below follows, in both themes.
+ *
+ * Four things make it "expressive" rather than plain Material 3:
+ *   1. Shape: pill-first, and shapes morph (pill -> rounded square on press).
+ *   2. Motion: spring easings with a little overshoot for movement in space,
+ *      and calm non-overshooting curves for colour and opacity.
+ *   3. Colour: tonal containers instead of outlines, and a stronger primary.
+ *   4. Imagery: organic blob shapes behind illustrations (see ui/illustrations).
+ */
+:root {
+  /* ---- Shape scale --------------------------------------------------
+     One scale, carried by the generated radius tokens, which hold the
+     Material 3 steps. These names are aliases so that Material-named and
+     brand-named rules in the same stylesheet cannot drift apart: editing
+     docs/brand/tokens.json moves every corner in the app at once. */
+  --m3-shape-xs: var(--radius-xs);
+  --m3-shape-sm: var(--radius-sm);
+  --m3-shape-md: var(--radius-md);
+  --m3-shape-lg: var(--radius-lg);
+  --m3-shape-xl: var(--radius-xl);
+  --m3-shape-2xl: var(--radius-2xl);
+  --m3-shape-full: var(--radius-round);
+  /* What a pill button relaxes into while it is pressed. */
+  --m3-shape-pressed: var(--radius-md);
+
+  /* ---- Motion ------------------------------------------------------- */
+  /* Spatial springs: things that move or change size. They overshoot. */
+  --m3-spring-fast: cubic-bezier(0.42, 1.67, 0.21, 0.9);
+  --m3-spring: cubic-bezier(0.38, 1.21, 0.22, 1);
+  --m3-spring-slow: cubic-bezier(0.39, 1.29, 0.35, 0.98);
+  /* Effects: colour and opacity. These never overshoot. */
+  --m3-effects: cubic-bezier(0.31, 0.94, 0.34, 1);
+  --m3-dur-fast: 200ms;
+  --m3-dur: 350ms;
+  --m3-dur-slow: 550ms;
+
+  /* ---- State layers ------------------------------------------------- */
+  --m3-state-hover: 0.08;
+  --m3-state-focus: 0.1;
+  --m3-state-press: 0.12;
+}
+
+/* ---- Colour roles, per theme ------------------------------------------ */
+[data-theme='paper'] {
+  --m3-primary: var(--color-forest-500);
+  --m3-on-primary: var(--color-n-0);
+  --m3-primary-container: var(--color-forest-100);
+  --m3-on-primary-container: var(--color-forest-800);
+  --m3-tertiary: var(--color-verm-600);
+  --m3-tertiary-container: var(--color-verm-100);
+  --m3-on-tertiary-container: var(--color-verm-800);
+  --m3-surface: var(--color-n-100);
+  --m3-surface-low: var(--color-n-50);
+  --m3-surface-container: var(--color-surface-container);
+  --m3-surface-high: var(--color-surface-high);
+  --m3-outline: var(--color-n-500);
+  --m3-outline-variant: var(--color-n-300);
+}
+
+[data-theme='ink'] {
+  --m3-primary: var(--color-forest-300);
+  --m3-on-primary: var(--color-forest-950);
+  --m3-primary-container: var(--color-forest-700);
+  --m3-on-primary-container: var(--color-forest-100);
+  --m3-tertiary: var(--color-verm-300);
+  --m3-tertiary-container: var(--color-verm-800);
+  --m3-on-tertiary-container: var(--color-verm-100);
+  --m3-surface: var(--color-n-1000);
+  --m3-surface-low: var(--color-n-950);
+  --m3-surface-container: var(--color-surface-container);
+  --m3-surface-high: var(--color-surface-high);
+  --m3-outline: var(--color-n-500);
+  --m3-outline-variant: var(--color-n-800);
+}
+
+/* ---- State layer ------------------------------------------------------
+   Opt in with data-ripple. The layer is a pseudo-element painted in the
+   element's own text colour, so one rule serves every variant and theme. */
+[data-ripple] {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+  -webkit-tap-highlight-color: transparent;
+}
+
+[data-ripple]::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  background: currentColor;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--m3-dur-fast) var(--m3-effects);
+}
+
+[data-ripple]:hover:not(:disabled):not([aria-disabled='true'])::after {
+  opacity: var(--m3-state-hover);
+}
+
+[data-ripple]:focus-visible::after {
+  opacity: var(--m3-state-focus);
+}
+
+[data-ripple]:active:not(:disabled):not([aria-disabled='true'])::after {
+  opacity: var(--m3-state-press);
+}
+
+.m3-ripple {
+  position: absolute;
+  z-index: -1;
+  border-radius: 50%;
+  background: currentColor;
+  opacity: 0.16;
+  pointer-events: none;
+  transform: scale(0);
+  animation: m3-ripple 650ms var(--m3-effects) forwards;
+}
+
+@keyframes m3-ripple {
+  to {
+    transform: scale(1);
+    opacity: 0;
+  }
+}
+
+/* ---- Entrances --------------------------------------------------------- */
+@keyframes m3-rise {
+  from {
+    opacity: 0;
+    transform: translateY(14px) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes m3-pop {
+  from {
+    opacity: 0;
+    transform: scale(0.82);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes m3-float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-8px);
+  }
+}
+
+@keyframes m3-morph {
+  0%,
+  100% {
+    border-radius: 62% 38% 55% 45% / 48% 58% 42% 52%;
+  }
+  33% {
+    border-radius: 42% 58% 38% 62% / 60% 40% 60% 40%;
+  }
+  66% {
+    border-radius: 55% 45% 62% 38% / 40% 55% 45% 60%;
+  }
+}
+
+/* Staggered children: set --i on each child, or let :nth-child do it. */
+.m3-stagger > * {
+  animation: m3-rise var(--m3-dur-slow) var(--m3-spring) both;
+  animation-delay: calc(var(--i, 0) * 55ms);
+}
+
+.m3-stagger > :nth-child(1) { --i: 0; }
+.m3-stagger > :nth-child(2) { --i: 1; }
+.m3-stagger > :nth-child(3) { --i: 2; }
+.m3-stagger > :nth-child(4) { --i: 3; }
+.m3-stagger > :nth-child(5) { --i: 4; }
+.m3-stagger > :nth-child(6) { --i: 5; }
+.m3-stagger > :nth-child(n + 7) { --i: 6; }
+
+/* Illustration helpers. */
+.m3-float {
+  animation: m3-float 6s ease-in-out infinite;
+}
+
+.m3-blob {
+  animation: m3-morph 14s ease-in-out infinite;
+}
+
+/* ---- Interactive surfaces ---------------------------------------------
+   A card that is a link lifts on hover and settles on press. */
+a.glass-soft,
+button.glass-soft,
+a.glass-dense {
+  transition:
+    transform var(--m3-dur) var(--m3-spring),
+    box-shadow var(--m3-dur-fast) var(--m3-effects),
+    background-color var(--m3-dur-fast) var(--m3-effects);
+}
+
+a.glass-soft:hover,
+button.glass-soft:hover {
+  transform: translateY(-3px);
+}
+
+a.glass-soft:active,
+button.glass-soft:active,
+a.glass-dense:active {
+  transform: translateY(0) scale(0.985);
+}
+
+/* The glass tiers' own corners stay in glass.css, which owns everything else
+   about them. Those radii are already the Material steps, because the radius
+   tokens now carry them, so this layer adds movement and leaves shape alone. */
+
+/* ---- Reduced motion: keep the state changes, drop the movement ---------- */
+@media (prefers-reduced-motion: reduce) {
+  .m3-stagger > *,
+  .m3-float,
+  .m3-blob,
+  .m3-ripple {
+    animation: none !important;
+  }
+
+  a.glass-soft:hover,
+  button.glass-soft:hover {
+    transform: none;
+  }
+}

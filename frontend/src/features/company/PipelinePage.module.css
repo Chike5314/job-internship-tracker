@@ -153,7 +153,7 @@
 .closePosting {
   height: 42px;
   padding: 0 var(--space-3);
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-round);
   color: var(--color-attention-text);
   font-size: 14px;
   font-weight: 600;
@@ -316,7 +316,7 @@
 .bulkQuiet {
   height: 40px;
   padding: 0 14px;
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-round);
   font-size: var(--type-body-sm-size);
   font-weight: 600;
   white-space: nowrap;
@@ -402,7 +402,7 @@
 .rejectConfirm {
   height: 42px;
   padding: 0 var(--space-4);
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-round);
   background: var(--color-attention-text);
   color: var(--color-on-brand);
   font-size: 14px;
@@ -465,7 +465,7 @@
   justify-content: center;
   width: 32px;
   height: 32px;
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-round);
   background: var(--color-glass-solid);
   color: var(--color-text-primary);
 }
@@ -538,7 +538,7 @@
   gap: 6px;
   height: 38px;
   padding: 0 14px;
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-round);
   background: var(--color-action-fill);
   color: var(--color-on-brand);
   font-size: var(--type-body-sm-size);
@@ -604,4 +604,34 @@
     margin-right: auto;
     align-items: flex-start;
   }
+}
+
+/* The reject bin. A toggle rather than a separate screen: the rejections are
+   already in this column, and what a recruiter looking for a mistake needs is
+   to stop reading past the accepted and the withdrawn to find one. It appears
+   only when there is something in it. */
+.bin {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  align-self: flex-start;
+  height: 28px;
+  margin-top: var(--space-2);
+  padding: 0 var(--space-3);
+  border-radius: var(--radius-round);
+  background: var(--color-state-closed-bg);
+  color: var(--color-text-muted);
+  font-size: var(--type-caption-size);
+  font-weight: 600;
+}
+
+.bin:hover {
+  color: var(--color-text-primary);
+}
+
+/* On, it carries the attention tone, because the column is now showing a
+   filtered subset and that should not be mistakable for the whole of it. */
+.binOn {
+  background: var(--color-attention-wash);
+  color: var(--color-attention-text);
 }

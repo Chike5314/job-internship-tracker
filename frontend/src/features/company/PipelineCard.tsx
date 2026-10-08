@@ -2,7 +2,7 @@ import type { PipelineRow } from '@/api/types'
 import { StatusTag } from '@/ui/StatusTag'
 import { formatDateShort } from '@/lib/formatDate'
 import { initials } from '@/lib/initials'
-import { applicantName, chipTime, recruiterShortLabel, timeInStage } from './pipeline'
+import { applicantName, chipTime, hasPassed, recruiterShortLabel, timeInStage } from './pipeline'
 import styles from './PipelineCard.module.css'
 
 const CHIP_WORD = { PROPOSED: 'Awaiting', CONFIRMED: 'Confirmed', DECLINED: 'Declined', CANCELLED: 'Cancelled' }
@@ -35,6 +35,10 @@ export function PipelineCard({
   const unopened = row.status === 'SUBMITTED'
   const interview = row.status === 'INTERVIEW_SCHEDULED' ? row.nextInterview : null
   const awaiting = interview?.state === 'PROPOSED'
+  // The clock passing an interview writes nothing to the application, so a card
+  // can sit here showing a time that has already been and gone. Saying so is
+  // the only thing that tells a recruiter this one is theirs to move.
+  const passed = Boolean(interview && hasPassed(interview.scheduledAt))
 
   return (
     <li
@@ -65,8 +69,13 @@ export function PipelineCard({
         </span>
 
         {interview && (
-          <span className={[styles.chip, awaiting ? styles.chipAwaiting : styles.chipConfirmed].join(' ')}>
-            {chipTime(interview.scheduledAt)} · {CHIP_WORD[interview.state]}
+          <span
+            className={[
+              styles.chip,
+              passed ? styles.chipPassed : awaiting ? styles.chipAwaiting : styles.chipConfirmed,
+            ].join(' ')}
+          >
+            {chipTime(interview.scheduledAt)} · {passed ? 'needs an outcome' : CHIP_WORD[interview.state]}
           </span>
         )}
 

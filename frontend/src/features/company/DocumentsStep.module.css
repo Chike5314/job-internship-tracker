@@ -78,7 +78,7 @@
   display: flex;
   gap: 2px;
   padding: 3px;
-  border-radius: 9px;
+  border-radius: var(--radius-md);
   background: var(--color-glass-solid);
   box-shadow: var(--shadow-inset-edge), inset 0 0 0 1px var(--color-rule-hairline);
 }
@@ -86,7 +86,7 @@
 .needOption {
   flex: 1;
   height: 30px;
-  border-radius: 7px;
+  border-radius: var(--radius-round);
   color: var(--color-text-muted);
   font-size: var(--type-caption-size);
   font-weight: 600;
@@ -118,7 +118,7 @@
   justify-content: center;
   width: 40px;
   height: 36px;
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-round);
 }
 
 .remove {
@@ -151,7 +151,7 @@
 .addButton {
   height: 42px;
   padding: 0 var(--space-4);
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-round);
   background: var(--color-glass-solid);
   box-shadow: inset 0 0 0 1px var(--color-rule-strong);
   color: var(--color-text-primary);

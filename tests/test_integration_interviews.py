@@ -394,68 +394,196 @@ def test_account_analytics_aggregate_across_postings(posting):
     assert payload["byOpportunityType"]["FULL_TIME_JOB"] == 1
 
 
-def test_the_pipeline_row_carries_the_next_interview_and_the_time_in_stage(posting):  # noqa: F811
-    """The board needs both to draw a card, and neither is on the application
-    list shape, so the pipeline row has to supply them."""
-    application_id = submitted_application(posting)
-
-    status, payload = call(
-        jobs_handler(),
-        "GET",
-        "/jobs/{id}/applications",
-        user="co_1",
-        groups=RECRUITER,
-        path={"id": posting},
+# ----------------------------------------------------------------------
+# Reinstating a rejection
+# ----------------------------------------------------------------------
+def reinstate(application_id, company="co_1", groups=RECRUITER, body=None):
+    return call(
+        app_handler(),
+        "POST",
+        "/applications/{id}/reinstate",
+        user=company,
+        groups=groups,
+        path={"id": application_id},
+        body=body or {},
     )
-    assert status == 200
-    row = payload["applications"][0]
-    # Nothing has moved yet, so the stage began when the application arrived.
-    # The submission history entry and appliedAt are written by separate calls,
-    # so they land milliseconds apart rather than on the same instant.
-    assert row["statusChangedAt"] >= row["appliedAt"]
-    assert row["statusChangedAt"][:16] == row["appliedAt"][:16]
-    assert row["nextInterview"] is None
-
-    scheduled_status, _ = schedule(application_id, days=4.0)
-    assert scheduled_status == 201
-
-    _, after = call(
-        jobs_handler(),
-        "GET",
-        "/jobs/{id}/applications",
-        user="co_1",
-        groups=RECRUITER,
-        path={"id": posting},
-    )
-    moved = after["applications"][0]
-    assert moved["status"] == "INTERVIEW_SCHEDULED"
-    assert moved["nextInterview"]["state"] == "PROPOSED"
-    assert moved["nextInterview"]["scheduledAt"]
-    # Scheduling is a status change, so the stage clock restarts from it.
-    assert moved["statusChangedAt"] > moved["appliedAt"]
 
 
-def test_a_declined_interview_leaves_no_next_interview_on_the_row(posting):  # noqa: F811
-    application_id = submitted_application(posting)
-    assert schedule(application_id, days=4.0)[0] == 201
-
-    declined, _ = call(
+def reject(application_id, company="co_1"):
+    return call(
         app_handler(),
         "PATCH",
-        "/applications/{id}/interview",
-        user="app_1",
-        groups=APPLICANT,
+        "/applications/{id}/status",
+        user=company,
+        groups=RECRUITER,
         path={"id": application_id},
-        body={"action": "DECLINE"},
+        body={"status": "REJECTED"},
     )
-    assert declined == 200
 
-    _, payload = call(
+
+def test_reinstating_restores_the_status_held_before_the_rejection(posting):
+    """An application rejected out of an interview goes back to its interview,
+    not to the bottom of the funnel."""
+    application_id = submitted_application(posting)
+    schedule(application_id, days=3)
+    reject(application_id)
+
+    status, payload = reinstate(application_id)
+    assert status == 200
+    assert payload["application"]["status"] == "INTERVIEW_SCHEDULED"
+
+
+def test_reinstating_puts_a_future_interview_back_on_the_calendar(posting):
+    """The rejection took the row off the sparse index. Reinstating has to put
+    it back, which only happens if the route runs interviews.apply again."""
+    application_id = submitted_application(posting)
+    schedule(application_id, days=3)
+    reject(application_id)
+    assert calendar()[1]["count"] == 0
+
+    reinstate(application_id)
+    _, payload = calendar()
+    assert payload["count"] == 1
+    assert payload["interviews"][0]["applicationId"] == application_id
+
+
+def test_the_rejection_stays_in_the_history(posting):
+    """Nothing is overwritten: the mistake and its correction both read."""
+    application_id = submitted_application(posting)
+    reject(application_id)
+    _, payload = reinstate(application_id)
+
+    statuses = [entry["status"] for entry in payload["application"]["statusHistory"]]
+    assert "REJECTED" in statuses
+    assert statuses[-1] == "UNDER_REVIEW"
+
+
+def test_only_a_rejected_application_can_be_reinstated(posting):
+    application_id = submitted_application(posting)
+    status, _ = reinstate(application_id)
+    assert status == 409
+
+
+def test_another_company_cannot_reinstate(posting):
+    application_id = submitted_application(posting)
+    reject(application_id)
+    status, _ = reinstate(application_id, company="co_2")
+    assert status == 403
+
+
+def test_reinstating_twice_leaves_one_correction(posting):
+    """The conditional write is what stops two recruiters both undoing it."""
+    application_id = submitted_application(posting)
+    reject(application_id)
+    assert reinstate(application_id)[0] == 200
+
+    second, _ = reinstate(application_id)
+    assert second == 409
+
+
+# ----------------------------------------------------------------------
+# An interview that has happened
+# ----------------------------------------------------------------------
+def let_the_interview_pass(application_id, days_ago=3.0):
+    """What the clock does, done to one row.
+
+    An application carries nextInterviewAt until something writes to it, and
+    time passing writes nothing, so this is the real state of any interview
+    nobody recorded an outcome for.
+    """
+    from common import dynamo
+
+    dynamo.applications().update_item(
+        Key={"applicationId": application_id},
+        UpdateExpression="SET nextInterviewAt = :past, nextInterview.scheduledAt = :past",
+        ExpressionAttributeValues={":past": in_days(-days_ago)},
+    )
+
+
+def test_an_interview_still_ahead_is_on_the_calendar(posting):
+    application_id = submitted_application(posting)
+    schedule(application_id, days=5)
+
+    _, payload = calendar()
+    assert payload["count"] == 1
+    assert payload["awaitingOutcome"] == []
+
+
+def test_an_interview_that_has_passed_moves_to_awaiting_an_outcome(posting):
+    """The whole point. It used to vanish from every screen while the account
+    went on counting the application at INTERVIEW_SCHEDULED."""
+    application_id = submitted_application(posting)
+    schedule(application_id, days=5)
+    let_the_interview_pass(application_id)
+
+    _, payload = calendar()
+    assert payload["count"] == 0, "it is not something coming up any more"
+    assert len(payload["awaitingOutcome"]) == 1
+    assert payload["awaitingOutcome"][0]["applicationId"] == application_id
+    assert payload["awaitingOutcome"][0]["applicationStatus"] == "INTERVIEW_SCHEDULED"
+
+
+def test_an_old_interview_is_not_lost_to_the_window(posting):
+    """Four months is still waiting on somebody. A fortnight of lookback would
+    have dropped it and put the account back where it started."""
+    application_id = submitted_application(posting)
+    schedule(application_id, days=5)
+    let_the_interview_pass(application_id, days_ago=120)
+
+    _, payload = calendar()
+    assert len(payload["awaitingOutcome"]) == 1
+
+
+def test_the_two_views_agree_once_an_outcome_is_recorded(posting):
+    """Deciding is what clears it, which is the only thing that should."""
+    application_id = submitted_application(posting)
+    schedule(application_id, days=5)
+    let_the_interview_pass(application_id)
+    reject(application_id)
+
+    _, payload = calendar()
+    assert payload["interviews"] == []
+    assert payload["awaitingOutcome"] == []
+
+    _, analytics = call(
         jobs_handler(),
         "GET",
-        "/jobs/{id}/applications",
+        "/companies/{id}/analytics",
         user="co_1",
         groups=RECRUITER,
-        path={"id": posting},
+        path={"id": "co_1"},
     )
-    assert payload["applications"][0]["nextInterview"] is None
+    assert analytics["funnel"]["INTERVIEW_SCHEDULED"] == 0
+
+
+def test_the_dashboard_count_and_the_calendar_now_agree(posting):
+    """What the recruiter actually noticed: one at INTERVIEW_SCHEDULED in the
+    funnel and nothing on any interview screen to explain it."""
+    application_id = submitted_application(posting)
+    schedule(application_id, days=5)
+    let_the_interview_pass(application_id)
+
+    _, analytics = call(
+        jobs_handler(),
+        "GET",
+        "/companies/{id}/analytics",
+        user="co_1",
+        groups=RECRUITER,
+        path={"id": "co_1"},
+    )
+    _, payload = calendar()
+    counted = analytics["funnel"]["INTERVIEW_SCHEDULED"]
+    shown = payload["count"] + len(payload["awaitingOutcome"])
+    assert counted == 1
+    assert shown == counted, "every application the funnel counts has a row somewhere"
+
+
+def test_an_explicit_window_still_bounds_both_ends(posting):
+    """A from of today means today onwards, for a day or week view."""
+    application_id = submitted_application(posting)
+    schedule(application_id, days=5)
+    let_the_interview_pass(application_id)
+
+    _, payload = calendar(query={"from": in_days(-1), "to": in_days(14)})
+    assert payload["interviews"] == []
+    assert payload["awaitingOutcome"] == []

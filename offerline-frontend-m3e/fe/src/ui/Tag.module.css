@@ -1,0 +1,9 @@
+.tag {
+  display: inline-flex;
+  align-items: center;
+  height: 24px;
+  padding: 0 var(--space-2);
+  border-radius: var(--radius-xs);
+  background: var(--color-state-open-bg);
+  color: var(--color-state-open-text);
+}

@@ -1,0 +1,84 @@
+/* The frame carries the blurred thumbnail as its own background, so it is the
+   photograph's colours from the first paint. background-size: cover makes that
+   thumbnail fill the frame exactly as the image will. */
+.frame {
+  position: relative;
+  overflow: hidden;
+  margin: 0;
+  background-color: var(--color-glass-solid);
+  background-size: cover;
+  background-position: center;
+  border-radius: var(--radius-xl);
+  isolation: isolate;
+}
+
+/* A ground rather than a shape of its own: the parent is what sets the height,
+   and the radius is inherited so the photograph stops exactly where the panel
+   does. */
+.fill {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+}
+
+.image {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* The washes are pseudo-elements rather than a filter on the image, so the
+   photograph keeps its own tones underneath and only the surface changes.
+
+   They are directional on purpose. A wash spread evenly across a frame has to
+   be heavy enough for the lightest pixel anywhere in it, and that drains the
+   colour out of the two thirds that carry no text at all; the first pass here
+   did exactly that and the photographs came out pale. Each gradient below is
+   opaque where the words sit and gone by the far end, so the picture stays
+   bright everywhere it can afford to.
+
+   --wash-angle lets a call site turn the gradient to wherever its own text is.
+   The default covers the common case of text along the bottom. */
+.forest::after,
+.scrim::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+/* Forest, for a photograph that is part of the brand panel: the green belongs
+   to the panel, so the wash carries it rather than plain black. */
+.forest::after {
+  background: linear-gradient(
+    var(--wash-angle, to top),
+    rgb(18 52 37 / 0.97) 0%,
+    rgb(18 52 37 / 0.95) 38%,
+    rgb(18 52 37 / 0.52) 68%,
+    rgb(18 52 37 / 0.08) 100%
+  );
+}
+
+/* Scrim only darkens, for a photograph whose own colour should carry. */
+.scrim::after {
+  background: linear-gradient(
+    var(--wash-angle, to top),
+    rgb(12 16 12 / 0.86) 0%,
+    rgb(12 16 12 / 0.6) 38%,
+    rgb(12 16 12 / 0) 78%
+  );
+}
+
+/* Someone who has asked for more contrast is asking to read against a settled
+   surface, so the wash goes flat and heavy and the photograph goes quiet. That
+   is the trade they asked for. */
+@media (prefers-contrast: more) {
+  .forest::after {
+    background: rgb(18 52 37 / 0.93);
+  }
+
+  .scrim::after {
+    background: rgb(12 16 12 / 0.82);
+  }
+}

@@ -74,6 +74,10 @@ export function PipelinePage() {
   const [bulkNote, setBulkNote] = useState('')
   const [result, setResult] = useState<BulkResult | null>(null)
   const [exported, setExported] = useState<ExportResult | null>(null)
+  // The reject bin. Decided holds four endings at once, and a recruiter looking
+  // for one they closed by mistake should not have to read past the accepted
+  // and the withdrawn to find it.
+  const [binOnly, setBinOnly] = useState(false)
 
   const rows = useMemo(() => pipeline.data?.applications ?? [], [pipeline.data])
 
@@ -269,7 +273,10 @@ export function PipelinePage() {
       ) : (
         <div className={styles.board}>
           {COLUMNS.map((column) => {
-            const items = byColumn.get(column.key) ?? []
+            const all = byColumn.get(column.key) ?? []
+            const isDecided = column.key === 'decided'
+            const items = isDecided && binOnly ? all.filter((row) => row.status === 'REJECTED') : all
+            const rejected = isDecided ? all.filter((row) => row.status === 'REJECTED').length : 0
             return (
               <section
                 key={column.key}
@@ -285,6 +292,19 @@ export function PipelinePage() {
                     <span className={styles.count}>{pipeline.isPending ? '' : items.length}</span>
                   </p>
                   <p className={styles.hint}>{column.hint}</p>
+                  {isDecided && rejected > 0 && (
+                    <button
+                      type="button"
+                      className={[styles.bin, binOnly ? styles.binOn : ''].join(' ')}
+                      aria-pressed={binOnly}
+                      onClick={() => setBinOnly((on) => !on)}
+                    >
+                      <Icon name="history" size={14} />
+                      {binOnly
+                        ? 'Showing rejected only'
+                        : `${rejected} rejected, can be undone`}
+                    </button>
+                  )}
                 </header>
                 <ul className={styles.cards}>
                   {pipeline.isPending ? (
@@ -297,7 +317,9 @@ export function PipelinePage() {
                       </li>
                     </>
                   ) : items.length === 0 ? (
-                    <li className={styles.none}>No one here yet</li>
+                    <li className={styles.none}>
+                      {isDecided && binOnly ? 'No rejections here' : 'No one here yet'}
+                    </li>
                   ) : (
                     items.map((row) => (
                       <PipelineCard

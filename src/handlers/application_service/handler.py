@@ -31,6 +31,7 @@ from common.errors import (
     ApplicationFrozenError,
     DuplicateApplicationError,
     ForbiddenError,
+    InvalidTransitionError,
     NotFoundError,
     PostingNotOpenError,
     ValidationError,
@@ -42,10 +43,12 @@ from common.state_machine import (
     ALL_STATUSES,
     FINAL_STATUSES,
     INTERVIEW_SCHEDULED,
+    REJECTED,
     SUBMITTED,
     UNDER_REVIEW,
     assert_transition,
     history_entry,
+    status_before_rejection,
 )
 from common.time_utils import is_past, now_iso
 from common.validation import (
@@ -143,7 +146,6 @@ def submit_application(event: Dict[str, Any], _context: Any) -> Dict[str, Any]:
     if reuse_cv_id and not supplied_documents.get(documents.CV):
         supplied_documents[documents.CV] = _resolve_reused_cv(caller.user_id, reuse_cv_id)
 
-    _attach_profile_transcript(caller.user_id, requirements, supplied_documents)
     documents.validate_submission(requirements, supplied_documents, answers)
 
     cover_letter = optional_string(body, "coverLetter", max_length=10000)
@@ -217,28 +219,6 @@ def _resolve_reused_cv(applicant_id: str, cv_identifier: str) -> str:
         if entry.get("cvId") == cv_identifier:
             return entry["s3Key"]
     raise ValidationError("That CV is not one of your earlier uploads.")
-
-
-def _attach_profile_transcript(
-    applicant_id: str, requirements: List[Dict[str, Any]], supplied: Dict[str, str]
-) -> None:
-    """FR-2.1. The transcript kept on the profile goes with every application
-    whose posting asks for one, unless the applicant attached a different one.
-
-    The key is copied onto the application rather than looked up later, and
-    storage never overwrites a key, so the application keeps the transcript it
-    was sent with even after the profile's is replaced.
-    """
-    asks = any(
-        requirement.get("key") == documents.TRANSCRIPT
-        and requirement.get("kind", "FILE") == "FILE"
-        for requirement in requirements
-    )
-    if not asks or supplied.get(documents.TRANSCRIPT):
-        return
-    transcript_key = find_user(applicant_id).get("transcriptS3Key")
-    if transcript_key:
-        supplied[documents.TRANSCRIPT] = transcript_key
 
 
 def _assert_posting_open(job: Dict[str, Any]) -> None:
@@ -416,7 +396,6 @@ def amend_application(event: Dict[str, Any], _context: Any) -> Dict[str, Any]:
             documents.strip_unknown(requirements, body.get("answers") or {}, "TEXT")
         )
 
-    _attach_profile_transcript(caller.user_id, requirements, merged_documents)
     documents.validate_submission(requirements, merged_documents, merged_answers)
 
     changes: Dict[str, Any] = {
@@ -500,6 +479,95 @@ def change_status(event: Dict[str, Any], _context: Any) -> Dict[str, Any]:
     # so it drops off the company calendar here.
     interview_calendar.apply(
         table, application["applicationId"], updated.get("interviews"), target
+    )
+
+    return ok({"application": dynamo.from_dynamo(_status_view(updated))})
+
+
+@router.route("POST", "/applications/{id}/reinstate")
+def reinstate(event: Dict[str, Any], _context: Any) -> Dict[str, Any]:
+    """Undo a rejection.
+
+    Deliberately its own operation rather than a transition out of REJECTED.
+    Appendix A makes a rejection final and the rest of the system leans on that:
+    interviews.CLOSED_STATUSES drops the calendar row, the applicant view stops
+    offering actions, and assert_transition refuses every move. Adding an edge
+    back into the table would weaken all of it for a case that is a correction
+    rather than a step in the model. So the state machine is left alone and
+    recovering from a mistake is a separate, audited act.
+
+    The application returns to where it stood before the rejection, read from
+    statusHistory, so one rejected during an interview goes back to its
+    interview rather than to the bottom of the funnel. Nothing is overwritten:
+    the rejection stays in the history with the reinstatement after it.
+
+    The applicant has already been told they were not taken forward, since the
+    stream sends that the moment the rejection is written. They are told again
+    here, and the wording is a correction rather than a plain status update: the
+    notification service recognises a move out of REJECTED, which only this
+    route can produce.
+    """
+    caller = get_caller(event)
+    caller.require("Recruiters", "Admins")
+    application = get_application(path_param(event, "id"))
+    if caller.is_recruiter and application.get("companyId") != caller.user_id:
+        raise ForbiddenError("You are not allowed to work with this application.")
+
+    if application.get("status") != REJECTED:
+        raise InvalidTransitionError(
+            "Only a rejected application can be reinstated.",
+            {"currentStatus": application.get("status", "")},
+        )
+
+    body = parse_body(event)
+    note = optional_string(body, "note", max_length=500) or ""
+
+    # Where it stood before the rejection, with UNDER_REVIEW as the floor.
+    # SUBMITTED is excluded deliberately rather than as a tidy default: that
+    # status is what keeps an application editable by the applicant, and it
+    # unfreezes on the way back. Restoring it would let someone rewrite an
+    # application a recruiter has already read and ruled on. A rejection can
+    # only have been made by a recruiter who had it open, so UNDER_REVIEW is
+    # the truthful floor as well as the safe one.
+    restored = status_before_rejection(application.get("statusHistory") or []) or UNDER_REVIEW
+    if restored == SUBMITTED or restored in FINAL_STATUSES:
+        restored = UNDER_REVIEW
+
+    table = dynamo.applications()
+    try:
+        updated = table.update_item(
+            Key={"applicationId": application["applicationId"]},
+            UpdateExpression=(
+                "SET #s = :restored, statusHistory = "
+                "list_append(if_not_exists(statusHistory, :empty), :entry)"
+            ),
+            # Conditional on it still being rejected, so two recruiters
+            # reinstating at once leave one history entry rather than two.
+            ConditionExpression="#s = :rejected",
+            ExpressionAttributeNames={"#s": "status"},
+            ExpressionAttributeValues={
+                ":restored": restored,
+                ":rejected": REJECTED,
+                ":empty": [],
+                ":entry": [
+                    history_entry(
+                        restored,
+                        caller.user_id,
+                        note or "Reinstated after the rejection was withdrawn.",
+                    )
+                ],
+            },
+            ReturnValues="ALL_NEW",
+        )["Attributes"]
+    except table.meta.client.exceptions.ConditionalCheckFailedException:
+        raise ApplicationFrozenError(
+            "This application is no longer rejected. Reload it and try again."
+        )
+
+    # An interview still ahead of now returns to the company calendar, which the
+    # rejection had taken it off.
+    interview_calendar.apply(
+        table, application["applicationId"], updated.get("interviews"), restored
     )
 
     return ok({"application": dynamo.from_dynamo(_status_view(updated))})

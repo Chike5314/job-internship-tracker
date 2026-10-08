@@ -23,7 +23,7 @@
 .sm {
   width: 36px;
   height: 36px;
-  border-radius: 9px;
+  border-radius: var(--radius-md);
   font-size: 14px;
 }
 

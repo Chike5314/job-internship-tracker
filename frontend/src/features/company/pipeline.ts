@@ -93,6 +93,18 @@ export function timeInStage(iso: string, now: number = Date.now()): string {
   return days === 0 ? 'today' : `${days}d in stage`
 }
 
+/** Whether an interview time has been and gone.
+ *
+ * The clock passing an interview writes nothing to the application, so a card
+ * can sit at INTERVIEW_SCHEDULED showing a time in the past indefinitely. The
+ * moment is a parameter with a default for the same reason timeInStage takes
+ * one: read during a render it is an impure call, and read here it is not.
+ */
+export function hasPassed(iso: string, now: number = Date.now()): boolean {
+  const at = new Date(iso).getTime()
+  return Number.isFinite(at) && at < now
+}
+
 /** "29 Sep 10:00", which reads as one unit on a card. */
 export function chipTime(iso: string): string {
   return `${formatDateShort(iso)} ${formatClock(iso)}`

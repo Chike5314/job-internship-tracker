@@ -1,0 +1,39 @@
+/* What every list card on the dashboard shares: the glass, the padding, and a
+   header carrying the card's name and the link to the full list. */
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: 20px;
+  border-radius: var(--radius-lg);
+  min-width: 0;
+}
+
+.head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.title {
+  color: var(--color-text-primary);
+  font-size: 17px;
+  font-weight: 600;
+  line-height: normal;
+}
+
+.more {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  color: var(--color-text-link);
+  font-size: var(--type-body-sm-size);
+  font-weight: 600;
+}
+
+.more:hover {
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}

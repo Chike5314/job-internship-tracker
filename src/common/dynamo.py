@@ -154,3 +154,34 @@ def chunked(values: Iterable[Any], size: int) -> Iterable[List[Any]]:
             batch = []
     if batch:
         yield batch
+
+
+def get_users(user_ids: Iterable[str]) -> Dict[str, Dict[str, Any]]:
+    """Read many users at once, keyed by userId.
+
+    A list of people assembled from applications needs each person's profile,
+    and one GetItem per person turns a page of fifty into fifty round trips.
+    BatchGetItem takes a hundred keys at a time and returns them in any order,
+    so the result is a map rather than a list. Duplicates are collapsed first,
+    since the same person applying three times is still one read.
+
+    Keys that match nothing are simply absent from the result, which is the
+    same contract find_user offers for one.
+    """
+    wanted = [uid for uid in dict.fromkeys(user_ids) if uid]
+    if not wanted:
+        return {}
+
+    resource = _resource()
+    name = users().name
+    found: Dict[str, Dict[str, Any]] = {}
+    for batch in chunked(wanted, 100):
+        request = {name: {"Keys": [{"userId": uid} for uid in batch]}}
+        while request:
+            response = resource.batch_get_item(RequestItems=request)
+            for item in response.get("Responses", {}).get(name, []):
+                found[item["userId"]] = item
+            # DynamoDB returns the keys it could not serve rather than failing,
+            # and the caller is expected to ask again for exactly those.
+            request = response.get("UnprocessedKeys") or {}
+    return found

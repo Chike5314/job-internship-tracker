@@ -3,6 +3,8 @@
 Routes
     POST   /companies              register, which is also the verification request
     GET    /companies              admin listing by verification status
+    GET    /companies/mine         the account reading itself, from its token
+    POST   /companies/logo-upload-url  a presigned PUT for the logo
     GET    /companies/{id}         public details shown beside a posting
     PATCH  /companies/{id}         the account updating its own details
     PATCH  /companies/{id}/status  admin approval, rejection or suspension
@@ -25,6 +27,7 @@ from common.router import Router, api_handler, parse_body, path_param, query_par
 from common.time_utils import now_iso
 from common.validation import (
     Errors,
+    validate_upload_request,
     VERIFICATION_STATUSES,
     coerce_bool,
     optional_string,
@@ -33,7 +36,6 @@ from common.validation import (
     require_enum,
     require_https_url,
     require_string,
-    validate_upload_request,
 )
 
 router = Router("company-service")
@@ -60,12 +62,6 @@ def register_company(event: Dict[str, Any], _context: Any) -> Dict[str, Any]:
     Registration is the verification request. The record lands in
     PENDING_VERIFICATION and nothing it creates can reach applicants until an
     admin approves it.
-
-    The route is authorizer protected. The record is keyed by the caller's
-    Cognito subject, so there is no such thing as an anonymous registration: the
-    recruiter has already signed up and holds a token by the time they reach
-    this. Left public, as it was, the route had no authorizer, request context
-    claims were never populated, and every call failed on the caller lookup.
     """
     caller = get_caller(event)
     body = parse_body(event)
@@ -107,57 +103,61 @@ def register_company(event: Dict[str, Any], _context: Any) -> Dict[str, Any]:
     return created({"company": _public_view(item, full=True)})
 
 
-@router.route("GET", "/companies/{id}")
-def get_company_details(event: Dict[str, Any], _context: Any) -> Dict[str, Any]:
-    """FR-4.3. The website and map link an applicant uses to judge a posting.
-
-    No authorizer, because an anonymous applicant reads this alongside a
-    posting, so it serves the public view and nothing else. It used to widen the
-    response for an admin or for the company itself, which never happened: a
-    route with no authorizer never has request context claims populated, so the
-    caller was always absent. The company reads its own full record through
-    GET /companies/mine, and an admin through GET /companies.
-    """
-    company = get_company(path_param(event, "id"))
-    return ok({"company": _public_view(company, full=False)})
-
-
 @router.route("GET", "/companies/mine")
 def get_my_company(event: Dict[str, Any], _context: Any) -> Dict[str, Any]:
-    """The company's own record, in full, including its moderation history.
+    """The account reading itself.
 
-    The authorizer protected counterpart of GET /companies/{id}. A recruiter
-    account is the company, so the identifier comes from the token rather than
-    the path and there is nothing to authorise beyond the group.
+    Its own route rather than a flag on GET /companies/{id}, for the reason
+    recorded against GET /jobs/mine: that route is public so that an applicant
+    can read a company beside a posting, a public route carries no Cognito
+    authorizer, and API Gateway never populates request context claims on a
+    route with no authorizer, whatever the client sends in the header. It can
+    therefore only ever serve the public view, and the account would never see
+    its own contact email or its moderation history. Here the identifier comes
+    from the token and nothing is taken from the path at all.
     """
     caller = get_caller(event)
-    caller.require("Recruiters", "Admins")
+    caller.require("Recruiters")
     company = get_company(caller.user_id)
     return ok({"company": _public_view(company, full=True)})
 
 
 @router.route("POST", "/companies/logo-upload-url")
 def company_logo_upload_url(event: Dict[str, Any], _context: Any) -> Dict[str, Any]:
-    """FR-5.4 and FR-5.5, for the one image a company owns.
+    """A presigned PUT for the logo, scoped to a key this account owns.
 
-    A presigned PUT scoped to one generated key under the company's own prefix.
-    The record is not touched here: the client sends the key back on
-    PATCH /companies/{id} once the upload has landed, the same two step shape the
-    CV library uses, and for the same reason. A presigned URL is an offer, not an
-    upload.
+    Recording the logo on the company is PATCH /companies/{id} with the key,
+    made after the upload lands. The transfer goes straight from the browser to
+    S3, so issuing the URL is not evidence that anything arrived.
     """
     caller = get_caller(event)
-    caller.require("Recruiters", "Admins")
+    caller.require("Recruiters")
+    company = get_company(caller.user_id)
     body = parse_body(event)
     errors = Errors()
-
     file_info = validate_upload_request(
-        errors, body, image_allowed=True, max_bytes=config.MAX_UPLOAD_BYTES
+        errors,
+        body,
+        image_allowed=True,
+        image_only=True,
+        max_bytes=config.MAX_UPLOAD_BYTES,
     )
     errors.raise_if_any()
 
-    key = storage.build_key(caller.user_id, "companyLogo", file_info["fileName"])
+    key = storage.build_key(company["companyId"], "logo", file_info["fileName"])
     return created(storage.presigned_upload(key, body.get("contentType")))
+
+
+@router.route("GET", "/companies/{id}")
+def get_company_details(event: Dict[str, Any], _context: Any) -> Dict[str, Any]:
+    """FR-4.3. The website and map link an applicant uses to judge a posting.
+
+    Public route with no authorizer, so the caller is always anonymous and only
+    the public view is returned. The account itself reads its full record
+    through GET /companies/mine.
+    """
+    company = get_company(path_param(event, "id"))
+    return ok({"company": _public_view(company, full=False)})
 
 
 @router.route("PATCH", "/companies/{id}")
@@ -188,15 +188,6 @@ def update_company(event: Dict[str, Any], _context: Any) -> Dict[str, Any]:
         changes["officeAddress"] = optional_string(body, "officeAddress", max_length=500)
     if "googleMapsUrl" in body:
         changes["googleMapsUrl"] = optional_url(body, "googleMapsUrl")
-    if "logoS3Key" in body:
-        # A key sent back by the client has to be one issued to this same
-        # company, otherwise an account could claim somebody else's upload.
-        logo_key = optional_string(body, "logoS3Key", max_length=512)
-        if logo_key:
-            storage.assert_key_owned_by(logo_key, company_id)
-            if not logo_key.startswith(storage.PREFIXES["companyLogo"] + "/"):
-                raise ValidationError("That key is not a company logo.")
-        changes["logoS3Key"] = logo_key
     errors.raise_if_any()
 
     if not changes:
@@ -550,10 +541,6 @@ def _public_view(company: Dict[str, Any], *, full: bool) -> Dict[str, Any]:
         "officeAddress": company.get("officeAddress"),
         "verificationStatus": company.get("verificationStatus"),
     }
-    # Section 5.1: an S3 key never leaves the API as a key. The logo is swapped
-    # for a presigned URL at the moment it is read, like every other document.
-    if company.get("logoS3Key"):
-        view["logoUrl"] = storage.presigned_download(company["logoS3Key"])
     if full:
         view.update(
             {

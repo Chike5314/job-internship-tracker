@@ -3,6 +3,7 @@ import type {
   BulkStatusResult,
   CompanyAnalytics,
   CompanyFull,
+  CompanyApplicant,
   CompanyInterview,
   ExportResult,
   JobAnalytics,
@@ -133,12 +134,35 @@ export function getCompanyAnalytics(companyId: string): Promise<CompanyAnalytics
   return http.get(`/companies/${companyId}/analytics`)
 }
 
-/** The calendar, served off the sparse GSI. `from` and `to` are ISO instants. */
+/** The calendar, served off the sparse GSI. `from` and `to` are ISO instants.
+ *
+ * Two lists, not one. `interviews` is what is coming up; `awaitingOutcome` is
+ * what has already happened with nothing recorded since, which is a job of work
+ * rather than a calendar entry and has no lower bound in time.
+ */
 export function listCompanyInterviews(
   companyId: string,
   window: { from?: string; to?: string } = {},
-): Promise<{ from: string; to: string; count: number; interviews: CompanyInterview[] }> {
+): Promise<{
+  from: string
+  to: string
+  count: number
+  interviews: CompanyInterview[]
+  awaitingOutcome: CompanyInterview[]
+}> {
   return http.get(`/companies/${companyId}/interviews`, { query: window })
+}
+
+/** Everyone who has applied to this company, gathered by person.
+ *
+ * Assembled on read by walking the account's postings, so it answers the one
+ * question no other recruiter route can: whether this is somebody you have
+ * seen before, and what happened last time.
+ */
+export function listCompanyApplicants(
+  companyId: string,
+): Promise<{ companyId: string; applicants: CompanyApplicant[] }> {
+  return http.get(`/companies/${companyId}/applicants`)
 }
 
 /** Writes a CSV to the documents bucket and hands back a presigned link to it.

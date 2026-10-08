@@ -7,6 +7,7 @@ import {
   getJobAnalytics,
   getMyCompany,
   getMyJob,
+  listCompanyApplicants,
   listCompanyInterviews,
   listJobApplications,
   listMyJobs,
@@ -16,6 +17,7 @@ import {
 } from '@/api/company'
 import {
   changeApplicationStatus,
+  reinstateApplication,
   getApplicationForRecruiter,
   rescheduleInterview,
   scheduleInterview,
@@ -217,6 +219,26 @@ export function useRecruiterActions(applicationId: string, jobId: string) {
     },
   })
 
+  // Undoing a rejection. Separate from `move` because the server refuses every
+  // transition out of REJECTED, so this cannot go through the status route.
+  const reinstate = useMutation({
+    mutationFn: (params: { note?: string } = {}) => reinstateApplication(applicationId, params),
+    onSuccess: ({ application }) => {
+      queryClient.setQueryData<{ application: RecruiterApplication }>(key, (current) =>
+        current
+          ? {
+              application: {
+                ...current.application,
+                status: application.status as ApplicationStatus,
+                statusHistory: application.statusHistory,
+              },
+            }
+          : current,
+      )
+      refresh()
+    },
+  })
+
   // The application is past SUBMITTED by now, so reading it again moves nothing.
   const reread = () => queryClient.invalidateQueries({ queryKey: key })
 
@@ -236,7 +258,7 @@ export function useRecruiterActions(applicationId: string, jobId: string) {
     },
   })
 
-  return { move, schedule, reschedule }
+  return { move, reinstate, schedule, reschedule }
 }
 
 export function useJobAnalytics(jobId: string | undefined) {
@@ -265,6 +287,22 @@ export function useCompanyInterviews(window: { from?: string; to?: string } = {}
     queryFn: () => listCompanyInterviews(companyId as string, window),
     enabled: Boolean(companyId),
     staleTime: 30_000,
+  })
+}
+
+/** Everyone who has applied to this account, by person.
+ *
+ * Assembled on read by walking every posting, so it is the most expensive of
+ * the company queries. A minute of staleness is the right trade: a directory is
+ * read to get your bearings, not to watch a board move.
+ */
+export function useCompanyApplicants() {
+  const companyId = useCompanyId()
+  return useQuery({
+    queryKey: queryKeys.company.applicants(companyId ?? ''),
+    queryFn: () => listCompanyApplicants(companyId as string),
+    enabled: Boolean(companyId),
+    staleTime: 60_000,
   })
 }
 

@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <!-- The Offerline mark. The SVG is what current browsers take; the PNG is
+         the fallback for those that still want a bitmap, and the touch icon is
+         what a phone puts on its home screen. -->
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="color-scheme" content="light dark" />
+    <meta name="theme-color" content="#f4f2ed" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#12100c" media="(prefers-color-scheme: dark)" />
+    <title>Offerline</title>
+    <script>
+      // Runs before the stylesheet, so there is no flash of the wrong theme.
+      // Kept in sync with the logic in src/app/ThemeProvider.tsx.
+      (function () {
+        var stored = localStorage.getItem('offerline.theme')
+        var preference = stored === 'paper' || stored === 'ink' ? stored : 'system'
+        var resolved =
+          preference === 'system'
+            ? window.matchMedia('(prefers-color-scheme: dark)').matches
+              ? 'ink'
+              : 'paper'
+            : preference
+        document.documentElement.dataset.theme = resolved
+      })()
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

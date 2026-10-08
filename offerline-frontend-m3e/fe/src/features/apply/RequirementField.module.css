@@ -1,0 +1,42 @@
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.label {
+  color: var(--color-text-primary);
+  font-size: 14px;
+  font-weight: 600;
+  line-height: normal;
+}
+
+.optional {
+  color: var(--color-text-muted);
+  font-weight: 400;
+}
+
+.help {
+  color: var(--color-text-muted);
+  font-size: var(--type-body-sm-size);
+  line-height: normal;
+}
+
+.input {
+  height: 44px;
+  padding: 0 14px;
+  font-size: var(--type-body-size);
+}
+
+.textarea {
+  padding: var(--space-3) 14px;
+  font-size: var(--type-body-size);
+  line-height: 1.5;
+}
+
+.error {
+  color: var(--color-attention-text);
+  font-size: var(--type-body-sm-size);
+  font-weight: 600;
+  line-height: normal;
+}

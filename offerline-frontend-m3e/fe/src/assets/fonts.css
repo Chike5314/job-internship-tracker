@@ -1,0 +1,16 @@
+/* Self-hosted, per docs/brand/tokens.json's three families. Kept out of
+   index.css so the font imports are easy to find on their own.
+
+   Fraunces is the display face, imported from its optical size subset rather
+   than the default weight-only one. The opsz axis lets the same family set a
+   48px heading and a 14px eyebrow without either reading as the other scaled,
+   which is the reason to carry a display serif at all. The logo's wordmark is
+   a serif, so an all sans interface would leave the mark standing apart from
+   everything around it. The italic subset is imported alongside the roman
+   because the display italic style is a real style in the scale, and without
+   the file the browser slants the roman instead. */
+/* Explicit relative paths from frontend/src/assets/fonts.css to node_modules */
+@import '../../node_modules/@fontsource-variable/fraunces/wght.css';
+@import '../../node_modules/@fontsource-variable/fraunces/wght-italic.css';
+@import '../../node_modules/@fontsource-variable/inter/wght.css';
+@import '../../node_modules/@fontsource/ibm-plex-mono/index.css';

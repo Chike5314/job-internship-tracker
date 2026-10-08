@@ -1,3 +1,35 @@
+/* ----------------------------------------------------------------------
+   Entrance keyframes, defined here rather than used from m3.css
+   ----------------------------------------------------------------------
+   CSS Modules rewrites every animation-name it sees into the module's own
+   hashed namespace. m3.css is a global stylesheet, so its @keyframes m3-rise
+   keeps its plain name, and a module asking for `m3-rise` ends up asking for
+   `_m3-rise_<hash>_1`, which exists nowhere. No error, no warning: the rule
+   parses, animation-name computes to something, and the element simply never
+   moves. Every load-time entrance on this page was dead this way.
+
+   :global() is not accepted in the animation shorthand or in animation-name by
+   this toolchain, so the keyframes are declared here, where the hash the
+   reference gets is the hash the definition gets. The scroll-driven animations
+   in this file always worked for exactly that reason: their keyframes are
+   local too.
+
+   m3.css keeps its copies for the global .m3-stagger utility, which is applied
+   from markup and so never goes through this rewriting. */
+@keyframes m3-rise {
+  from {
+    opacity: 0;
+    transform: translateY(14px) scale(0.985);
+  }
+}
+
+@keyframes m3-pop {
+  from {
+    opacity: 0;
+    transform: scale(0.82);
+  }
+}
+
 .wrapper {
   min-height: 100vh;
   display: grid;
@@ -18,8 +50,8 @@
 
 /* The bloom field is written for a whole page: fixed to the viewport with
    shapes measured in vw. Here it belongs to one panel, so it is re-anchored to
-   this box and its shapes re-measured against it. Left fixed, it washes across
-   the form on the right and drains the contrast out of every control there. */
+   this box. Left fixed, it washes across the form on the right and drains the
+   contrast out of every control there. */
 .brand :global(.bloom-field) {
   position: absolute;
   /* This panel is forest in both themes, so it takes the ink theme's bloom in
@@ -52,9 +84,27 @@
   right: -30%;
 }
 
+/* The photograph's own slot in the column, hidden on a short or narrow window
+   where the headline and the four stages already fill the panel. */
+.scene {
+  display: none;
+  width: 100%;
+  max-width: 440px;
+  /* A hairline of the panel's own light, so the frame reads as a pane resting
+     on the forest rather than a hole cut through it. */
+  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.16);
+}
+
+@media (min-width: 900px) and (min-height: 760px) {
+  .scene {
+    display: block;
+    animation: m3-pop var(--m3-dur-slow) var(--m3-spring-slow) 200ms both;
+  }
+}
+
 .brandInner {
   position: relative;
-  z-index: 1;
+  z-index: 2;
   height: 100%;
   display: flex;
   flex-direction: column;
@@ -109,7 +159,7 @@
   place-items: center;
   width: 34px;
   height: 34px;
-  border-radius: 999px;
+  border-radius: var(--radius-round);
   background: rgb(255 255 255 / 0.1);
   color: var(--color-forest-100);
 }
@@ -261,5 +311,32 @@
 @media (max-width: 899px) {
   .brandFoot {
     display: none;
+  }
+}
+
+/* The path of an application, drawn: sits between the headline and the stage
+   list on a wide screen and is dropped on the short band a phone gets. */
+.stage {
+  animation: m3-rise var(--m3-dur-slow) var(--m3-spring) both;
+}
+
+.stage:nth-child(2) { animation-delay: 80ms; }
+.stage:nth-child(3) { animation-delay: 160ms; }
+.stage:nth-child(4) { animation-delay: 240ms; }
+
+.stageIcon {
+  border-radius: var(--radius-lg);
+  background: rgb(255 255 255 / 0.14);
+}
+
+.panel {
+  animation: m3-rise var(--m3-dur-slow) var(--m3-spring) 120ms both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .scene,
+  .stage,
+  .panel {
+    animation: none !important;
   }
 }

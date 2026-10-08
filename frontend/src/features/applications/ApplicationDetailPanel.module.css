@@ -88,7 +88,7 @@
   display: flex;
   align-items: center;
   height: 34px;
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-round);
   font-size: var(--type-body-sm-size);
   font-weight: 600;
 }
@@ -253,7 +253,7 @@
   flex: none;
   height: 38px;
   padding: 0 14px;
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-round);
   background: rgba(216, 67, 28, 0.08);
   color: var(--color-attention-text);
   font-size: var(--type-body-sm-size);

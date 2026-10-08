@@ -45,6 +45,16 @@ STATUS_WORDING = {
     "WITHDRAWN": "You withdrew your application.",
 }
 
+# A rejection is final everywhere else in the system, so an application that
+# leaves REJECTED can only have been reinstated. That makes the move itself the
+# signal, with no flag on the record to write and keep in step. The wording is a
+# correction rather than a status update, because this applicant has already
+# been told they were not taken forward and deserves to hear that was wrong.
+REINSTATED_WORDING = (
+    "The decision not to take your application forward has been withdrawn, "
+    "and it is being read again."
+)
+
 
 # ----------------------------------------------------------------------
 # Notification centre
@@ -180,7 +190,7 @@ def _handle_record(record: Dict[str, Any]) -> None:
         return
 
     if new_status and new_status != old_status:
-        _announce_status(new_item, new_status, applicant, company, job)
+        _announce_status(new_item, new_status, applicant, company, job, old_status)
 
 
 def _announce_status(
@@ -189,6 +199,7 @@ def _announce_status(
     applicant: Dict[str, Any],
     company: Dict[str, Any],
     job: Dict[str, Any],
+    previous: Optional[str] = None,
 ) -> None:
     """FR-8.1, FR-8.5 and FR-12.1.
 
@@ -197,7 +208,10 @@ def _announce_status(
     """
     title = job.get("title", "a posting")
     company_name = company.get("companyName", "the company")
-    wording = STATUS_WORDING.get(status, f"Your application status is now {status}.")
+    if previous == "REJECTED":
+        wording = REINSTATED_WORDING
+    else:
+        wording = STATUS_WORDING.get(status, f"Your application status is now {status}.")
     message = f"{wording} Posting: {title} at {company_name}."
 
     notifications.record(
@@ -206,9 +220,17 @@ def _announce_status(
         message,
         f"/applications/{application.get('applicationId')}",
     )
+    # A correction says so in the subject line. Someone who has already had the
+    # rejection email should be able to tell the two apart in a list of unread
+    # mail without opening either.
+    subject = (
+        f"Correction on your application to {title}"
+        if previous == "REJECTED"
+        else f"Update on your application to {title}"
+    )
     email.send(
         applicant.get("email", ""),
-        f"Update on your application to {title}",
+        subject,
         f"{message}\n\nYou can see the full history in your dashboard.",
     )
 

@@ -31,7 +31,7 @@ const INTERVIEW_STATE = {
   CANCELLED: { label: 'Cancelled', tone: 'declined' },
 } as const
 
-type Mode = null | 'interview' | 'OFFER_EXTENDED' | 'REJECTED'
+type Mode = null | 'interview' | 'OFFER_EXTENDED' | 'REJECTED' | 'REINSTATE'
 
 const CONFIRM_COPY = {
   OFFER_EXTENDED: {
@@ -43,6 +43,11 @@ const CONFIRM_COPY = {
     title: 'Reject this application',
     hint: 'A short reason helps the applicant',
     action: 'Confirm rejection',
+  },
+  REINSTATE: {
+    title: 'Undo this rejection',
+    hint: 'Optional. What changed your mind',
+    action: 'Reinstate application',
   },
 }
 
@@ -171,7 +176,7 @@ function DrawerContent({
   officeAddress?: string
   onClose: () => void
 }) {
-  const { move, schedule, reschedule } = useRecruiterActions(application.applicationId, jobId)
+  const { move, reinstate, schedule, reschedule } = useRecruiterActions(application.applicationId, jobId)
   const [mode, setMode] = useState<Mode>(null)
   const [note, setNote] = useState('')
   const [flash, setFlash] = useState('')
@@ -225,8 +230,26 @@ function DrawerContent({
     )
   }
 
+  function sendReinstate() {
+    setProblem('')
+    reinstate.mutate(
+      { note: note.trim() || undefined },
+      {
+        onSuccess: () => {
+          setMode(null)
+          setNote('')
+          setFlash(`${first} has been emailed a correction. This is back on the board.`)
+        },
+        onError: (error) =>
+          setProblem(failure(error, 'The application was not reinstated. Reload it and try again.')),
+      },
+    )
+  }
+
   const actions: { label: string; tone: 'primary' | 'secondary' | 'reject'; to: Mode }[] =
-    status === 'UNDER_REVIEW'
+    status === 'REJECTED'
+      ? [{ label: 'Undo rejection', tone: 'secondary', to: 'REINSTATE' }]
+      : status === 'UNDER_REVIEW'
       ? [
           { label: 'Schedule interview', tone: 'primary', to: 'interview' },
           { label: 'Extend offer', tone: 'secondary', to: 'OFFER_EXTENDED' },
@@ -340,12 +363,14 @@ function DrawerContent({
           />
         )}
 
-        {(mode === 'OFFER_EXTENDED' || mode === 'REJECTED') && (
+        {(mode === 'OFFER_EXTENDED' || mode === 'REJECTED' || mode === 'REINSTATE') && (
           <div className={styles.confirm}>
             <label className={styles.control}>
               <span className={styles.formTitle}>{CONFIRM_COPY[mode].title}</span>
               <span className={styles.controlLabel}>
-                Optional note. {first} sees it in the history of this application.
+                {mode === 'REINSTATE'
+                  ? `${first} will be emailed that the decision was withdrawn and the application is being read again.`
+                  : `Optional note. ${first} sees it in the history of this application.`}
               </span>
               <Textarea
                 value={note}
@@ -360,12 +385,16 @@ function DrawerContent({
               <button
                 type="button"
                 className={[styles.confirmAction, mode === 'REJECTED' ? styles.confirmReject : ''].join(' ')}
-                onClick={() => confirm(mode)}
-                disabled={move.isPending}
+                onClick={() => (mode === 'REINSTATE' ? sendReinstate() : confirm(mode))}
+                disabled={move.isPending || reinstate.isPending}
               >
                 {CONFIRM_COPY[mode].action}
               </button>
-              <Button variant="secondary" onClick={() => begin(null)} disabled={move.isPending}>
+              <Button
+                variant="secondary"
+                onClick={() => begin(null)}
+                disabled={move.isPending || reinstate.isPending}
+              >
                 Cancel
               </Button>
             </div>
@@ -383,8 +412,14 @@ function DrawerContent({
             Waiting for {first} to accept or decline the offer.
           </p>
         )}
-        {mode === null && isFinal && (
+        {mode === null && isFinal && status !== 'REJECTED' && (
           <p className={styles.waiting}>This application is closed. Its history stays for your records.</p>
+        )}
+        {mode === null && status === 'REJECTED' && (
+          <p className={styles.waiting}>
+            Rejected, and {first} has been told. Undoing it emails them a correction and puts the
+            application back where it was before.
+          </p>
         )}
       </footer>
     </div>

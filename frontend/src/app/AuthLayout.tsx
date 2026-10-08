@@ -3,6 +3,8 @@ import { BloomField } from './BloomField'
 import { Logo } from './Logo'
 import { ThemeToggle } from './ThemeToggle'
 import { Icon, type IconName } from '@/ui/Icon'
+import { Photo } from '@/ui/Photo'
+import { photos } from '@/assets/photos/manifest'
 import styles from './AuthLayout.module.css'
 
 /**
@@ -39,6 +41,13 @@ export function AuthLayout() {
                 Every application, from sent to <em className={styles.signed}>signed.</em>
               </h2>
             </div>
+            {/* A pane on the panel rather than its ground. Text runs down the
+                whole left edge here and along the bottom on both sides, so a
+                photograph behind all of it would need a wash heavy enough for
+                its lightest pixel, which is what made the first attempt pale.
+                Given its own space it needs no wash and keeps every bit of the
+                daylight it was shot in. */}
+            <Photo photo={photos.colleagues} ratio="16 / 10" eager className={styles.scene} />
             <ol className={styles.stages}>
             {STAGES.map((stage) => (
               <li key={stage.label} className={styles.stage}>

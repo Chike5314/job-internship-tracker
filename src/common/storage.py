@@ -12,7 +12,6 @@ from typing import Any, Dict, Optional
 
 import boto3
 from botocore.config import Config as BotoConfig
-from botocore.exceptions import ClientError
 
 from common import config
 from common.errors import ForbiddenError
@@ -101,23 +100,6 @@ def get_object_text(key: str, max_bytes: int = 2_000_000) -> str:
     return get_object_bytes(key, max_bytes).decode("utf-8", errors="ignore")
 
 
-def object_exists(key: str) -> bool:
-    """Whether the browser's direct upload to this key actually landed.
-
-    A presigned URL is only an offer. The transfer happens between the browser
-    and S3 with nothing in between, so the API finds out whether it succeeded by
-    asking for the object.
-    """
-    try:
-        _client().head_object(Bucket=config.DOCUMENTS_BUCKET, Key=key)
-        return True
-    except ClientError as error:
-        status = error.response.get("ResponseMetadata", {}).get("HTTPStatusCode")
-        if status == 404 or error.response.get("Error", {}).get("Code") in ("404", "NoSuchKey", "NotFound"):
-            return False
-        raise
-
-
 def assert_key_owned_by(key: str, owner_id: str) -> None:
     """A key a client sends back has to be one issued to that same caller.
 
@@ -126,3 +108,19 @@ def assert_key_owned_by(key: str, owner_id: str) -> None:
     """
     if f"/{owner_id}/" not in key:
         raise ForbiddenError("That document does not belong to you.")
+
+
+def object_exists(key: str) -> bool:
+    """Whether the upload actually landed.
+
+    A presigned PUT goes straight from the browser to S3, so the API never sees
+    the transfer and only learns of it when the client says so. Taking the
+    client's word writes a library entry for an upload that may have failed or
+    been abandoned, so anything recording an upload after the fact asks S3
+    first.
+    """
+    try:
+        _client().head_object(Bucket=config.DOCUMENTS_BUCKET, Key=key)
+        return True
+    except Exception:  # noqa: BLE001 - any failure here means "not there yet"
+        return False

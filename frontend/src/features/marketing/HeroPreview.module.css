@@ -48,7 +48,7 @@
 .state {
   flex: none;
   padding: 4px 10px;
-  border-radius: 999px;
+  border-radius: var(--radius-round);
   font-size: var(--type-caption-size);
   font-weight: 600;
   white-space: nowrap;

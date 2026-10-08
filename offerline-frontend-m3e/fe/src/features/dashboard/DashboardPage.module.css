@@ -1,0 +1,89 @@
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+  min-width: 0;
+}
+
+.greeting {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--space-2) var(--space-4);
+}
+
+.welcome {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  min-width: 0;
+}
+
+/* The display face at a heading's size: the one serif line on the screen,
+   which is what makes it read as a greeting and the rest as the work. */
+.title {
+  color: var(--color-text-primary);
+  font-family: var(--font-serif);
+  font-size: 30px;
+  line-height: 1.15;
+  font-weight: 400;
+  letter-spacing: -0.01em;
+}
+
+.subtitle {
+  color: var(--color-text-muted);
+  font-size: var(--type-body-size);
+  line-height: normal;
+}
+
+.today {
+  color: var(--color-text-muted);
+  font-size: 14px;
+  line-height: normal;
+}
+
+.tiles {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-4);
+}
+
+/* Both columns stretch to the taller one, and the last card in each takes up
+   the slack, so the two columns end on one line. */
+.split {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 20px;
+}
+
+.column {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  min-width: 0;
+}
+
+@media (min-width: 560px) {
+  .tiles {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1100px) {
+  .tiles {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .split {
+    flex: 1;
+    grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr);
+  }
+
+  /* At least one screen tall, so the cards reach down to the same margin the
+     page keeps at the top. 72px is the app bar and 56px the main area's top
+     and bottom padding, both set in AppShell. */
+  .page {
+    min-height: calc(100vh - 72px - 56px);
+  }
+}

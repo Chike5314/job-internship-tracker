@@ -298,8 +298,56 @@ export interface CompanyAnalytics {
   }[]
 }
 
+/** One of a person's applications to this company, as the applicants directory
+ *  carries it. Lighter than PipelineRow: the name and email sit on the person
+ *  above rather than being repeated on every application under them. */
+export interface ApplicantApplication {
+  applicationId: string
+  jobId: string
+  jobTitle?: string
+  status: ApplicationStatus
+  appliedAt: string
+  statusChangedAt: string
+  isFinal: boolean
+  interviewCount: number
+  nextInterview?: { scheduledAt: string; state: InterviewState } | null
+}
+
+/** From company_applicants in jobs_service/handler.py: one row per person
+ *  rather than per application, which is the whole point of that route. Every
+ *  other recruiter view is organised by posting, so this is the only place a
+ *  repeat applicant reads as one candidate with a history. */
+export interface CompanyApplicant {
+  applicantId: string
+  fullName?: string
+  email?: string
+  phone?: string
+  skills: string[]
+  academicInfo?: AcademicInfo
+  applicationCount: number
+  firstAppliedAt?: string
+  /** The last time any of their applications moved. */
+  lastActivityAt?: string
+  /** How far they got across all of them, not where the newest one sits. */
+  furthestStatus: ApplicationStatus
+  /** Still in play somewhere, which is what separates somebody to act on from
+   *  somebody already dealt with. */
+  isActive: boolean
+  /** Applications nobody has opened yet. */
+  awaitingReview: number
+  /** Offers and interview invitations they have not answered. */
+  awaitingTheirReply: number
+  /** Newest first. */
+  applications: ApplicantApplication[]
+}
+
 /** One row of the company calendar, served off the sparse GSI: an application
- *  appears here only while it has an interview still ahead of it. */
+ *  appears here while it has an interview that nothing has closed out.
+ *
+ *  Note "nothing has closed out" rather than "still ahead of it". The clock
+ *  passing an interview writes nothing to the application, so a row whose time
+ *  has gone stays on the index with a timestamp in the past. Those come back
+ *  under `awaitingOutcome` instead of `interviews`. */
 export interface CompanyInterview {
   applicationId: string
   jobId: string

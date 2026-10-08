@@ -32,7 +32,7 @@
 .published {
   flex: none;
   padding: 4px 10px;
-  border-radius: 999px;
+  border-radius: var(--radius-round);
   background: var(--color-state-active-bg);
   color: var(--color-state-active-text);
   font-size: var(--type-caption-size);
@@ -53,7 +53,7 @@
 
 .track {
   height: 10px;
-  border-radius: 999px;
+  border-radius: var(--radius-round);
   background: var(--color-state-open-bg);
   overflow: hidden;
 }
@@ -61,7 +61,7 @@
 .bar {
   display: block;
   height: 100%;
-  border-radius: 999px;
+  border-radius: var(--radius-round);
   background: var(--color-brand-forest);
 }
 

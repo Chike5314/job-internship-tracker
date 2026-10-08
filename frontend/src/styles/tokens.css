@@ -1,4 +1,4 @@
-/* Generated from docs/brand/tokens.json v4 by scripts/build-tokens.mjs. Do not edit by hand. */
+/* Generated from docs/brand/tokens.json v5 by scripts/build-tokens.mjs. Do not edit by hand. */
 :root {
   /* Color */
   --color-n-0: #ffffff;
@@ -164,12 +164,12 @@
   --space-10: 128px;
 
   /* Radius */
-  --radius-xs: 6px;
-  --radius-sm: 10px;
-  --radius-md: 14px;
-  --radius-lg: 18px;
-  --radius-xl: 24px;
-  --radius-2xl: 32px;
+  --radius-xs: 4px;
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 28px;
+  --radius-2xl: 36px;
   --radius-round: 999px;
 
   /* Blur */
@@ -188,6 +188,8 @@
 
 [data-theme='paper'] {
   --color-ground: var(--color-n-100);
+  --color-surface-container: #f8f5ef;
+  --color-surface-high: #f1ede5;
   --color-bloom-forest: rgba(42,106,82,0.20);
   --color-bloom-verm: rgba(216,67,28,0.14);
   --color-bloom-warm: rgba(222,216,201,0.85);
@@ -228,6 +230,8 @@
 
 [data-theme='ink'] {
   --color-ground: var(--color-n-1000);
+  --color-surface-container: #1f1c17;
+  --color-surface-high: #2a261f;
   --color-bloom-forest: rgba(42,106,82,0.30);
   --color-bloom-verm: rgba(216,67,28,0.22);
   --color-bloom-warm: rgba(46,43,36,0.75);

@@ -1,0 +1,306 @@
+.wrapper {
+  min-height: 100vh;
+  display: grid;
+  grid-template-columns: 1fr;
+}
+
+/* The brand side. Forest deep enough that the bloom field behind it reads as
+   depth rather than as three coloured shapes, and its own colours are fixed in
+   both themes: this panel is the one surface that stays dark either way, so the
+   mark sits on the ground it was drawn for. */
+.brand {
+  position: relative;
+  overflow: hidden;
+  background: var(--color-forest-800);
+  color: var(--color-n-50);
+  isolation: isolate;
+}
+
+/* The bloom field is written for a whole page: fixed to the viewport with
+   shapes measured in vw. Here it belongs to one panel, so it is re-anchored to
+   this box and its shapes re-measured against it. Left fixed, it washes across
+   the form on the right and drains the contrast out of every control there. */
+.brand :global(.bloom-field) {
+  position: absolute;
+  /* This panel is forest in both themes, so it takes the ink theme's bloom in
+     both. The paper theme's warm note is a pale wash meant to sit under glass
+     on a light page; over forest it reads as a light source and takes the
+     contrast out of the text laid across it. */
+  --color-bloom-forest: rgba(42, 106, 82, 0.3);
+  --color-bloom-verm: rgba(216, 67, 28, 0.22);
+  --color-bloom-warm: rgba(46, 43, 36, 0.75);
+}
+
+.brand :global(.bloom-field__shape--forest) {
+  width: 95%;
+  height: 65%;
+  top: -12%;
+  left: -25%;
+}
+
+.brand :global(.bloom-field__shape--verm) {
+  width: 60%;
+  height: 40%;
+  bottom: -10%;
+  right: -18%;
+}
+
+.brand :global(.bloom-field__shape--warm) {
+  width: 75%;
+  height: 50%;
+  top: 35%;
+  right: -30%;
+}
+
+.brandInner {
+  position: relative;
+  z-index: 1;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+  padding: var(--space-6);
+}
+
+.pitch {
+  display: grid;
+  gap: var(--space-3);
+  color: var(--color-forest-100);
+}
+
+.headline {
+  color: var(--color-n-50);
+  text-wrap: balance;
+  max-width: 15ch;
+}
+
+/* The one italic the type scale allows: the last word, in the lighter forest. */
+.signed {
+  font-style: italic;
+  color: var(--color-forest-200);
+}
+
+/* The headline and the stage list are one block, centred in whatever height is
+   left under the wordmark. Pinned to the bottom instead, they leave a void down
+   the middle of the panel on a tall window. */
+.brandBody {
+  margin-block: auto;
+  display: grid;
+  gap: var(--space-6);
+}
+
+.stages {
+  display: grid;
+  gap: var(--space-4);
+  max-width: 44ch;
+}
+
+.stage {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+}
+
+/* The four icons line up on one left edge, so the column reads as a sequence
+   rather than four separate rows. */
+.stageIcon {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 999px;
+  background: rgb(255 255 255 / 0.1);
+  color: var(--color-forest-100);
+}
+
+.stageLabel {
+  display: block;
+  color: var(--color-n-50);
+}
+
+.stageNote {
+  display: block;
+  color: var(--color-forest-200);
+}
+
+/* The form side. */
+.form {
+  position: relative;
+  isolation: isolate;
+  display: flex;
+  flex-direction: column;
+  background: var(--color-ground);
+}
+
+.formBloom {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  overflow: hidden;
+}
+
+.formBloomForest,
+.formBloomWarm {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(var(--blur-bloom));
+}
+
+.formBloomForest {
+  width: 420px;
+  height: 420px;
+  top: -120px;
+  right: -80px;
+  background: rgba(42, 106, 82, 0.16);
+}
+
+.formBloomWarm {
+  width: 300px;
+  height: 300px;
+  bottom: -60px;
+  left: 60px;
+  background: var(--color-bloom-warm);
+}
+
+.formHeader {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: var(--space-4);
+  min-height: 88px;
+  padding: var(--space-5) var(--space-7);
+}
+
+/* The wordmark belongs on the brand side at this width; it reappears in the
+   form header only once the brand side has collapsed to a band. */
+.compactLogo {
+  display: none;
+  margin-right: auto;
+}
+
+.center {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-6);
+  padding-top: 0;
+}
+
+.panel {
+  width: 100%;
+  max-width: 400px;
+}
+
+@media (min-width: 900px) {
+  .wrapper {
+    grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr);
+  }
+
+  .brandInner {
+    padding: var(--space-7);
+    gap: var(--space-7);
+  }
+
+  .center {
+    padding: var(--space-7);
+    padding-top: 0;
+  }
+}
+
+/* Below the split, the brand side keeps saying what the product is but stops
+   competing with the form for the first screen: the stage list goes and the
+   headline shortens to the line above it. */
+@media (max-width: 899px) {
+  .brand {
+    min-height: 0;
+  }
+
+  .brandInner {
+    gap: var(--space-4);
+    padding: var(--space-5) var(--space-5) var(--space-6);
+  }
+
+  .stages {
+    display: none;
+  }
+
+  .headline {
+    font-size: var(--type-heading-lg-size);
+    line-height: var(--type-heading-lg-line);
+    max-width: 24ch;
+  }
+
+  .formHeader {
+    min-height: 0;
+    padding: var(--space-5);
+  }
+
+  .compactLogo {
+    display: inline-flex;
+  }
+
+  .brandLogo {
+    display: none;
+  }
+}
+
+.brandFoot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin-top: auto;
+  padding-top: var(--space-6);
+  color: var(--color-forest-200);
+  font-size: var(--type-caption-size);
+}
+
+@media (max-width: 899px) {
+  .brandFoot {
+    display: none;
+  }
+}
+
+/* The path of an application, drawn: sits between the headline and the stage
+   list on a wide screen and is dropped on the short band a phone gets. */
+.scene {
+  display: none;
+  width: 100%;
+  max-width: 440px;
+  height: auto;
+}
+
+@media (min-width: 900px) and (min-height: 760px) {
+  .scene {
+    display: block;
+    animation: m3-pop var(--m3-dur-slow) var(--m3-spring-slow) 200ms both;
+  }
+}
+
+.stage {
+  animation: m3-rise var(--m3-dur-slow) var(--m3-spring) both;
+}
+
+.stage:nth-child(2) { animation-delay: 80ms; }
+.stage:nth-child(3) { animation-delay: 160ms; }
+.stage:nth-child(4) { animation-delay: 240ms; }
+
+.stageIcon {
+  border-radius: 14px;
+  background: rgb(255 255 255 / 0.14);
+}
+
+.panel {
+  animation: m3-rise var(--m3-dur-slow) var(--m3-spring) 120ms both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .scene,
+  .stage,
+  .panel {
+    animation: none !important;
+  }
+}

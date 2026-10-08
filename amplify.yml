@@ -1,0 +1,34 @@
+version: 1
+# The React app lives in frontend/, not at the repository root, so this is the
+# monorepo form of the build spec. Amplify runs every command from inside
+# appRoot, which is why the paths below are relative to frontend/.
+applications:
+  - appRoot: frontend
+    frontend:
+      phases:
+        preBuild:
+          commands:
+            # The repo pins Node 22 in frontend/.nvmrc. Amplify's build image
+            # ships several versions through nvm and does not read .nvmrc on
+            # its own, so the version is selected here rather than left to
+            # whichever one the image happens to default to.
+            - nvm install 22
+            - nvm use 22
+            - node --version
+            # ci rather than install: package-lock.json is committed, and ci
+            # fails loudly on a lockfile that has drifted instead of quietly
+            # resolving different versions than the ones tested.
+            - npm ci
+        build:
+          commands:
+            # Runs the prebuild hook first, which regenerates
+            # src/styles/tokens.css from docs/brand/tokens.json, then
+            # typechecks, then builds.
+            - npm run build
+      artifacts:
+        baseDirectory: dist
+        files:
+          - '**/*'
+      cache:
+        paths:
+          - node_modules/**/*

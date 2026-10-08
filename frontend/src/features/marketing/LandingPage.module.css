@@ -37,7 +37,7 @@
   align-items: center;
   gap: var(--space-2);
   padding: 6px 12px;
-  border-radius: 999px;
+  border-radius: var(--radius-round);
   background: var(--color-active-wash);
   color: var(--color-state-active-text);
   font-size: var(--type-caption-size);
@@ -129,7 +129,7 @@
   place-items: center;
   width: 36px;
   height: 36px;
-  border-radius: 999px;
+  border-radius: var(--radius-round);
   background: var(--color-active-wash);
   color: var(--color-state-active-text);
 }
@@ -283,41 +283,52 @@
 
 /* The pipeline reads as one run rather than five chips: the dots sit on a
    shared baseline and the rule between them is what carries the sequence. */
+/* The five states sit together in one recessed track, which is what tells a
+   reader they are a sequence rather than five separate labels, and what sets
+   them apart from the three endings underneath. Space between is the connector's
+   job, so the row spreads rather than bunching to the left. */
 .pipeline {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: var(--space-3);
   width: 100%;
+  padding: var(--space-4) var(--space-5);
+  border-radius: var(--radius-lg);
+  background: var(--color-state-open-bg);
+  box-shadow: inset 0 0 0 1px var(--color-rule-hairline);
 }
 
 .stage {
   display: flex;
   align-items: center;
   gap: var(--space-3);
-  color: var(--color-text-secondary);
+  min-width: 0;
 }
 
-.stageDot {
-  width: 10px;
-  height: 10px;
-  border-radius: 999px;
-  background: var(--color-brand-forest);
+/* Every item but the last carries the rule to the next tag, so letting those
+   grow is what spreads the track evenly and keeps the line continuous. The last
+   tag has no rule and so takes only its own width. */
+.stage:not(:last-child) {
+  flex: 1 1 auto;
 }
 
+/* The rule between two tags grows into whatever space is left, so the track
+   reads as one continuous line however wide the container is. */
 .stageLine {
-  width: 32px;
+  flex: 1 1 24px;
+  min-width: 16px;
   height: 1px;
-  background: var(--color-rule-strong);
+  background: var(--color-rule-hairline);
 }
 
+/* No divider above these: each one is its own card, and a rule as well as three
+   borders is one boundary too many. */
 .endings {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr));
-  gap: var(--space-5);
+  gap: var(--space-4);
   width: 100%;
-  padding-top: var(--space-5);
-  border-top: 1px solid var(--color-rule-hairline);
 }
 
 .ending {
@@ -359,13 +370,35 @@
   --color-text-primary: var(--color-n-50);
   --color-rule-strong: var(--color-forest-300);
 
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
   border-radius: var(--radius-2xl);
+  /* Still forest underneath: it is what shows while the photograph loads, and
+     what the panel falls back to if the file never arrives. */
   background: var(--color-forest-800);
   color: var(--color-n-50);
   padding: var(--space-8) var(--space-6);
 }
 
+/* The photograph sits behind the content. Its wash comes from the Photo
+   component and nothing is layered on top of it here: an extra gradient was
+   stacked over that wash at first, and the two together left the panel reading
+   as flat forest with the photograph invisible underneath.
+
+   This band carries text on the left and two buttons on the right, so there is
+   no direction a gradient can clear off to. It takes the even wash instead, and
+   a dusk photograph is the right one to put under it: the band is deep forest
+   by design, so muted here is the intent rather than a loss. */
+.closingPhoto {
+  z-index: 0;
+  border-radius: 0;
+  --wash-angle: to top;
+}
+
 .closingInner {
+  position: relative;
+  z-index: 1;
   display: grid;
   gap: var(--space-4);
   justify-items: center;
@@ -388,6 +421,17 @@
   gap: var(--space-3);
   justify-content: center;
   margin-top: var(--space-2);
+}
+
+@media (max-width: 640px) {
+  .pipeline {
+    justify-content: flex-start;
+    padding: var(--space-3) var(--space-4);
+  }
+
+  .stageLine {
+    display: none;
+  }
 }
 
 @media (min-width: 720px) {
@@ -433,15 +477,25 @@
 }
 
 @media (prefers-reduced-motion: no-preference) {
-  @supports ((animation-timeline: view()) and (animation-range: entry)) {
+  @supports ((animation-timeline: view()) and (animation-range: cover)) {
+    /* Every range on this page is measured against cover rather than entry,
+       and the reason is worth keeping. An entry range is only as long as the
+       element's own height, so a card 109 pixels tall finishes its reveal in
+       109 pixels of scrolling, and four cards offset from each other by a few
+       per cent of that arrive together. A cover range is the viewport plus the
+       element, which is a thousand pixels or more whatever the card measures,
+       so the same percentages become a run the eye can follow and a card of
+       any height behaves like its neighbours. */
     .reveal,
+    .reveal .empty,
     .reveal .grid > *,
     .reveal .tracks > *,
     .reveal .steps > *,
-    .reveal .endings > * {
+    .reveal .endings > *,
+    .reveal .companyPoints > * {
       animation: reveal 1ms linear both;
       animation-timeline: view();
-      animation-range: entry 5% entry 60%;
+      animation-range: cover 8% cover 30%;
     }
 
     /* A row arrives as a run rather than all at once. Each card carries its own
@@ -450,19 +504,116 @@
     .reveal .grid > :nth-child(3n + 2),
     .reveal .tracks > :nth-child(2),
     .reveal .steps > :nth-child(2),
-    .reveal .endings > :nth-child(2) {
-      animation-range: entry 11% entry 66%;
+    .reveal .endings > :nth-child(2),
+    .reveal .companyPoints > :nth-child(2) {
+      animation-range: cover 16% cover 38%;
     }
 
     .reveal .grid > :nth-child(3n + 3),
     .reveal .tracks > :nth-child(3),
     .reveal .steps > :nth-child(3),
-    .reveal .endings > :nth-child(3) {
-      animation-range: entry 17% entry 72%;
+    .reveal .endings > :nth-child(3),
+    .reveal .companyPoints > :nth-child(3) {
+      animation-range: cover 24% cover 46%;
     }
 
-    .reveal .steps > :nth-child(4) {
-      animation-range: entry 23% entry 78%;
+    .reveal .steps > :nth-child(4),
+    .reveal .companyPoints > :nth-child(4) {
+      animation-range: cover 32% cover 54%;
+    }
+
+    /* The call to action at the end of the list, which is the fifth thing in it
+       and would otherwise arrive alongside the first. */
+    .reveal .companyPoints > :nth-child(5) {
+      animation-range: cover 40% cover 62%;
+    }
+
+    /* The closing band is deliberately absent from all of this. It is a single
+       panel, photograph and wash and text together, and the section reveal
+       above already carries the whole thing. Staggering its headline and
+       buttons inside that was measured: the rendered opacity was identical at
+       every scroll position with those rules on and off, because a child
+       finishing inside a parent that is still fading contributes nothing. One
+       block, one fade.
+
+       The preview panel is the other half of the companies section and the one
+       thing in it with any size, so it arrives after the points beside it have
+       finished rather than with them. */
+    .reveal .companySplit > :last-child {
+      animation: reveal 1ms linear both;
+      animation-timeline: view();
+      animation-range: cover 18% cover 44%;
+    }
+
+    /* ------------------------------------------------------------------
+       The status track plays its own sequence.
+
+       This is the one piece of motion on the page that carries meaning
+       rather than polish: the section is about an application moving
+       through states, so the five tags arrive left to right and the rule
+       between each pair draws itself toward the next one. The movement is
+       the subject.
+
+       Every child reads one named timeline rather than its own view(), and
+       that timeline is declared on the panel around the track rather than
+       on the track itself. The nine elements in the sequence are a row 58
+       pixels tall and eight connectors a pixel high, and a timeline taken
+       from any of those is measured against something far too small to
+       spread a sequence across. The panel is the subject the whole run is
+       timed to, and the offsets below place the run so that it starts as
+       the row clears the bottom edge and ends with the row near the middle
+       of the screen. */
+    .reveal .recordPanel {
+      view-timeline-name: --track;
+    }
+
+    @keyframes draw {
+      from {
+        transform: scaleX(0);
+      }
+    }
+
+    .reveal .pipeline > .stage {
+      animation: reveal 1ms linear both;
+      animation-timeline: --track;
+      animation-range: cover 22% cover 30%;
+    }
+
+    .reveal .pipeline .stageLine {
+      transform-origin: left center;
+      animation: draw 1ms linear both;
+      animation-timeline: --track;
+      animation-range: cover 25% cover 30%;
+    }
+
+    .reveal .pipeline > :nth-child(2) { animation-range: cover 28% cover 36%; }
+    .reveal .pipeline > :nth-child(2) .stageLine { animation-range: cover 31% cover 36%; }
+    .reveal .pipeline > :nth-child(3) { animation-range: cover 34% cover 42%; }
+    .reveal .pipeline > :nth-child(3) .stageLine { animation-range: cover 37% cover 42%; }
+    .reveal .pipeline > :nth-child(4) { animation-range: cover 40% cover 48%; }
+    .reveal .pipeline > :nth-child(4) .stageLine { animation-range: cover 43% cover 48%; }
+    .reveal .pipeline > :nth-child(5) { animation-range: cover 46% cover 54%; }
+
+    /* ------------------------------------------------------------------
+       The photographs settle rather than appear.
+
+       A large image that fades in reads as a page still loading. Easing off
+       a slight scale instead reads as the picture arriving, and because it
+       ends at its native size there is nothing resampled at rest. Only the
+       image moves: its frame, its wash and anything written over it stay
+       where they are. The range is long on purpose: a settle that finishes
+       in a few pixels is a flinch. */
+    @keyframes settle {
+      from {
+        transform: scale(1.05);
+      }
+    }
+
+    .reveal .companyBanner img,
+    .reveal .closingPhoto img {
+      animation: settle 1ms linear both;
+      animation-timeline: view();
+      animation-range: cover 0% cover 50%;
     }
   }
 }
@@ -512,7 +663,7 @@
 .pill {
   height: 38px;
   padding: 0 var(--space-4);
-  border-radius: 999px;
+  border-radius: var(--radius-round);
   background: var(--color-glass-solid);
   color: var(--color-text-primary);
   box-shadow: 0 0 0 1px var(--color-rule-hairline) inset;
@@ -561,25 +712,12 @@
 }
 
 .ending {
+  display: grid;
+  justify-items: start;
+  gap: var(--space-3);
   padding: var(--space-4);
   border-radius: var(--radius-md);
-  box-shadow: var(--shadow-inset-edge);
-}
-
-.endingWord {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-  font-size: var(--type-body-sm-size);
-  font-weight: 600;
-}
-
-/* Each ending carries its word; the dot is a second cue, never the only one. */
-.endingDot {
-  width: 7px;
-  height: 7px;
-  border-radius: 999px;
-  background: var(--color-text-muted);
+  box-shadow: inset 0 0 0 1px var(--color-rule-hairline);
 }
 
 .companySplit {
@@ -659,4 +797,181 @@
     justify-content: center;
     margin-top: 0;
   }
+}
+
+/* ----------------------------------------------------------------------
+   Material 3 Expressive pass
+   ---------------------------------------------------------------------- */
+
+/* Hero imagery: the illustration is the backdrop and the live preview panel
+   floats over it, so the product is shown on top of the picture rather than
+   beside it. Hidden under 960px where the stacked layout has no room for both. */
+.heroVisual {
+  position: relative;
+  display: grid;
+  min-width: 0;
+}
+
+.heroArt {
+  display: none;
+}
+
+@media (min-width: 960px) {
+  .heroArt {
+    display: block;
+    position: absolute;
+    inset: -8% -14% -12% -4%;
+    width: 118%;
+    height: auto;
+    z-index: -1;
+    opacity: 0.95;
+  }
+}
+
+/* ----------------------------------------------------------------------
+   Entrance keyframes, defined here rather than used from m3.css
+   ----------------------------------------------------------------------
+   CSS Modules rewrites every animation-name it sees into the module's own
+   hashed namespace. m3.css is a global stylesheet, so its @keyframes m3-rise
+   keeps its plain name, and a module asking for `m3-rise` ends up asking for
+   `_m3-rise_<hash>_1`, which exists nowhere. No error, no warning: the rule
+   parses, animation-name computes to something, and the element simply never
+   moves. Every load-time entrance on this page was dead this way.
+
+   :global() is not accepted in the animation shorthand or in animation-name by
+   this toolchain, so the keyframes are declared here, where the hash the
+   reference gets is the hash the definition gets. The scroll-driven animations
+   in this file always worked for exactly that reason: their keyframes are
+   local too.
+
+   m3.css keeps its copies for the global .m3-stagger utility, which is applied
+   from markup and so never goes through this rewriting. */
+@keyframes m3-rise {
+  from {
+    opacity: 0;
+    transform: translateY(14px) scale(0.985);
+  }
+}
+
+@keyframes m3-pop {
+  from {
+    opacity: 0;
+    transform: scale(0.82);
+  }
+}
+
+.heroText > * {
+  animation: m3-rise var(--m3-dur-slow) var(--m3-spring) both;
+}
+
+.heroText > :nth-child(2) { animation-delay: 60ms; }
+.heroText > :nth-child(3) { animation-delay: 110ms; }
+.heroText > :nth-child(4) { animation-delay: 160ms; }
+.heroText > :nth-child(5) { animation-delay: 210ms; }
+.heroText > :nth-child(6) { animation-delay: 260ms; }
+/* The hiring line closes the hero. Without this it inherited the base delay of
+   nothing and arrived before the headline it sits under. */
+.heroText > :nth-child(7) { animation-delay: 310ms; }
+
+.heroVisual > :last-child {
+  animation: m3-pop var(--m3-dur-slow) var(--m3-spring-slow) 180ms both;
+}
+
+/* The strip under the hero finishes the opening rather than starting a second
+   one. It is partly on the first screen, so it runs on load like the hero above
+   it: a scroll-driven reveal here would either have played before the reader
+   arrived or be sitting at nothing while they looked straight at it. */
+.assurances > * {
+  animation: m3-rise var(--m3-dur-slow) var(--m3-spring) 370ms both;
+}
+
+.assurances > :nth-child(2) { animation-delay: 430ms; }
+.assurances > :nth-child(3) { animation-delay: 490ms; }
+
+/* Search: one pill, as an M3 Expressive search bar. */
+.search {
+  padding: 6px;
+  border-radius: var(--m3-shape-full);
+  background: var(--m3-surface-container);
+  box-shadow: var(--shadow-soft-sm), 0 0 0 1px var(--m3-outline-variant) inset;
+  transition: box-shadow var(--m3-dur-fast) var(--m3-effects);
+}
+
+.search:focus-within {
+  box-shadow: var(--shadow-soft-md), 0 0 0 2px var(--m3-primary) inset;
+}
+
+.pill {
+  border-radius: var(--m3-shape-md);
+  transition:
+    background-color var(--m3-dur-fast) var(--m3-effects),
+    border-radius var(--m3-dur) var(--m3-spring);
+}
+
+.pillOn {
+  border-radius: var(--m3-shape-full);
+}
+
+.badge {
+  background: var(--m3-primary-container);
+  color: var(--m3-on-primary-container);
+}
+
+.pointIcon {
+  border-radius: var(--m3-shape-md);
+  background: var(--m3-primary-container);
+  color: var(--m3-on-primary-container);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .heroText > *,
+  .heroVisual > :last-child,
+  .assurances > * {
+    animation: none;
+  }
+}
+
+/* Inside the pill, the field and the city picker lose their own outlines: the
+   bar is the one container, and the fields are regions of it. */
+.searchField,
+.city {
+  border-radius: var(--m3-shape-full);
+  background: transparent;
+  box-shadow: none;
+}
+
+.city {
+  padding: 0 var(--space-4);
+  cursor: pointer;
+}
+
+.city:hover {
+  background: var(--m3-primary-container);
+}
+
+/* Wrapped onto several rows on a phone, a full pill would clip its contents. */
+@media (max-width: 640px) {
+  .search {
+    border-radius: var(--m3-shape-xl);
+  }
+
+  .search button {
+    width: 100%;
+  }
+}
+
+/* A wide band across the recruiter section, above the split. 21:9 so it reads
+   as a band rather than a card, and short enough that the points below it stay
+   on the same screen. */
+.companyBanner {
+  width: 100%;
+  margin-bottom: var(--space-6);
+}
+
+.search button {
+  padding: 0 var(--space-4);
+}
+
+.city {
+  flex: 0 1 132px;
 }

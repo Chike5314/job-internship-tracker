@@ -1,0 +1,42 @@
+.shell {
+  min-height: 100vh;
+}
+
+.foreground {
+  position: relative;
+  z-index: 1;
+  min-height: 100vh;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.column {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.main {
+  flex: 1;
+  min-width: 0;
+  padding: var(--space-5) var(--space-4) var(--space-8);
+}
+
+/* Below the split the rail is a band above the content. The grid is at least a
+   screen tall, and on a short page it would share the spare height out between
+   its rows and stretch the band, so the rows keep their own heights. */
+@media (max-width: 899px) {
+  .foreground {
+    align-content: start;
+  }
+}
+
+@media (min-width: 900px) {
+  .foreground {
+    grid-template-columns: 256px minmax(0, 1fr);
+  }
+
+  .main {
+    padding: 28px var(--space-6);
+  }
+}

@@ -9,18 +9,25 @@ import { safeNextPath } from '@/auth/RouteGuards'
 import { Button } from '@/ui/Button'
 import { Field } from '@/ui/Field'
 import { Input } from '@/ui/Input'
-import { AccountTabs, useAccount, type Account } from './AccountTabs'
 import { GoogleButton } from './GoogleButton'
 import { PasswordRulesList } from './PasswordRulesList'
 import styles from './authPanel.module.css'
 
+/**
+ * Signing in is one door.
+ *
+ * This screen used to carry the same "I'm looking for work" / "I'm hiring"
+ * tabs as registration, which was misleading: the account's groups decide
+ * where it lands, so a company signing in under either tab ended up in the
+ * company app regardless. The tabs changed only the wording, and hiding the
+ * Google button behind one of them meant an account could be shown a method it
+ * was entitled to use on one tab and not the other. Registration keeps the
+ * tabs, because an applicant and a company genuinely fill in different forms.
+ */
 export function SignInPage() {
-  const [account, setAccount] = useAccount()
-
   return (
     <div className={styles.panel}>
-      <AccountTabs account={account} onChange={setAccount} />
-      <SignInForm account={account} />
+      <SignInForm />
       <p className={styles.note}>
         Offerline team members are added by an administrator and sign in with email.
       </p>
@@ -28,7 +35,7 @@ export function SignInPage() {
   )
 }
 
-function SignInForm({ account }: { account: Account }) {
+function SignInForm() {
   const { signIn } = useAuth()
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
@@ -40,8 +47,6 @@ function SignInForm({ account }: { account: Account }) {
   const [submitting, setSubmitting] = useState(false)
   const [needsNewPassword, setNeedsNewPassword] = useState(false)
 
-  const company = account === 'company'
-
   async function onSubmit(event: FormEvent) {
     event.preventDefault()
     setError(null)
@@ -52,10 +57,9 @@ function SignInForm({ account }: { account: Account }) {
         setNeedsNewPassword(true)
         return
       }
-      // The account decides where it lands, never the tab it was signed in
-      // from: a company signing in on "I'm looking for work" is still a
-      // company. `next` overrides that when the sign-in was prompted by a
-      // specific page, e.g. "Sign in to apply" from a posting.
+      // The account's groups decide where it lands. `next` overrides that when
+      // the sign-in was prompted by a specific page, e.g. "Sign in to apply"
+      // from a posting.
       await goHome()
     } catch (caught) {
       setError(authErrorMessage(caught))
@@ -74,28 +78,22 @@ function SignInForm({ account }: { account: Account }) {
   return (
     <form onSubmit={onSubmit} className={styles.form}>
       <div className={styles.lead}>
-        <h1 className={styles.title}>{company ? 'Sign in to your company' : 'Welcome back'}</h1>
-        <p className={styles.subtitle}>
-          {company ? 'Manage postings and applicants.' : 'Sign in to follow your applications.'}
-        </p>
+        <h1 className={styles.title}>Welcome back</h1>
+        <p className={styles.subtitle}>Sign in to pick up where you left off.</p>
       </div>
 
-      {!company && (
-        <>
-          <GoogleButton label="Continue with Google" />
-          <p className={styles.divider}>or with email</p>
-        </>
-      )}
+      <GoogleButton label="Continue with Google" />
+      <p className={styles.divider}>or with email</p>
 
       <div className={styles.fields}>
-        <Field label={company ? 'Company email' : 'Email'}>
+        <Field label="Email">
           {(props) => (
             <Input
               {...props}
               className={styles.input}
               type="email"
               autoComplete="email"
-              placeholder={company ? 'hiring@company.cm' : 'you@example.com'}
+              placeholder="you@example.com"
               required
               value={email}
               onChange={(event) => setEmail(event.target.value)}
@@ -136,27 +134,17 @@ function SignInForm({ account }: { account: Account }) {
         Sign in
       </Button>
 
-      {company ? (
-        <>
-          <p className={styles.aside}>
-            Company accounts sign in with email. Google sign-in is for applicants, because a Google
-            account belongs to a person.
-          </p>
-          <p className={styles.swap}>
-            New to Offerline?{' '}
-            <button type="button" onClick={() => navigate('/sign-up?account=company')}>
-              Register your company
-            </button>
-          </p>
-        </>
-      ) : (
-        <p className={styles.swap}>
-          Don't have an account?{' '}
-          <button type="button" onClick={() => navigate('/sign-up')}>
-            Create one
-          </button>
-        </p>
-      )}
+      <p className={styles.swap}>
+        New here?{' '}
+        <button type="button" onClick={() => navigate('/sign-up')}>
+          Create an account
+        </button>{' '}
+        or{' '}
+        <button type="button" onClick={() => navigate('/sign-up?account=company')}>
+          register a company
+        </button>
+      </p>
+
     </form>
   )
 }

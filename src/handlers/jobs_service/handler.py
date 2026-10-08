@@ -4,12 +4,14 @@ Routes
     GET    /jobs                                 public listing with filters
     POST   /jobs                                 create a posting in DRAFT
     GET    /jobs/mine                            the caller's own postings, drafts included
+    GET    /jobs/mine/{id}                       one of them in any status, with its company
     GET    /jobs/{id}                            public detail
     PATCH  /jobs/{id}                            edit or change lifecycle status
     GET    /jobs/{id}/applications               the pipeline for one posting
     PATCH  /jobs/{id}/applications/bulk-status   one status change across a selection
     GET    /jobs/{id}/analytics                  funnel for one posting
     GET    /companies/{id}/interviews            the account's interview calendar
+    GET    /companies/{id}/applicants            the account's applicants, by person
     GET    /companies/{id}/analytics             aggregate across the account
     POST   /companies/{id}/export                CSV export as a presigned URL
 """
@@ -37,7 +39,14 @@ from common.router import Router, api_handler, parse_body, path_param, query_par
 from common.state_machine import (
     ALL_STATUSES,
     FINAL_STATUSES,
+    INTERVIEW_SCHEDULED,
+    OFFER_ACCEPTED,
+    OFFER_DECLINED,
+    OFFER_EXTENDED,
+    REJECTED,
     SUBMITTED,
+    UNDER_REVIEW,
+    WITHDRAWN,
     assert_transition,
     funnel_counts,
     history_entry,
@@ -182,8 +191,6 @@ def update_job(event: Dict[str, Any], _context: Any) -> Dict[str, Any]:
         changes["openings"] = optional_int(errors, body, "openings", minimum=1, maximum=1000)
     if "skills" in body:
         changes["skills"] = optional_string_list(body, "skills", limit=30)
-    if "startDate" in body:
-        changes["startDate"] = optional_iso_datetime(errors, body, "startDate")
 
     target_status = None
     if "postingStatus" in body:
@@ -234,18 +241,13 @@ def _assert_publishable(job: Dict[str, Any], changes: Dict[str, Any]) -> None:
 
 @router.route("GET", "/jobs/{id}")
 def get_job_details(event: Dict[str, Any], _context: Any) -> Dict[str, Any]:
-    """FR-4.7. The public view of one posting, for anyone browsing.
+    """FR-4.7 and FR-4.10.
 
-    This route carries no authorizer, because anonymous browsing has to work, so
-    it can only ever serve the public view of a published posting. It used to
-    read an optional caller and widen the response for an owner, an admin, or an
-    applicant who had already applied, which never happened: API Gateway
-    populates request context claims only on a route that has an authorizer
-    attached, so the caller here was always absent and all three branches were
-    dead. A recruiter or an admin reads a posting through GET /jobs/mine/{id}
-    instead, and an applicant reads the posting they applied to through
-    GET /applications/{id}, which already carries the posting with it. That last
-    route is what keeps FR-4.10 satisfied once a posting expires.
+    Public route with no authorizer, so the caller is always anonymous here (see
+    the note at the end of common/auth.py). The owner reads its own posting
+    through GET /jobs/mine/{id}. An applicant who already applied should keep
+    access once a posting expires, and that needs an authorizer protected
+    counterpart of its own; _has_applied is the check it will use.
     """
     job = get_job(path_param(event, "id"))
     if job.get("postingStatus") != PUBLISHED:
@@ -253,25 +255,6 @@ def get_job_details(event: Dict[str, Any], _context: Any) -> Dict[str, Any]:
 
     company = find_company(job["companyId"])
     return ok({"job": _job_view(job, full=False), "company": _company_snippet(company, job)})
-
-
-@router.route("GET", "/jobs/mine/{id}")
-def get_my_job_details(event: Dict[str, Any], _context: Any) -> Dict[str, Any]:
-    """FR-4.7 for the recruiter who owns the posting, and for an admin.
-
-    The authorizer protected counterpart of GET /jobs/{id}: it answers for a
-    posting in any status, drafts and closed postings included, and returns the
-    full view.
-    """
-    caller = get_caller(event)
-    caller.require("Recruiters", "Admins")
-    job = get_job(path_param(event, "id"))
-
-    if caller.user_id != job.get("companyId") and not caller.is_admin:
-        raise ForbiddenError("This posting is not yours.")
-
-    company = find_company(job["companyId"])
-    return ok({"job": _job_view(job, full=True), "company": _company_snippet(company, job)})
 
 
 @router.route("GET", "/jobs/mine")
@@ -294,6 +277,40 @@ def list_my_jobs(event: Dict[str, Any], _context: Any) -> Dict[str, Any]:
         limit=200,
     )
     return ok({"count": len(items), "jobs": [_job_view(j, full=True) for j in items]})
+
+
+@router.route("GET", "/jobs/mine/{id}")
+def get_my_job(event: Dict[str, Any], _context: Any) -> Dict[str, Any]:
+    """One of the caller's own postings, in any status.
+
+    The public GET /jobs/{id} serves published postings only and, carrying no
+    authorizer, can never tell who is asking. A recruiter editing a draft and an
+    admin opening any posting both need the full record, so they read it here
+    where the caller is known.
+
+    An admin may read any company's posting; a recruiter only their own. The
+    company comes back with it, because every screen that opens a posting this
+    way shows whose it is.
+    """
+    caller = get_caller(event)
+    caller.require("Recruiters", "Admins")
+    job = get_job(path_param(event, "id"))
+    if not caller.is_admin and job.get("companyId") != caller.user_id:
+        raise ForbiddenError("That posting belongs to another company.")
+
+    company = find_company(job.get("companyId", ""))
+    return ok(
+        {
+            "job": _job_view(job, full=True),
+            "company": dynamo.from_dynamo(
+                {
+                    "companyId": company.get("companyId"),
+                    "companyName": company.get("companyName"),
+                    "verificationStatus": company.get("verificationStatus"),
+                }
+            ),
+        }
+    )
 
 
 @router.route("GET", "/jobs")
@@ -383,6 +400,18 @@ def _deadline_passed(job: Dict[str, Any]) -> bool:
     return bool(job.get("applicationDeadline")) and is_past(job["applicationDeadline"])
 
 
+def _has_applied(applicant_id: str, job_id_value: str) -> bool:
+    from common.ids import applicant_job_key
+
+    items = dynamo.query_all(
+        dynamo.applications(),
+        key_condition=Key("applicantJobKey").eq(applicant_job_key(applicant_id, job_id_value)),
+        index_name="ApplicantJobIndex",
+        limit=1,
+    )
+    return bool(items)
+
+
 # ----------------------------------------------------------------------
 # Pipeline
 # ----------------------------------------------------------------------
@@ -408,11 +437,18 @@ def list_job_applications(event: Dict[str, Any], _context: Any) -> Dict[str, Any
     if status_filter:
         items = [item for item in items if item.get("status") == status_filter]
 
+    # One batch for the whole board rather than a read per card. A busy posting
+    # is exactly where the per-row lookup was worst.
+    people = dynamo.get_users(item.get("applicantId", "") for item in items)
+
     return ok(
         {
             "job": {"jobId": job["jobId"], "title": job.get("title")},
             "count": len(items),
-            "applications": [_pipeline_row(item) for item in items],
+            "applications": [
+                _pipeline_row(item, people.get(item.get("applicantId", ""), {}))
+                for item in items
+            ],
         }
     )
 
@@ -502,9 +538,18 @@ def company_interviews(event: Dict[str, Any], _context: Any) -> Dict[str, Any]:
     """FR-13.8. The company's interview calendar.
 
     One ranged query on CompanyInterviewIndex, already in time order because the
-    interview time is the sort key. The window defaults to the coming fortnight,
-    which is what a calendar opens on, and from and to move it for a day, a week
-    or a month view without any change here.
+    interview time is the sort key. The window ends a fortnight out, which is
+    what a calendar opens on, and from and to move it for a day, a week or a
+    month view without any change here.
+
+    It has no lower bound unless one is asked for, and that is deliberate. An
+    application carries nextInterviewAt until something writes to it, and the
+    clock passing an interview writes nothing, so an interview nobody recorded
+    an outcome for keeps a timestamp in the past forever. A window starting at
+    now dropped exactly those, which left the account counting an application at
+    INTERVIEW_SCHEDULED while the calendar showed nothing at all and no screen
+    said where it went. They are the rows most in need of a recruiter, so they
+    come back separately rather than being mixed into the days ahead.
     """
     caller = get_caller(event)
     caller.require("Recruiters", "Admins")
@@ -512,15 +557,21 @@ def company_interviews(event: Dict[str, Any], _context: Any) -> Dict[str, Any]:
     assert_owns_company(caller, company_id)
 
     params = query_params(event)
-    window_from = params.get("from") or now_iso()
-    window_to = params.get("to") or _plus_days(window_from, 14)
-    if window_to < window_from:
+    moment = now_iso()
+    window_from = params.get("from")
+    window_to = params.get("to") or _plus_days(window_from or moment, 14)
+    if window_from and window_to < window_from:
         raise ValidationError("The end of the window is before its start.")
 
+    key = Key("companyId").eq(company_id)
+    key = key & (
+        Key("nextInterviewAt").between(window_from, window_to)
+        if window_from
+        else Key("nextInterviewAt").lte(window_to)
+    )
     rows = dynamo.query_all(
         dynamo.applications(),
-        key_condition=Key("companyId").eq(company_id)
-        & Key("nextInterviewAt").between(window_from, window_to),
+        key_condition=key,
         index_name="CompanyInterviewIndex",
         scan_forward=True,
         limit=500,
@@ -553,12 +604,22 @@ def company_interviews(event: Dict[str, Any], _context: Any) -> Dict[str, Any]:
             }
         )
 
+    # Split on the clock rather than on anything stored, so a row moves from one
+    # side to the other by itself as its time passes.
+    ahead = [e for e in entries if str(e.get("scheduledAt") or "") >= moment]
+    passed = [e for e in entries if str(e.get("scheduledAt") or "") < moment]
+    # Most overdue last, so the list reads oldest first the way a backlog does.
+    passed.sort(key=lambda entry: str(entry.get("scheduledAt") or ""))
+
     return ok(
         {
-            "from": window_from,
+            "from": window_from or moment,
             "to": window_to,
-            "count": len(entries),
-            "interviews": dynamo.from_dynamo(entries),
+            "count": len(ahead),
+            "interviews": dynamo.from_dynamo(ahead),
+            # Interviews that have happened with nothing recorded since. Not a
+            # calendar entry any more: a job of work.
+            "awaitingOutcome": dynamo.from_dynamo(passed),
         }
     )
 
@@ -602,6 +663,57 @@ def job_analytics(event: Dict[str, Any], _context: Any) -> Dict[str, Any]:
     )
 
 
+@router.route("GET", "/companies/{id}/applicants")
+def company_applicants(event: Dict[str, Any], _context: Any) -> Dict[str, Any]:
+    """The account's applicants, one row per person rather than per application.
+
+    Every other recruiter view is organised by posting, which means somebody who
+    applied to three of your openings reads as three unrelated cards on three
+    boards. This route is the one place the same person is one person: their
+    applications are gathered under them, with the furthest stage any of them
+    reached and what is waiting on each side.
+
+    Assembled the same way company_analytics is, by querying JobIndex once per
+    posting, for the reason section 4.6 records. The profiles are then read in
+    batches rather than one per row, because the interesting case for this page
+    is the account with many applicants and that is exactly the case where one
+    GetItem per person stops being acceptable.
+    """
+    caller = get_caller(event)
+    caller.require("Recruiters", "Admins")
+    company_id = path_param(event, "id")
+    assert_owns_company(caller, company_id)
+
+    postings = dynamo.query_all(
+        dynamo.jobs(),
+        key_condition=Key("companyId").eq(company_id),
+        index_name="CompanyIndex",
+        limit=300,
+    )
+    titles = {posting["jobId"]: posting.get("title") for posting in postings}
+
+    grouped: Dict[str, List[Dict[str, Any]]] = {}
+    for posting in postings:
+        for application in dynamo.query_all(
+            dynamo.applications(),
+            key_condition=Key("jobId").eq(posting["jobId"]),
+            index_name="JobIndex",
+            limit=1000,
+        ):
+            grouped.setdefault(application.get("applicantId", ""), []).append(application)
+    grouped.pop("", None)
+
+    profiles = dynamo.get_users(grouped.keys())
+    rows = [
+        _applicant_row(applicant_id, applications, profiles.get(applicant_id, {}), titles)
+        for applicant_id, applications in grouped.items()
+    ]
+    # Most recently active first, which is the order a recruiter reads this in.
+    rows.sort(key=lambda row: row["lastActivityAt"] or "", reverse=True)
+
+    return ok({"companyId": company_id, "applicants": rows})
+
+
 @router.route("GET", "/companies/{id}/analytics")
 def company_analytics(event: Dict[str, Any], _context: Any) -> Dict[str, Any]:
     """FR-10.2 and FR-10.5.
@@ -637,11 +749,6 @@ def company_analytics(event: Dict[str, Any], _context: Any) -> Dict[str, Any]:
                 "title": posting.get("title"),
                 "postingStatus": posting.get("postingStatus"),
                 "applications": len(rows),
-                # Still at SUBMITTED means nobody has opened it, because opening
-                # an application is what moves it to UNDER_REVIEW. The postings
-                # list leads with this, so a recruiter sees where the unread
-                # work is without opening each pipeline.
-                "newApplications": sum(1 for row in rows if row.get("status") == SUBMITTED),
             }
         )
 
@@ -812,55 +919,125 @@ def _company_snippet(company: Dict[str, Any], job: Dict[str, Any]) -> Dict[str, 
     return {k: v for k, v in snippet.items() if v is not None}
 
 
-def _next_interview(application: Dict[str, Any]) -> Dict[str, Any] | None:
-    """The soonest interview still standing, for the board's time chip.
-
-    A reschedule leaves the superseded interview in the list and a decline
-    leaves its own entry, so the soonest row is taken from the ones still live
-    rather than from the end of the list.
-    """
-    live = [
-        interview
-        for interview in (application.get("interviews") or [])
-        if interview.get("state") not in ("CANCELLED", "DECLINED")
-        and interview.get("scheduledAt")
-    ]
-    if not live:
-        return None
-    soonest = min(live, key=lambda interview: interview["scheduledAt"])
-    return {
-        "scheduledAt": soonest.get("scheduledAt"),
-        "state": soonest.get("state"),
-    }
+# The order the pipeline actually runs in, used to answer how far somebody got
+# across several applications. The three endings sit below the run rather than
+# inside it: a rejection is not further along than an interview, so they rank
+# under every live stage and only ever win when nothing live exists.
+_PROGRESS = [
+    SUBMITTED,
+    UNDER_REVIEW,
+    INTERVIEW_SCHEDULED,
+    OFFER_EXTENDED,
+    OFFER_ACCEPTED,
+]
 
 
-def _status_changed_at(application: Dict[str, Any]) -> Any:
-    """When the application last moved, so the board can show time in stage.
+def _furthest(statuses: List[str]) -> str:
+    live = [s for s in statuses if s in _PROGRESS]
+    if live:
+        return max(live, key=_PROGRESS.index)
+    # Nothing live: report what actually happened, preferring the ending the
+    # applicant chose over the one the company did, since "they turned us down"
+    # is the more useful thing to know when both appear.
+    for ending in (OFFER_DECLINED, WITHDRAWN, REJECTED):
+        if ending in statuses:
+            return ending
+    return statuses[0] if statuses else SUBMITTED
 
-    Falls back to the submission time, which is correct for an application that
-    has not moved since: its first history entry is the submission itself.
+
+def _status_changed_at(application: Dict[str, Any]) -> Optional[str]:
+    """When the application last moved, which is what time in stage counts from.
+
+    Read off the end of statusHistory rather than stored, because the history is
+    already the record of every move and a second copy of the last one would be
+    a second thing to keep in step. Falls back to the application's own
+    timestamp, so a row written before any history existed still reads.
     """
     history = application.get("statusHistory") or []
     if history:
-        return history[-1].get("timestamp") or application.get("appliedAt")
+        last = history[-1].get("timestamp")
+        if last:
+            return str(last)
     return application.get("appliedAt")
 
 
-def _pipeline_row(application: Dict[str, Any]) -> Dict[str, Any]:
-    applicant = find_user(application.get("applicantId", ""))
+def _pipeline_row(application: Dict[str, Any], applicant: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+    """One card on a board.
+
+    The applicant is passed in where the caller has already read a batch of
+    them, and looked up here otherwise, so a single application costs one read
+    and a page of fifty costs one batch.
+    """
+    person = applicant if applicant is not None else find_user(application.get("applicantId", ""))
     return dynamo.from_dynamo(
         {
             "applicationId": application.get("applicationId"),
             "applicantId": application.get("applicantId"),
-            "applicantName": applicant.get("fullName"),
-            "applicantEmail": applicant.get("email"),
+            "applicantName": person.get("fullName"),
+            "applicantEmail": person.get("email"),
             "status": application.get("status"),
             "appliedAt": application.get("appliedAt"),
-            "lastEditedAt": application.get("lastEditedAt"),
             "statusChangedAt": _status_changed_at(application),
+            "lastEditedAt": application.get("lastEditedAt"),
             "isFinal": application.get("status") in FINAL_STATUSES,
             "interviewCount": len(application.get("interviews") or []),
-            "nextInterview": _next_interview(application),
+            "nextInterview": application.get(interview_calendar.SNAPSHOT_FIELD),
+        }
+    )
+
+
+def _applicant_row(
+    applicant_id: str,
+    applications: List[Dict[str, Any]],
+    profile: Dict[str, Any],
+    titles: Dict[str, Optional[str]],
+) -> Dict[str, Any]:
+    """One person, with everything they have sent this company under them."""
+    ordered = sorted(applications, key=lambda a: str(a.get("appliedAt") or ""))
+    statuses = [str(a.get("status") or "") for a in ordered]
+    moments = [_status_changed_at(a) for a in ordered]
+
+    # Open interview invitations across all of them, which is the other half of
+    # what is waiting on the applicant alongside an offer they have not answered.
+    awaiting_interview = sum(
+        1
+        for application in ordered
+        for interview in (application.get("interviews") or [])
+        if interview.get("state") == "PROPOSED"
+    )
+
+    return dynamo.from_dynamo(
+        {
+            "applicantId": applicant_id,
+            "fullName": profile.get("fullName"),
+            "email": profile.get("email"),
+            "phone": profile.get("phone"),
+            "skills": profile.get("skills") or [],
+            "academicInfo": profile.get("academicInfo"),
+            "applicationCount": len(ordered),
+            "firstAppliedAt": ordered[0].get("appliedAt") if ordered else None,
+            "lastActivityAt": max([m for m in moments if m], default=None),
+            "furthestStatus": _furthest(statuses),
+            # Whether this person is still in play anywhere, which is what
+            # separates somebody to act on from somebody already dealt with.
+            "isActive": any(s not in FINAL_STATUSES for s in statuses),
+            "awaitingReview": sum(1 for s in statuses if s == SUBMITTED),
+            "awaitingTheirReply": sum(1 for s in statuses if s == OFFER_EXTENDED)
+            + awaiting_interview,
+            "applications": [
+                {
+                    "applicationId": application.get("applicationId"),
+                    "jobId": application.get("jobId"),
+                    "jobTitle": titles.get(str(application.get("jobId"))),
+                    "status": application.get("status"),
+                    "appliedAt": application.get("appliedAt"),
+                    "statusChangedAt": _status_changed_at(application),
+                    "isFinal": application.get("status") in FINAL_STATUSES,
+                    "interviewCount": len(application.get("interviews") or []),
+                    "nextInterview": application.get(interview_calendar.SNAPSHOT_FIELD),
+                }
+                for application in reversed(ordered)
+            ],
         }
     )
 

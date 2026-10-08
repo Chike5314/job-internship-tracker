@@ -9,6 +9,10 @@ import { Button } from '@/ui/Button'
 import { Icon, type IconName } from '@/ui/Icon'
 import { Skeleton } from '@/ui/Skeleton'
 import { HeroPreview } from './HeroPreview'
+import { HeroScene } from '@/ui/illustrations'
+import { Photo } from '@/ui/Photo'
+import { StatusTag, type ApplicationStatus } from '@/ui/StatusTag'
+import { photos } from '@/assets/photos/manifest'
 import styles from './LandingPage.module.css'
 
 const TYPE_PILLS: { value: string; label: string }[] = [
@@ -82,12 +86,29 @@ const STEPS = [
 
 /** The pipeline as the state machine actually runs it, ending in the three
  *  ways an application can close. */
-const PIPELINE = ['Submitted', 'Under review', 'Interview', 'Offer extended', 'Accepted']
+// Real statuses rather than five strings, so this section renders with the same
+// StatusTag the pipeline and the applications list use. That is the point of the
+// section: a visitor sees the exact tags they will be reading later, in the
+// tones the token file assigns them, including the one solid tag that marks the
+// state demanding an answer.
+const PIPELINE: ApplicationStatus[] = [
+  'SUBMITTED',
+  'UNDER_REVIEW',
+  'INTERVIEW_SCHEDULED',
+  'OFFER_EXTENDED',
+  'OFFER_ACCEPTED',
+]
 
-const ENDINGS = [
-  { word: 'Rejected', body: 'The company closes the application at any point before an offer.' },
-  { word: 'Withdrawn', body: 'You withdraw your own application at any point before a final decision.' },
-  { word: 'Declined', body: 'You turn down an offer that was extended to you.' },
+const ENDINGS: { status: ApplicationStatus; body: string }[] = [
+  {
+    status: 'REJECTED',
+    body: 'The company closes the application at any point before an offer.',
+  },
+  {
+    status: 'WITHDRAWN',
+    body: 'You withdraw your own application at any point before a final decision.',
+  },
+  { status: 'OFFER_DECLINED', body: 'You turn down an offer that was extended to you.' },
 ]
 
 const FOR_COMPANIES: { icon: IconName; heading: string; body: string }[] = [
@@ -180,7 +201,7 @@ export function LandingPage() {
                 </option>
               ))}
             </select>
-            <Button type="submit" variant="primary">
+            <Button type="submit" variant="primary" size="lg">
               Search
             </Button>
           </form>
@@ -210,7 +231,10 @@ export function LandingPage() {
           </p>
         </div>
 
-        <HeroPreview />
+        <div className={styles.heroVisual}>
+          <HeroScene backdrop className={styles.heroArt} />
+          <HeroPreview />
+        </div>
       </section>
 
       <section className={styles.assurances}>
@@ -239,7 +263,7 @@ export function LandingPage() {
                 {openings.length} opening{openings.length === 1 ? '' : 's'}
               </span>
             )}
-            <ButtonLink variant="secondary" to="/postings">
+            <ButtonLink variant="tonal" to="/postings">
               Browse all
             </ButtonLink>
           </span>
@@ -323,23 +347,24 @@ export function LandingPage() {
             </p>
           </header>
 
+          {/* The track sits in its own recessed panel, which is what separates
+              the five states an application moves through from the three ways it
+              can end below. */}
           <ol className={styles.pipeline}>
-          {PIPELINE.map((stage, index) => (
-            <li key={stage} className={styles.stage}>
-              <span className={styles.stageDot} aria-hidden="true" />
-              <span className="t-body-sm">{stage}</span>
-              {index < PIPELINE.length - 1 && <span className={styles.stageLine} aria-hidden="true" />}
-            </li>
-          ))}
+            {PIPELINE.map((status, index) => (
+              <li key={status} className={styles.stage}>
+                <StatusTag status={status} compact />
+                {index < PIPELINE.length - 1 && (
+                  <span className={styles.stageLine} aria-hidden="true" />
+                )}
+              </li>
+            ))}
           </ol>
 
           <div className={styles.endings}>
             {ENDINGS.map((ending) => (
-              <div key={ending.word} className={['glass-solid', styles.ending].join(' ')}>
-                <p className={styles.endingWord}>
-                  <span className={styles.endingDot} aria-hidden="true" />
-                  {ending.word}
-                </p>
+              <div key={ending.status} className={['glass-solid', styles.ending].join(' ')}>
+                <StatusTag status={ending.status} compact />
                 <p className={['t-body-sm', styles.muted].join(' ')}>{ending.body}</p>
               </div>
             ))}
@@ -352,6 +377,11 @@ export function LandingPage() {
           <p className="t-eyebrow">For companies</p>
           <h2 className="t-display-md">Post, shortlist and schedule in one place.</h2>
         </header>
+        {/* Candidates rather than recruiters, deliberately: what a company is
+            being offered here is the people, and the rest of this section is
+            already screens of the tool. No wash, because nothing is written
+            over it, so it runs at full colour. */}
+        <Photo photo={photos.colleagues} ratio="21 / 9" className={styles.companyBanner} />
         <div className={styles.companySplit}>
           <div className={styles.companyPoints}>
             {FOR_COMPANIES.map((item) => (
@@ -375,6 +405,12 @@ export function LandingPage() {
       </section>
 
       <section className={[styles.closing, styles.reveal].join(' ')}>
+        {/* The panel's ground rather than a picture beside the text, which at
+            the 300px that column used to be would have been a thumbnail. This
+            band is close to 3:1, so it needs a photograph shot wide: a tall one
+            cropped to this shape shows a slab of its middle and reads as
+            nothing at all. */}
+        <Photo photo={photos.companiesMeeting} wash="forest" fill className={styles.closingPhoto} />
         <div className={styles.closingInner}>
           <div className={styles.closingText}>
             <h2 className={['t-display-lg', styles.closingHeadline].join(' ')}>

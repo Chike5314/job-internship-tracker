@@ -20,6 +20,7 @@ export function CompanySidebar() {
   const destinations: RailDestination[] = [
     { to: '/company', label: 'Overview', icon: 'analytics', end: true },
     { to: '/company/postings', label: 'Postings', icon: 'posting', count: postingCount },
+    { to: '/company/applicants', label: 'Applicants', icon: 'person' },
     { to: '/company/interviews', label: 'Interviews', icon: 'interview' },
     { to: '/company/analytics', label: 'Analytics', icon: 'trend' },
     { to: '/company/notifications', label: 'Notifications', icon: 'bell', count: unread, urgent: true },

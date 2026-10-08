@@ -140,7 +140,7 @@
   text-overflow: ellipsis;
   height: 22px;
   padding: 0 var(--space-2);
-  border-radius: 7px;
+  border-radius: var(--radius-sm);
   font-size: 11px;
   font-weight: 600;
   font-variant-numeric: tabular-nums;
@@ -157,6 +157,13 @@
 .chipConfirmed {
   background: var(--color-active-wash);
   color: var(--color-state-active-text);
+}
+
+/* A time that has been and gone outranks both: whatever was agreed, the card is
+   now sitting on a decision only this recruiter can make. */
+.chipPassed {
+  background: var(--color-brand-verm);
+  color: var(--color-on-brand);
 }
 
 .badge {

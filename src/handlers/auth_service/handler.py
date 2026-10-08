@@ -4,8 +4,8 @@ Routes
     GET    /profile
     POST   /profile
     POST   /profile/upload-url
-    GET    /profile/cvs
     POST   /profile/cvs
+    GET    /profile/cvs
 
 FR-1.6 is handled here rather than in a Cognito trigger. The first authenticated
 call from an account finds no record and creates one, which covers applicants
@@ -149,18 +149,16 @@ def profile_upload_url(event: Dict[str, Any], _context: Any) -> Dict[str, Any]:
     key = storage.build_key(caller.user_id, kind, file_info["fileName"])
     presigned = storage.presigned_upload(key, body.get("contentType"))
 
-    # FR-2.7. A CV upload is remembered so it can be offered for reuse later,
-    # but not here. A presigned URL is an offer, not an upload: the transfer
-    # happens between the browser and S3, and it can be abandoned, fail, or
-    # expire unused. Written at this point the library filled up with entries
-    # pointing at keys that had no object behind them, and the reuse list then
-    # offered CVs that could not be downloaded. The entry is written by
-    # POST /profile/cvs once the upload has actually landed.
+    # FR-2.7. The library entry is written by POST /profile/cvs once the upload
+    # has landed, not here. Writing it at this point recorded every CV the
+    # moment a URL was asked for, so an upload that failed or was abandoned left
+    # an entry pointing at an object that was never created, and the applicant
+    # was offered it for reuse on their next application.
     if kind == "cv":
         presigned["cv"] = {
-            "s3Key": key,
             "label": optional_string(body, "label", max_length=120)
             or file_info["fileName"],
+            "s3Key": key,
         }
 
     return created(presigned)
@@ -168,38 +166,40 @@ def profile_upload_url(event: Dict[str, Any], _context: Any) -> Dict[str, Any]:
 
 @router.route("POST", "/profile/cvs")
 def confirm_cv_upload(event: Dict[str, Any], _context: Any) -> Dict[str, Any]:
-    """FR-2.7. Record a CV in the library once its upload has landed.
+    """FR-2.7. Records a CV in the library, after its upload has landed.
 
-    Called by the client after the presigned PUT succeeds. The object is checked
-    for rather than taken on trust, so a client that reports an upload it never
-    made still cannot put an empty entry in the library.
+    A presigned PUT goes straight from the browser to S3, so this call is the
+    only way the API learns the transfer happened. It does not take the client's
+    word for it: the object is checked before anything is written, which is what
+    keeps an abandoned upload out of the library.
+
+    Safe to call again. A retry that names the same key confirms to the same
+    entry rather than adding a second one, because a browser retrying an upload
+    it is unsure about is the normal case rather than an error.
     """
     caller = get_caller(event)
+    caller.require("Applicants")
     body = parse_body(event)
     errors = Errors()
-
-    key = require_string(errors, body, "s3Key", max_length=512)
-    label = optional_string(body, "label", max_length=120)
+    key = require_string(errors, body, "s3Key", max_length=1024) or ""
     errors.raise_if_any()
 
     storage.assert_key_owned_by(key, caller.user_id)
-    if not key.startswith(storage.PREFIXES["cv"] + "/"):
-        raise ValidationError("That key is not a CV.")
     if not storage.object_exists(key):
-        raise ValidationError("That upload has not arrived yet. Try again once it finishes.")
+        raise ValidationError(
+            "That upload has not arrived yet. Finish it and try again.",
+            {"s3Key": "No object at that key."},
+        )
 
     profile = _ensure_user_record(caller)
-
-    # Confirming twice is the same confirmation, not a second CV. The client
-    # retries this call on a flaky connection, and a retry must not leave the
-    # library holding the same document under two identifiers.
-    for existing in profile.get("cvs") or []:
-        if existing.get("s3Key") == key:
-            return ok({"cv": existing})
+    existing = list(profile.get("cvs") or [])
+    for entry in existing:
+        if entry.get("s3Key") == key:
+            return ok({"cv": dynamo.from_dynamo(_cv_view(entry))})
 
     entry = {
         "cvId": cv_id(),
-        "label": label or key.rsplit("-", 1)[-1],
+        "label": optional_string(body, "label", max_length=120) or key.rsplit("/", 1)[-1],
         "s3Key": key,
         "uploadedAt": now_iso(),
     }
@@ -208,7 +208,7 @@ def confirm_cv_upload(event: Dict[str, Any], _context: Any) -> Dict[str, Any]:
         UpdateExpression="SET cvs = list_append(if_not_exists(cvs, :empty), :entry)",
         ExpressionAttributeValues={":empty": [], ":entry": [entry]},
     )
-    return created({"cv": entry})
+    return created({"cv": dynamo.from_dynamo(_cv_view(entry))})
 
 
 @router.route("GET", "/profile/cvs")
@@ -227,12 +227,14 @@ def list_cvs(event: Dict[str, Any], _context: Any) -> Dict[str, Any]:
     entries.sort(key=lambda item: item.get("uploadedAt", ""), reverse=True)
     recent = entries[: config.CV_REUSE_LIMIT]
 
-    for entry in recent:
-        entry["downloadUrl"] = storage.presigned_download(
-            entry["s3Key"], entry.get("label")
-        )
+    return ok(
+        {"cvs": [_cv_view(entry) for entry in recent], "totalUploaded": len(entries)}
+    )
 
-    return ok({"cvs": recent, "totalUploaded": len(entries)})
+
+def _cv_view(entry: Dict[str, Any]) -> Dict[str, Any]:
+    """One library row. The key never leaves as a key, per section 5.1."""
+    return {**entry, "downloadUrl": storage.presigned_download(entry["s3Key"], entry.get("label"))}
 
 
 def _presentable(profile: Dict[str, Any]) -> Dict[str, Any]:

@@ -70,7 +70,7 @@
 .pill {
   height: 38px;
   padding: 0 var(--space-4);
-  border-radius: 999px;
+  border-radius: var(--radius-round);
   background: var(--color-glass-solid);
   color: var(--color-text-primary);
   box-shadow: 0 0 0 1px var(--color-rule-hairline) inset;

@@ -1,0 +1,235 @@
+.layout {
+  display: flex;
+  align-items: flex-start;
+  gap: 40px;
+}
+
+.layout > aside {
+  flex: none;
+  width: 380px;
+}
+
+.main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  min-width: 0;
+}
+
+.intro {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding-bottom: var(--space-1);
+}
+
+.title {
+  color: var(--color-text-primary);
+  font-family: var(--font-serif);
+  font-size: 36px;
+  font-weight: 400;
+  line-height: 1.1;
+  letter-spacing: -0.01em;
+}
+
+.lede {
+  color: var(--color-text-muted);
+  font-size: var(--type-heading-sm-size);
+  line-height: normal;
+}
+
+.banner {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: 18px 20px;
+  border-radius: var(--radius-md);
+  background: rgba(216, 67, 28, 0.08);
+  box-shadow: inset 0 0 0 1px var(--color-verm-200);
+  color: var(--color-attention-text);
+}
+
+:global([data-theme='ink']) .banner {
+  box-shadow: inset 0 0 0 1px var(--color-verm-700);
+}
+
+.bannerTitle {
+  font-size: var(--type-body-size);
+  font-weight: 600;
+  line-height: normal;
+}
+
+.bannerList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.bannerLink {
+  color: inherit;
+  font-size: 14px;
+  line-height: normal;
+  text-align: left;
+}
+
+.bannerLink::before {
+  content: '\00B7\00A0';
+}
+
+.bannerLink:hover {
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.about {
+  color: var(--color-text-secondary);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.about strong {
+  color: var(--color-text-primary);
+  font-weight: 600;
+}
+
+.aside {
+  color: var(--color-text-muted);
+  font-size: var(--type-body-sm-size);
+  line-height: 1.45;
+}
+
+.aside a {
+  color: var(--color-text-link);
+  font-weight: 600;
+}
+
+.aside a:hover {
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.noteField {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.noteLabel {
+  color: var(--color-text-primary);
+  font-size: 14px;
+  font-weight: 600;
+  line-height: normal;
+}
+
+.note {
+  padding: var(--space-3) 14px;
+  font-size: var(--type-body-size);
+  line-height: 1.5;
+}
+
+.submit {
+  display: flex;
+  align-items: center;
+  gap: var(--space-5);
+  padding: 22px 26px;
+  border-radius: var(--radius-lg);
+  background: var(--color-glass-solid);
+  box-shadow: inset 0 0 0 1px var(--color-n-400);
+}
+
+:global([data-theme='ink']) .submit {
+  box-shadow: inset 0 0 0 1px var(--color-n-700);
+}
+
+.submitText {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  min-width: 0;
+}
+
+.submitTitle {
+  color: var(--color-text-primary);
+  font-size: var(--type-heading-sm-size);
+  font-weight: 600;
+  line-height: normal;
+}
+
+.submitBody {
+  color: var(--color-text-muted);
+  font-size: 14px;
+  line-height: normal;
+}
+
+.submitError {
+  color: var(--color-feedback-error-text);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+/* Muted until everything required is in, but never disabled: pressing it
+   early is how the viewer finds out what is missing. */
+.send {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  height: 50px;
+  padding: 0 28px;
+  border-radius: var(--radius-md);
+  background: var(--color-state-open-bg);
+  box-shadow: inset 0 0 0 1px var(--color-n-400);
+  color: var(--color-text-secondary);
+  font-size: var(--type-heading-sm-size);
+  font-weight: 600;
+}
+
+.sendReady {
+  background: var(--color-action-fill);
+  box-shadow: none;
+  color: var(--color-glass-solid);
+}
+
+:global([data-theme='ink']) .sendReady {
+  color: var(--color-on-brand);
+}
+
+.sendReady:hover:not(:disabled) {
+  background: var(--color-action-fill-hover);
+}
+
+.send:disabled {
+  cursor: progress;
+}
+
+/* Below the split the form comes first, since it is the task, and the posting
+   summary follows it. */
+@media (max-width: 1100px) {
+  .layout {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .layout > aside {
+    order: 1;
+    width: auto;
+  }
+}
+
+@media (max-width: 640px) {
+  .title {
+    font-size: 28px;
+  }
+
+  .submit {
+    flex-direction: column;
+    align-items: stretch;
+    padding: var(--space-5);
+  }
+
+  .send {
+    justify-content: center;
+  }
+}

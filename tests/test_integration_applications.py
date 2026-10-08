@@ -6,7 +6,7 @@ DynamoDB, so this is the suite that actually covers them.
 import boto3
 import pytest
 
-from conftest import REGION, call, event
+from conftest import call, event
 
 APPLICANT = ("Applicants",)
 RECRUITER = ("Recruiters",)
@@ -203,17 +203,79 @@ def test_an_unpublished_posting_does_not_accept_applications(posting):
     assert payload["error"]["code"] == "POSTING_NOT_OPEN"
 
 
-def confirm_cv(s3_key, label=None, applicant="app_1"):
-    """Stand in for the browser's direct PUT, then confirm it the way the client does."""
-    boto3.client("s3", region_name=REGION).put_object(
-        Bucket="test-documents", Key=s3_key, Body=b"%PDF-1.4 cv"
-    )
-    body = {"s3Key": s3_key}
-    if label:
-        body["label"] = label
+def put_object_at(key, body=b"%PDF-1.4 a real file"):
+    """What the browser's presigned PUT does, since the API never sees it."""
+    from common import config, storage
+
+    storage.put_object(key, body, "application/pdf")
+    assert storage.object_exists(key)
+
+
+def confirm_cv(key, label=None, user="app_1"):
     return call(
-        auth_handler(), "POST", "/profile/cvs", user=applicant, groups=APPLICANT, body=body
+        auth_handler(),
+        "POST",
+        "/profile/cvs",
+        user=user,
+        groups=APPLICANT,
+        body={"s3Key": key, **({"label": label} if label else {})},
     )
+
+
+def test_a_cv_is_only_in_the_library_once_its_upload_has_landed(posting):
+    """Asking for a URL records nothing. The transfer goes straight from the
+    browser to S3, so an abandoned one used to leave an entry pointing at an
+    object that was never created."""
+    _, issued = call(
+        auth_handler(),
+        "POST",
+        "/profile/upload-url",
+        user="app_1",
+        groups=APPLICANT,
+        body={"documentKind": "cv", "fileName": "electrical.pdf", "label": "Electrical"},
+    )
+    _, listed = call(auth_handler(), "GET", "/profile/cvs", user="app_1", groups=APPLICANT)
+    assert listed["cvs"] == [], "nothing is recorded until the upload arrives"
+
+    status, _ = confirm_cv(issued["s3Key"], "Electrical")
+    assert status == 400, "and not on the client's word either"
+
+    put_object_at(issued["s3Key"])
+    status, confirmed = confirm_cv(issued["s3Key"], "Electrical")
+    assert status == 201
+    assert confirmed["cv"]["label"] == "Electrical"
+
+
+def test_confirming_the_same_upload_twice_leaves_one_entry(posting):
+    _, issued = call(
+        auth_handler(),
+        "POST",
+        "/profile/upload-url",
+        user="app_1",
+        groups=APPLICANT,
+        body={"documentKind": "cv", "fileName": "cv.pdf"},
+    )
+    put_object_at(issued["s3Key"])
+    _, first = confirm_cv(issued["s3Key"])
+    _, again = confirm_cv(issued["s3Key"])
+    assert first["cv"]["cvId"] == again["cv"]["cvId"]
+
+    _, listed = call(auth_handler(), "GET", "/profile/cvs", user="app_1", groups=APPLICANT)
+    assert len(listed["cvs"]) == 1
+
+
+def test_a_cv_belonging_to_somebody_else_cannot_be_claimed(posting):
+    _, issued = call(
+        auth_handler(),
+        "POST",
+        "/profile/upload-url",
+        user="app_1",
+        groups=APPLICANT,
+        body={"documentKind": "cv", "fileName": "cv.pdf"},
+    )
+    put_object_at(issued["s3Key"])
+    status, _ = confirm_cv(issued["s3Key"], user="app_2")
+    assert status == 403
 
 
 def test_a_cv_can_be_reused_from_an_earlier_upload(posting):
@@ -225,14 +287,8 @@ def test_a_cv_can_be_reused_from_an_earlier_upload(posting):
         groups=APPLICANT,
         body={"documentKind": "cv", "fileName": "electrical.pdf", "label": "Electrical"},
     )
-    # Issuing the URL hands back the key and the label it would use, and nothing
-    # is in the library yet.
-    assert "cvId" not in issued["cv"]
-    _, listed = call(auth_handler(), "GET", "/profile/cvs", user="app_1", groups=APPLICANT)
-    assert listed["cvs"] == []
-
-    status, confirmed = confirm_cv(issued["cv"]["s3Key"], label="Electrical")
-    assert status == 201
+    put_object_at(issued["s3Key"])
+    _, confirmed = confirm_cv(issued["s3Key"], "Electrical")
     cv_id = confirmed["cv"]["cvId"]
 
     status, payload = call(
@@ -248,179 +304,6 @@ def test_a_cv_can_be_reused_from_an_earlier_upload(posting):
     _, listed = call(auth_handler(), "GET", "/profile/cvs", user="app_1", groups=APPLICANT)
     assert listed["cvs"][0]["label"] == "Electrical"
     assert "downloadUrl" in listed["cvs"][0]
-
-
-def test_an_abandoned_upload_leaves_nothing_in_the_cv_library(posting):
-    """The whole point of confirming separately: the URL is only an offer."""
-    _, issued = call(
-        auth_handler(),
-        "POST",
-        "/profile/upload-url",
-        user="app_1",
-        groups=APPLICANT,
-        body={"documentKind": "cv", "fileName": "never-sent.pdf"},
-    )
-
-    _, listed = call(auth_handler(), "GET", "/profile/cvs", user="app_1", groups=APPLICANT)
-    assert listed["cvs"] == []
-    assert listed["totalUploaded"] == 0
-
-    # Claiming an upload that never happened is refused rather than recorded.
-    status, payload = call(
-        auth_handler(),
-        "POST",
-        "/profile/cvs",
-        user="app_1",
-        groups=APPLICANT,
-        body={"s3Key": issued["cv"]["s3Key"]},
-    )
-    assert status == 400
-    assert payload["error"]["code"] == "VALIDATION_FAILED"
-
-
-def test_confirming_the_same_upload_twice_records_one_cv(posting):
-    """A client retrying on a flaky connection must not double the library."""
-    _, issued = call(
-        auth_handler(),
-        "POST",
-        "/profile/upload-url",
-        user="app_1",
-        groups=APPLICANT,
-        body={"documentKind": "cv", "fileName": "retry.pdf", "label": "Retry"},
-    )
-    _, first = confirm_cv(issued["cv"]["s3Key"], label="Retry")
-    _, second = confirm_cv(issued["cv"]["s3Key"], label="Retry")
-
-    assert first["cv"]["cvId"] == second["cv"]["cvId"]
-    _, listed = call(auth_handler(), "GET", "/profile/cvs", user="app_1", groups=APPLICANT)
-    assert listed["totalUploaded"] == 1
-
-
-def test_a_cv_key_belonging_to_someone_else_is_refused(posting):
-    _, issued = call(
-        auth_handler(),
-        "POST",
-        "/profile/upload-url",
-        user="app_1",
-        groups=APPLICANT,
-        body={"documentKind": "cv", "fileName": "theirs.pdf"},
-    )
-    boto3.client("s3", region_name=REGION).put_object(
-        Bucket="test-documents", Key=issued["cv"]["s3Key"], Body=b"%PDF-1.4 cv"
-    )
-    status, payload = call(
-        auth_handler(),
-        "POST",
-        "/profile/cvs",
-        user="app_2",
-        groups=APPLICANT,
-        body={"s3Key": issued["cv"]["s3Key"]},
-    )
-    assert status == 403
-
-
-# ----------------------------------------------------------------------
-# The transcript kept on the profile
-# ----------------------------------------------------------------------
-@pytest.fixture
-def academic_posting(posting):
-    """A second posting from the same company that also asks for a transcript."""
-    _, created = call(
-        jobs_handler(),
-        "POST",
-        "/jobs",
-        user="co_1",
-        groups=RECRUITER,
-        body={
-            "title": "Field Engineering Intern",
-            "description": "Six months on the network team.",
-            "opportunityType": "ACADEMIC_INTERNSHIP",
-            "workModality": "ONSITE",
-            "documentRequirements": [
-                {"key": "cv", "label": "CV", "kind": "FILE", "required": True},
-                {"key": "transcript", "label": "Transcript", "kind": "FILE", "required": True},
-            ],
-        },
-    )
-    job_id = created["job"]["jobId"]
-    call(
-        jobs_handler(),
-        "PATCH",
-        "/jobs/{id}",
-        user="co_1",
-        groups=RECRUITER,
-        path={"id": job_id},
-        body={"postingStatus": "PUBLISHED"},
-    )
-    return job_id
-
-
-def put_profile_transcript(applicant="app_1"):
-    """Upload a transcript to the profile the way the profile page does."""
-    _, issued = call(
-        auth_handler(),
-        "POST",
-        "/profile/upload-url",
-        user=applicant,
-        groups=APPLICANT,
-        body={"documentKind": "transcript", "fileName": "transcript.pdf"},
-    )
-    boto3.client("s3", region_name=REGION).put_object(
-        Bucket="test-documents", Key=issued["s3Key"], Body=b"%PDF-1.4 transcript"
-    )
-    call(
-        auth_handler(),
-        "POST",
-        "/profile",
-        user=applicant,
-        groups=APPLICANT,
-        body={"transcriptS3Key": issued["s3Key"]},
-    )
-    return issued["s3Key"]
-
-
-def stored_documents(application_id):
-    table = boto3.resource("dynamodb", region_name=REGION).Table("test-applications")
-    return table.get_item(Key={"applicationId": application_id})["Item"]["documents"]
-
-
-def test_the_profile_transcript_goes_with_an_application_that_asks_for_one(academic_posting):
-    transcript_key = put_profile_transcript()
-    _, upload = upload_cv(job_id=academic_posting)
-
-    status, payload = submit(academic_posting, cv_key=upload["s3Key"])
-
-    assert status == 202
-    assert stored_documents(payload["application"]["applicationId"])["transcript"] == transcript_key
-
-
-def test_a_transcript_attached_to_the_application_is_kept_over_the_profile_one(academic_posting):
-    put_profile_transcript()
-    _, cv = upload_cv(job_id=academic_posting)
-    _, own = call(
-        app_handler(),
-        "POST",
-        "/applications/upload-url",
-        user="app_1",
-        groups=APPLICANT,
-        body={"jobId": academic_posting, "documentKey": "transcript", "fileName": "latest.pdf"},
-    )
-
-    status, payload = submit(
-        academic_posting, documents={"cv": cv["s3Key"], "transcript": own["s3Key"]}
-    )
-
-    assert status == 202
-    assert stored_documents(payload["application"]["applicationId"])["transcript"] == own["s3Key"]
-
-
-def test_without_a_profile_transcript_one_is_still_required(academic_posting):
-    _, upload = upload_cv(job_id=academic_posting)
-
-    status, payload = submit(academic_posting, cv_key=upload["s3Key"])
-
-    assert status == 400
-    assert payload["error"]["code"] == "REQUIRED_DOCUMENTS_MISSING"
 
 
 # ----------------------------------------------------------------------

@@ -50,5 +50,6 @@ export const queryKeys = {
     analytics: (companyId: string) => ['company', 'analytics', companyId] as const,
     interviews: (companyId: string, from?: string, to?: string) =>
       ['company', 'interviews', companyId, from ?? '', to ?? ''] as const,
+    applicants: (companyId: string) => ['company', 'applicants', companyId] as const,
   },
 }

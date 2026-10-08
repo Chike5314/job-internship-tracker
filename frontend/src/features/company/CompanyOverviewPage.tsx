@@ -21,6 +21,10 @@ export function CompanyOverviewPage() {
   const funnel = analytics.data?.funnel
   const waiting = (funnel?.SUBMITTED ?? 0) + (funnel?.INTERVIEW_SCHEDULED ?? 0)
   const upcoming = (interviews.data?.interviews ?? []).slice(0, 4)
+  // Interviews that have happened with nothing recorded since. They are part of
+  // the count in the line above, so leaving them off this block was what made
+  // that count look invented.
+  const overdue = interviews.data?.awaitingOutcome ?? []
 
   const verified = company?.company.verificationStatus === 'VERIFIED'
 
@@ -83,13 +87,27 @@ export function CompanyOverviewPage() {
               All interviews
             </Link>
           </header>
+          {overdue.length > 0 && (
+            <Link to="/company/interviews" className={styles.overdue}>
+              <span className={styles.overdueDot} aria-hidden="true" />
+              <span className="t-body-sm">
+                {overdue.length === 1
+                  ? 'One interview has happened with nothing recorded since.'
+                  : `${overdue.length} interviews have happened with nothing recorded since.`}
+              </span>
+            </Link>
+          )}
           {interviews.isPending ? (
             <Skeleton height={120} />
           ) : upcoming.length === 0 ? (
-            <EmptyState
-              heading="No interviews scheduled"
-              body="One appears here as soon as you propose a time on an application."
-            />
+            overdue.length > 0 ? (
+              <p className={['t-body-sm', styles.muted].join(' ')}>Nothing else is coming up.</p>
+            ) : (
+              <EmptyState
+                heading="No interviews scheduled"
+                body="One appears here as soon as you propose a time on an application."
+              />
+            )
           ) : (
             <ul className={styles.list}>
               {upcoming.map((row) => (

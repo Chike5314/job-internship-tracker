@@ -24,12 +24,7 @@ development account: AWS account `400294419066`, region `us-east-1`, stacks
 against it twice, confirming idempotency, and populated it with a verified
 company, three published postings, two applicants with CVs, and five
 applications spread across the pipeline including one scheduled interview.
-Both seeded applicants have applied to all three postings (Amara) or two
-(Diego), so a fourth, Robotics Software Engineer from Acme Robotics, was added
-to the dev Jobs table on 2026-10-05 for applying to by hand. It is also in
-`EXTRA_POSTINGS` in the seed script, which publishes it and applies to nothing,
-so a re-seed keeps one copy (postings are matched by title).
-Everything has been verified by `cdk synth` and by 116 tests.
+Everything has been verified by `cdk synth` and by 99 tests.
 
 Cognito hosted UI: `https://jiat-dev.auth.us-east-1.amazoncognito.com`. The app
 client only allows the authorization code OAuth flow with callback
@@ -39,52 +34,31 @@ client only allows the authorization code OAuth flow with callback
 is why `scripts/seed.py` signs in through `pycognito` rather than
 `USER_PASSWORD_AUTH`.
 
-### Public routes and the caller they cannot see
+**This is the project's recurring bug, and it has now landed four times.** A
+route that the frontend calls but the stack never declared does not fail
+loudly. API Gateway matches the request against whatever resource it does have,
+so `GET /companies/mine` silently became `GET /companies/{id}` with an id of
+"mine", answered by a public route that can never see its caller, while
+`GET /jobs/mine/{id}` matched nothing and returned 403 with a message about
+authentication. From a browser both read as "the backend is not sending data".
+The four that were missing, `GET /companies/mine`, `GET /jobs/mine/{id}`,
+`POST /companies/logo-upload-url` and `POST /profile/cvs`, now exist.
+`tests/test_route_surface.py` compares every `http.*` call in `frontend/src/api`
+against the route table in `application_stack.py` and fails on a mismatch, so
+the next one is caught in the suite rather than in somebody's browser. It ranks
+a literal segment above a path parameter, the way API Gateway does, which is
+exactly the distinction that hid `/companies/mine`.
 
-The one rule behind the shape of the route table. A route with no Cognito
-authorizer attached never gets `requestContext.authorizer.claims` populated by
-API Gateway, no matter what the client sends in the `Authorization` header. So a
-handler behind a public route cannot tell who is calling, ever. Anonymous
-browsing has to work, so some routes have to be public, and a route that also
-needs to behave differently for a signed in caller gets an authorizer protected
-counterpart of its own rather than trying to read an optional caller.
-
-First deploy surfaced one instance: the `mine=true` query flag on `GET /jobs`
-could never see a signed in caller, fixed by splitting `GET /jobs/mine` off.
-A later sweep for the same pattern found three more, all now fixed:
-
-- **`POST /companies` was dead.** It was `public=True` and called `get_caller`,
-  the required one, so every call failed on the caller lookup. No recruiter could
-  ever register a company through the deployed API. It is now authorizer
-  protected, which is what it always needed to be: the record is keyed by the
-  caller's Cognito subject, so there is no anonymous registration.
-- **`GET /jobs/{id}`** read an optional caller to widen the response for an
-  owner, an admin, or an applicant who had already applied. All three branches
-  were unreachable, so a posting that was not published 403'd everyone including
-  its own owner. It now serves the public view of a published posting and
-  nothing else, with `GET /jobs/mine/{id}` as the owner and admin counterpart.
-  An applicant reads a posting they applied to through `GET /applications/{id}`,
-  which already carries the posting with it, and that is what satisfies FR-4.10.
-- **`GET /companies/{id}`** widened its response the same way and equally never
-  did. It now serves the public view only, with `GET /companies/mine` as the
-  counterpart, since `GET /companies` is admin only and a recruiter otherwise had
-  no authenticated way to read its own record.
-
-`get_optional_caller` has been removed from `src/common/auth.py`, because
-nothing can use it correctly here, and a comment there records why. The three
-remaining public routes are `GET /jobs`, `GET /jobs/{id}` and
-`GET /companies/{id}`, and none of them reads a caller.
-
-The integration tests did not catch any of this, and would not have: they invoke
-the handlers directly with a synthesised event carrying claims, so every one of
-these routes looked authenticated in the suite. A route's `public` flag is the
-only thing that decides, and it lives in `infrastructure/application_stack.py`.
-Reading the synthesised template is how to check it:
-
-```bash
-npx aws-cdk synth --quiet -c env=dev
-# then read AWS::ApiGateway::Method resources and their AuthorizationType
-```
+First deploy also surfaced one real bug, now fixed: `GET /jobs` carries no
+Cognito authorizer (`AuthorizationType.NONE`), since anonymous browsing has to
+work, and a route with no authorizer attached never gets
+`requestContext.authorizer.claims` populated by API Gateway no matter what a
+client sends. The `mine=true` query flag that used to live on that route could
+therefore never see a signed in caller. Fixed by splitting a separate,
+authorizer-protected `GET /jobs/mine` off from the public `GET /jobs`. Worth
+checking whether the same public-route-with-an-optional-caller pattern exists
+anywhere else before it bites again (`POST /companies` reads a caller the same
+way and is also `public=True` in the route table).
 
 ## Layout
 
@@ -114,357 +88,18 @@ rendered entirely from a posting's `documentRequirements`, track applications,
 respond to offers and interviews, edit a `SUBMITTED` application, manage a
 profile and CV library, and notifications.
 
-The company app lives under `/company` in `src/features/company/`, behind one
-`RequireGroup("Recruiters")` on the shell rather than a guard per route. It uses
-a left rail (`CompanyShell`, `CompanySidebar`) rather than the applicant side's
-top bar, because a recruiter moves between seven destinations all day and an
-applicant between three. Seven screens: Overview, Postings, the posting editor,
-the pipeline board, Interviews, Analytics and Company profile. The admin app
-is described under "The admin app" below.
+The company app is under `features/company/`: overview, postings, the posting
+editor, a per-posting pipeline board with a reject bin, the interview calendar,
+analytics, the company profile, and the applicants directory. That last one is
+the only recruiter view organised by person rather than by posting, which is
+what makes a repeat applicant visible at all; it is a two-pane list and detail
+like the applicant side's applications page, with the selected person in the
+path so a candidate is a link somebody can send.
 
 Design tokens are generated, not hand authored: `frontend/scripts/build-tokens.mjs`
 reads `docs/brand/tokens.json` directly and writes `frontend/src/styles/tokens.css`,
 which is committed. Changing the design system means editing `tokens.json` and
 re-running `npm run tokens` (or just `npm run dev`, which runs it first).
-
-The two themes are called `paper` and `ink`, not light and dark. Every colour
-token lives in `[data-theme='paper']` or `[data-theme='ink']` and none of them in
-bare `:root`, so a page carrying any other value on that attribute renders with
-no colours at all: white ground, invisible field edges. A blocking inline script
-in `index.html` sets the attribute before the stylesheet loads, which is what
-keeps that from happening in a browser. Anything driving the app from outside, a
-screenshot harness above all, has to use `paper` or `ink`.
-
-### The design source
-
-There are two Offerline artifacts and they do different jobs.
-
-- **Offerline**, a Design System, holds tokens, six components, the logo group
-  and the brand book. Its `tokens.json` IS `docs/brand/tokens.json`: the two are
-  the same file, and the frontend generates its CSS from it. It defines no
-  screens at all.
-- **Offerline, Product UI**, a Design canvas, holds eleven artboards and is where
-  the screens live: a landing board, a brand kit, positioning, four applicant
-  boards, three company boards and sign in.
-
-The signed-in applicant side uses the canvas's rail and app bar, and the
-Dashboard is built to `Dashboard.dc.html` measure for measure (checked at
-1440x1024 against the board in both themes). Postings stay one combined list
-where the canvas separates Jobs from Internships; the rail's two links filter
-it by type. The company side and the landing page were built to the canvas.
-
-The canvas source can be read file by file from the "Offerline, Product UI"
-artifact (`project/<Board>.dc.html`), which beats measuring screenshots. Three
-things on the dashboard differ from the board on purpose: a rejected
-application reads "Not taken forward" (it matches the email wording, see
-`api/enums.ts`), the interview card is titled by round ("First interview")
-because an interview record carries no kind, and an onsite interview reads
-"In person" from `INTERVIEW_MODE_LABEL`. The theme switch sits in the account
-menu, because no board draws one in the bar.
-
-### Looking at the company screens without a backend
-
-They sit behind a recruiter guard and read a live API, so they cannot be seen by
-running the app against nothing. A throwaway Vite harness rendered them against a
-seeded query cache and a stubbed identity, which is how the layout and both
-themes were actually looked at rather than asserted from a clean compile. It is
-not committed; rebuild one when a screen needs looking at.
-
-### The landing page
-
-Built from `Main.dc.html`, all eight of its sections. The postings strip is the
-real listing rather than a mock of one: it shares a query key with the browse
-page, so arriving there afterwards costs no second request.
-
-Two of the canvas's own section titles were changed, deliberately. "Hire as an
-organisation, not as one inbox" framed the feature against an alternative that
-only ever existed in a conversation, which `docs/writing-conventions.md`
-forbids. "Every change is recorded. Nothing is overwritten" described the
-engineering invariant rather than what the reader gets from it. They are now
-"Post, shortlist and schedule in one place" and "You always know where it
-stands".
-
-Sections below the fold reveal on scroll. It is pure progressive enhancement:
-CSS scroll-driven animations inside `@supports ((animation-timeline: view()) and
-(animation-range: entry))` and `prefers-reduced-motion: no-preference`, with no
-scroll-listener fallback, because a reader in Firefox losing a fade loses
-nothing. Only `opacity` and `transform` are animated, and `animation-timeline` is
-declared after the `animation` shorthand, which would otherwise reset it. The
-hero and the strip under it never animate: the first screen is solid at rest.
-
-### The phone layout
-
-Built to the Mobile board. At 640px and below a signed-in applicant gets the
-phone chrome instead of the rail and the search bar: `PhoneHeader` (the mark,
-the bell, the avatar) and `PhoneTabBar` (Home, Applications, Alerts, Profile)
-pinned to the bottom. The dashboard renders `PhoneHome` there: the greeting, a
-search over the newest openings, the All, Jobs and Internships chips, the next
-interview and posting cards. The tiles, the recent list and the profile nudge
-stay on wider screens. Both switches go through `useMediaQuery(PHONE_QUERY)`
-and render one tree or the other, rather than hiding a second copy with CSS, so
-there is only ever one `main` and no repeated ids. Tablets keep the rail as a
-band. The applications page carries its own search on a phone, since the bar's
-is gone.
-
-### Sign in, sign up and password reset
-
-Built to the Login board. Where an account lands after signing in, and when it
-opens `/` or a page meant for the other kind of account, comes from the groups
-in its token (`homeFor` in `auth/home.ts`), never from the "I'm looking for
-work" and "I'm hiring" tabs, which only shape the form's wording. Sign in used
-to follow the tab, so a company signing in on the default tab was sent to the
-applicant dashboard and turned away there.
-
-Three routes behave differently from the rest:
-
-- `/sign-up/confirm` is not behind `RedirectIfSignedIn`. Confirming the code
-  signs the person in (auto sign in), and the page has to stay up to show the
-  board's next screen: "You're in" for an applicant, "Pending verification" for
-  a company. It redirects a signed-in visitor itself, unless it is mid
-  confirmation. If the company record fails to save after the account is
-  confirmed, it offers to save it again.
-- `/sign-in/reset` asks for a code, then a new password, through Amplify's
-  `resetPassword` and `confirmResetPassword`. The pool hides whether an address
-  has an account, so the screen says a code is on its way "if an account
-  exists". An account made through Google has no password to reset.
-
-### The pipeline board
-
-Built to the Recruiter board, at `/company/postings/:jobId/pipeline`: five
-columns, a card per application, a floating bulk bar, an export panel, and a
-drawer that opens one application. Things that are not obvious from the code:
-
-- **Opening a card is an action.** The drawer reads `GET /applications/{id}`,
-  and that read is what moves a `SUBMITTED` application to `UNDER_REVIEW` and
-  freezes it. `useRecruiterApplication` invalidates the pipeline after the read
-  so the card leaves New, and never retries on its own. The drawer remembers
-  the card's status at the moment it opened, which is how it knows to say that
-  this opening moved it.
-- **The drawer lives in the URL** as `?application=<id>`. Opening pushes a
-  history entry and closing replaces it, so Back closes the drawer. The
-  Interviews page links there; the applicant's `/applications/:id` route is
-  behind the applicant guard and a recruiter cannot use it.
-- **Moving a time and proposing a new one are different calls.** A time still
-  `PROPOSED` or `CONFIRMED` is moved with `PATCH .../interview`
-  `{action: 'RESCHEDULE'}`. Once the applicant has declined, nothing is open, so
-  `_latest_open_interview` would refuse that, and the drawer sends a new
-  `POST .../interview` instead.
-- **"On opening it"** in the history comes from matching the note
-  `_open_for_review` writes, "Opened by the recruiter.", which is the only thing
-  that tells an opening apart from a bulk move to the same status.
-- **The company reads "Rejected"** where the applicant reads "Not taken
-  forward" (`RECRUITER_STATUS_LABEL` in `features/company/pipeline.ts`).
-- **Native controls follow the theme.** `styles/base.css` sets `color-scheme`
-  from `data-theme`, where it used to follow the operating system, which left
-  white checkboxes and select menus on ink when ink was chosen on a light
-  system. That fix is app wide.
-
-Three places where the board shows something the API cannot supply yet:
-
-- A card's second line is the applicant's email, where the board shows the CV's
-  library label. `_pipeline_row` carries no CV information.
-- The interview form has no note for the applicant. Neither interview route
-  accepts one.
-- A note on an offer or a rejection goes into the application's history, which
-  the applicant sees, but not into the status email: `_announce_status` sends
-  the status wording only. The drawer's copy says so.
-
-### The posting editor
-
-Built to the Posting editor board, at `/company/postings/new` and
-`/company/postings/:jobId/edit`. It sits outside the company rail, in its own
-route group (`RequireGroup("Recruiters")` around `FocusLayout`), because it is
-one sitting's work: a header with the save, four steps down the left, the step
-in the middle and a live "what applicants will see" preview on the right. The
-step is in the URL as `?step=2`. `PostingEditorPage` loads the posting and only
-then mounts `PostingEditor`, which takes its starting draft from it once.
-
-- **Saving needs a description.** `POST /jobs` refuses a posting without one,
-  and the board puts "About the role" in step 2, so a save from step 1 lists it
-  as a blocker with a link to step 2 (`blockers` in `postingDraft.ts`).
-- **Publishing happens in step 4 only**, and needs a city (unless remote) and a
-  deadline that has not passed. The API only refuses a past deadline; requiring
-  one at all is the board's rule, so every posting closes itself. An expired
-  posting is published again through Closed, the one route the API allows.
-- **A publish that fails after the save** (an unverified company, most often)
-  comes back from `useSavePosting` as `publishError` beside the saved posting,
-  so the editor still moves to the posting that now exists and a retry cannot
-  create a second one.
-- **The deadline is a day.** The editor stores the last second of the chosen
-  local day, since it tells the recruiter the posting closes at the end of it.
-- **The type is fixed once saved.** `PATCH /jobs/{id}` ignores
-  `opportunityType`, so the editor locks the type cards on a saved posting and
-  says so. The earlier editor let the type change and then dropped it silently.
-- **Nothing optional can be cleared once saved.** `dynamo.build_update` only
-  ever writes SET, and the update route drops a field sent as empty. Choosing
-  "Flexible" for a start date that was set, or emptying a city, reverts to the
-  stored value after the save. `PATCH /jobs/{id}` did not read `startDate` at
-  all until it was added; it now keeps one set after creation.
-
-Steps 2, 3 and 4 follow the board, with these choices made on purpose:
-
-- **A hidden salary keeps no figures.** `validate_salary` stores
-  `{disclosed: false}` alone, so the figures grey out while "Show salary to
-  applicants" is unticked rather than pretending to be kept.
-- **Duration is a fixed row** in "Anything else applicants should know", since
-  `duration` is its own field and the posting page shows it as a fact. It shows
-  for internships, or wherever a posting has one, but not when a detail called
-  "Duration" already says it.
-- **A document added in step 3 is a file to upload.** The board offers no
-  choice of kind, and "a document" means a file to the applicant. The written
-  answers in the default sets keep their kind.
-- **Start dates on offer** are the first Monday of each of the next twelve
-  months, which is where the board's own examples fall.
-- **Step 4** reviews the three parts with an Edit link each, marks anything
-  missing in the signal colour, and each item in "Before you can publish" links
-  to its step. An extra detail left completely empty is dropped on save
-  (`toSave`), not refused.
-
-### The admin app
-
-No board draws it, so it is the company app's anatomy with the admin's own
-destinations, built from SRS section 3.9 (FR-9.1 to FR-9.9). It lives under
-`/admin` in `src/features/admin/`, behind one `RequireGroup("Admins")` on
-`AdminShell`, which reuses `CompanyShell.module.css` for the same frame. The
-rail carries Overview, Companies and Postings, with the size of the
-verification queue as the count on Companies (from `GET /admin/overview`).
-
-- **Admins have no notifications**, so the app bar draws its bell only when a
-  side passes `notificationsTo`, and the admin side passes none.
-- **The account menu shows "CVs" to applicants only.** It used to show it to
-  every account, and for a company it led nowhere.
-- **An admin is never made in the code.** FR-9.9: the Admins group is written
-  by hand in the Cognito console, and nothing in the API or the frontend can
-  put an account in it.
-- **The overview** shows the four platform totals from `GET /admin/overview`
-  and says they are approximate, since they come from table metadata refreshed
-  about every six hours; the queue size beside them is exact. Below sit the
-  companies waiting for verification, longest waiting first, and the count at
-  each standing, one `GET /companies?status=` per standing. Those four lists
-  are cached under `queryKeys.admin.companies(status)` and shared with the
-  companies page. A list returns at most 200, so a full one reads as "200+".
-- **The companies list** is tabs for Pending, Verified, Rejected, Suspended
-  and All, the tab in the URL as `?status=`. The queue is longest waiting
-  first, a decided list newest decision first, and All alphabetical. Search
-  is the app bar, which filters the table in place on this page through `?q=`
-  (matching name, contact email and website). A search arriving from the bar
-  with no tab chosen looks in All.
-- **The company drawer** opens from `?company=<id>` on the companies page,
-  which is also where the overview's Review buttons point. It shows the
-  company's details, its postings and every decision so far, and offers what
-  `ADMIN_TRANSITIONS` allows next: approve or reject a pending company, suspend
-  a verified one, verify a rejected one, restore a suspended one. A rejection
-  or a suspension must carry a note, because the company is emailed with it
-  and the history keeps it. The suspend warning counts the live postings that
-  will come down.
-- **A company's postings come from its analytics.** No admin route lists them,
-  but `GET /companies/{id}/analytics` returns one `perPosting` row each and lets
-  an admin through. Closing one is `PATCH /jobs/{id}` with
-  `postingStatus: CLOSED`, which records neither who closed it nor why, and
-  sends the company nothing; the drawer says so before the admin confirms.
-- **Adding a company** (FR-9.6, FR-9.7) is a drawer from the "Add a company"
-  button, at `?add=1`, posting to `POST /admin/companies`. The form checks
-  what `validation.py` checks, with the same words (`companyForm.ts`), and
-  also refuses a map link the backend would drop silently. The admin chooses
-  "Verified now" or "Send it to the queue". After creating, "Open" moves to
-  the new company's drawer on the tab that holds it.
-- **A first sign in with a temporary password** used to dead end: Cognito
-  answers `CONFIRM_SIGN_IN_WITH_NEW_PASSWORD_REQUIRED`, and the sign in page
-  ignored it and navigated as if signed in, so an admin-created company could
-  never get in. `signInWithPassword` now returns `'new-password'` for that
-  step, and the page asks for a password of the account's own and finishes
-  through `confirmNewPassword` (Amplify's `confirmSignIn`). The pool has no
-  SES configuration, so Cognito sends the temporary password itself, and it
-  arrives even while SES is in sandbox.
-- **The postings page** (FR-9.2) lists what applicants can see right now: it
-  reads the public `GET /jobs`, which returns published postings whose
-  deadline has not passed, newest first, at most 100, and shares its cache
-  with the browse page. Tabs split it by opportunity type; the app bar searches
-  title and company name in place. A row opens a drawer at `?posting=<id>`,
-  which reads the posting in full through `GET /jobs/mine/{id}` (it answers an
-  admin for any company) and its applications count from the company's
-  analytics. Closing is the same `PATCH /jobs/{id}` the company drawer uses,
-  and "Review <company>" opens that company's drawer on the All tab.
-- **Below 1100px the two lists stack.** The tables do not fit beside the rail
-  under that width, so the companies and postings pages render a stacked row
-  per item instead, switched through `useMediaQuery(STACKED_QUERY)` in
-  `adminFormat.ts`, one tree or the other as the phone layout does.
-- **The rail band keeps the current page in view.** Below the split the
-  destinations scroll across, and `SideRail` centres the current one. It
-  centres again whenever a link changes size, because the links widen after
-  the first paint (the web fonts landing, a count arriving with its data), and
-  a position worked out before that left the last destination cut off. This
-  applies to every side that uses the rail.
-- **The history names "you" or "an admin"**, since it records an admin by
-  account id and nothing maps an id to a name.
-- **A moderation entry is `{from, to, by, note, timestamp}`**, as
-  `set_verification_status` writes it. The frontend type used to say
-  `{status, changedBy}`, so the company's own profile page showed every past
-  decision with a blank label. `ModerationEntry` in `api/types.ts` now matches,
-  and the labels live in `VERIFICATION_STATUS_LABEL` in `api/enums.ts`.
-
-Every admin route the SRS lists already exists in the backend:
-`PATCH /companies/{id}/status` decides, `GET /companies?status=` lists,
-`POST /admin/companies` creates an account, `GET /admin/overview` counts, and
-an admin may close any posting through `PATCH /jobs/{id}` and read a company's
-postings through `GET /companies/{id}/analytics` (`perPosting`), since
-`assert_owns_job` and `assert_owns_company` both let an admin through.
-
-### The company logo
-
-`POST /companies/logo-upload-url` issues a presigned PUT under the company's own
-prefix and records nothing. The client sends the key back on
-`PATCH /companies/{id}` once the upload lands, which checks the key belongs to
-that company and that an object is really there. Same two step shape as the CV
-library, for the same reason. The key never leaves the API as a key: it comes
-back as a presigned `logoUrl`. A logo change alone does not send a verified
-company back for review, because the name and the website are what an admin
-actually checked.
-
-### The design pass
-
-One pass over the applicant frontend, verified by a build, by the 23 frontend
-tests, and by screenshots in both themes at 1280, 900, 760 and 390 wide:
-
-- **Typefaces.** Fraunces for display and Inter for the interface, replacing
-  Instrument Serif and Source Sans 3. Fraunces comes from its optical size
-  subset (`@fontsource-variable/fraunces/opsz.css`) rather than the default
-  weight only one, so one family carries a 76px headline and an 11px eyebrow.
-  The italic file is imported alongside it because `display-italic` is a real
-  style in the scale and without the file the browser slants the roman. A serif
-  stays in the system because the logo's wordmark is a serif.
-- **Logo.** `src/assets/brand/offerline-mark.svg` and `offerline-wordmark.svg`,
-  both traced from the supplied artwork rather than redrawn;
-  `docs/brand/logo/trace-wordmark.py` is how the second one was made. `Logo.tsx`
-  inlines them with `?raw` instead of pointing an `img` at them: an SVG loaded
-  through `img` is its own document, so `currentColor` inside it resolves to
-  black and the wordmark stayed black on the dark panel. Inlined, the ink
-  inherits and one file serves both themes. The mark is the browser tab icon
-  (`public/favicon.svg`, the traced mark in a square frame, with
-  `favicon-32.png` and a 180px `apple-touch-icon.png` on paper rendered from
-  it) and sits above the spinner while a session is read. The wordmark heads
-  the crash screen, which is also every route group's `errorElement`, since
-  React Router otherwise catches a failing route before the app's own error
-  boundary and shows its unbranded default.
-- **Icons.** `public/icons.svg` is the 58 icon sprite, replacing a starter
-  template's Bluesky and Discord leftovers. `src/ui/Icon.tsx` carries a union of
-  every symbol name, so a misspelled icon fails typecheck rather than rendering
-  as empty space.
-- **Input edges.** `controls.module.css` drew its edge as an inset ring but never
-  turned off the browser's own `2px inset` border, which the reset zeroes for
-  `button` and nothing else, so every field wore a grey 3D bevel over the
-  designed one. Fixed, with hover and focus states added.
-- **`rule-strong`.** The token's own usage note says it must read at 3:1 and its
-  value did not: `n-400` measures 1.85:1 against the field fill. Now `n-600`,
-  which clears 3:1 against both the field and the page in either theme.
-- **Split screen auth.** `AuthLayout.tsx` is two columns: the product on a fixed
-  forest panel on the left, the form on paper on the right. The left column
-  lists the four stages an application moves through, in the pipeline's own
-  status vocabulary. Below 900px it becomes a band above the form and the
-  wordmark moves into the form header. The bloom field is re-anchored to that
-  panel and given the ink theme's bloom values in both themes; as written it is
-  fixed to the viewport with shapes measured in `vw`, so left alone it washes
-  across the form and drains the contrast out of every control there.
 
 To run it: `cd frontend && npm install`, copy `.env.example` to `.env.local`
 (already carries the dev deployment's values), then `npm run dev`. **Must run
@@ -487,6 +122,27 @@ Two things worth knowing before touching this code again:
   depends on has resolved. Any future hook whose one-time initial state
   depends on query data needs the same split, not a loading spinner placed
   after the hook call.
+- **A row that lays itself out against the viewport will be wrong here.** The
+  applicants list is the whole page below the split and a little over half of it
+  above, so its width does not follow the window's: a 900px window gives a wider
+  list than a 1200px one, where the detail pane opens beside it. `ApplicantRow`
+  is sized with `@container applicant-list` against `.rows` instead. Any other
+  component that lives in one pane of a split needs the same treatment, and a
+  media query will look right at the width you test and wrong at the next one.
+- **A CSS Module cannot use a keyframe defined in a global stylesheet, and
+  fails silently when it tries.** CSS Modules rewrites every `animation-name`
+  into the module's hashed namespace, so `animation: m3-rise ...` in a
+  `.module.css` compiles to `_m3-rise_<hash>_1`, while `@keyframes m3-rise` in
+  the global `styles/m3.css` keeps its plain name. Nothing matches, nothing
+  errors, and the element simply never moves. Every load-time entrance on the
+  landing page and the auth screen was dead this way, including the hero, and
+  it was only found by asking the browser for `getAnimations()` and getting an
+  empty list back. `:global()` is rejected by this toolchain in both the
+  `animation` shorthand and `animation-name`, so a module that needs a keyframe
+  declares it in that module. The scroll-driven animations in the same file
+  always worked because their keyframes are local. Before trusting any new
+  animation, check `getAnimations().length` on the element rather than reading
+  `animationName`, which is populated whether or not the keyframes exist.
 - **A CSS Modules import to a file that doesn't exist is invisible to
   `tsc`.** Vite's ambient types accept any `*.module.css` path whether or not
   it's actually on disk; only the bundler catches a missing one, at dev or
@@ -504,7 +160,7 @@ Two things worth knowing before touching this code again:
 - Cognito user pool, three groups, optional Google identity provider.
 - SQS submission queue with a dead letter queue at three attempts, SNS recruiter
   topic, hourly posting expiry rule.
-- Six domain Lambda functions and 33 REST routes behind a Cognito authorizer
+- Six domain Lambda functions and 39 REST routes behind a Cognito authorizer
   (all but a handful of public, anonymous-friendly ones, such as the posting
   listing and detail views and `GET /companies/{id}`).
 - Identity trigger on the user pool. Post confirmation covers email and password
@@ -519,7 +175,7 @@ Two things worth knowing before touching this code again:
   account directly, and a platform overview. Moderation decisions append to a
   history rather than overwriting.
 - Company interview calendar on a sparse GSI.
-- 116 tests in two layers. 30 unit tests over the pure rules, 86 integration tests
+- 137 tests in two layers. 32 unit tests over the pure rules, 105 integration tests
   running the real handlers against moto with DynamoDB and its indexes, S3, SQS,
   SNS, SES and Cognito standing up in process.
 
@@ -549,29 +205,35 @@ reverse an earlier approach.
   delivery failure cannot roll back a status change already written.
 - Analytics are computed on read from `statusHistory`. There is no analytics
   store. SRS section 8.3 records when that would need revisiting.
-- A CV reaches the library only after its upload lands. `POST /profile/upload-url`
-  hands out a presigned URL and records nothing; the client PUTs the file
-  straight to S3 and then calls `POST /profile/cvs`, which checks the object is
-  really there before writing the entry. Written at presign time, as it was
-  before, the library filled with entries pointing at keys that had no object
-  behind them, and the reuse list then offered CVs that could not be downloaded.
-  Confirming twice is idempotent on the key, because a client retries. Both
-  frontend sites that upload a CV do all three steps:
-  `features/profile/useProfile.ts` and `features/apply/useApplyForm.ts`. The
-  apply form runs the third step when the application is sent, not when the
-  upload lands, because its label field comes after the file and a second
-  confirm does not rename an entry.
-  `POST /applications/upload-url` never had this problem and writes nothing.
-- The transcript lives on the profile and goes with every application whose
-  posting asks for one (FR-2.1). Submission and amendment copy the profile's
-  `transcriptS3Key` onto the application when none was attached, in
-  `_attach_profile_transcript` in the application service. The apply form shows
-  it as already supplied and leaves it out of the request. An applicant can
-  still attach a different one to a single application, and that one is kept.
 - The company interview calendar is a sparse GSI. An application carries
   `nextInterviewAt` and a `nextInterview` snapshot only while it has an interview
-  still ahead of it, so rows enter and leave the index by themselves. Every place
-  an interview or a status changes goes through `src/common/interviews.py`.
+  nothing has closed out, so rows enter and leave the index by themselves. Every
+  place an interview or a status changes goes through `src/common/interviews.py`.
+- **The clock is not a writer.** Nothing runs on a timer in this system, so an
+  interview whose time has simply passed still carries `nextInterviewAt`, with a
+  value now in the past, and the application still says `INTERVIEW_SCHEDULED`.
+  `GET /companies/{id}/interviews` therefore takes no lower bound unless one is
+  asked for, and splits the result into `interviews` (ahead) and
+  `awaitingOutcome` (passed, any age). A window starting at now dropped exactly
+  the overdue ones, which left the overview counting an application at
+  `INTERVIEW_SCHEDULED` while every interview screen showed nothing, with no way
+  to find it. Any future query that filters on a stored timestamp against now
+  has the same trap: ask what writes that field, and if the answer is "a user
+  action", the field goes stale the moment they stop acting.
+- The applicants directory is grouped on read, not stored. `GET
+  /companies/{id}/applicants` walks `CompanyIndex` for the account's postings
+  and `JobIndex` under each, then groups by `applicantId`, the same way
+  `company_analytics` does and for the reason SRS 4.6 records. There is no
+  person record behind an applicant beyond their Users row, so "the same
+  person" means the same `applicantId` and nothing more. The profiles behind a
+  page of rows are read with `dynamo.get_users`, a BatchGetItem, rather than one
+  GetItem each; `_pipeline_row` takes the same batch so a board costs one read
+  rather than one per card.
+- How far somebody got is not where their newest application sits.
+  `_furthest` ranks the five live stages and puts the three endings under all of
+  them, so rejected on one posting and interviewing on another reads as
+  interviewing. With nothing live it reports the ending the applicant chose over
+  the one the company did.
 - Deployment settings come from CDK context. Nothing is edited in source to
   deploy.
 
@@ -580,6 +242,16 @@ reverse an earlier approach.
 `docs/writing-conventions.md` governs every document, comment and piece of UI
 copy. The two that get broken most often: no em dashes anywhere, and never frame
 a feature against an alternative that only ever existed in a chat.
+
+## The harness
+
+`frontend/.harness` runs the whole SPA against fakes with no network. One rule
+holds it together: every company route is answered from the same `applications`
+array in `pipelineFake.ts`. Analytics used to be pre-seeded in `seed.ts` with an
+empty funnel and a total that matched no board, so the overview said nothing was
+waiting while the pipeline underneath it was full. A harness that can show two
+screens agreeing when the real system has them disagreeing is worse than none,
+so nothing company-facing is seeded with numbers of its own any more.
 
 ## Immediate next step
 
@@ -594,21 +266,22 @@ Two things left before the applicant side is really finished:
 
 - **Amplify Hosting**, connected by hand to a GitHub-hosted frontend repo,
   per the manual steps below. Until then the frontend only runs locally.
-Both of the issues noted during frontend verification are now fixed at the
-source; see the public routes section above for the first, and the CV library
-section below for the second.
+- **Two things noted during frontend verification but not fixed**, since
+  fixing them is backend work and this pass was scoped to the frontend:
+  `GET /jobs/{id}` can never see a signed in caller for the same reason
+  `GET /jobs/mine` couldn't before it was split out (`public=True` means no
+  authorizer, ever, regardless of what token is sent), so a closed or expired
+  posting 403s even the applicant who already applied to it. Still open.
 
-After that: the admin frontend phase, then the remaining Appendix D diagrams. The new `GET /jobs/mine/{id}` and `GET /companies/mine` routes exist
-for the recruiter views and have no caller yet; `POST /companies` is likewise
-untouched by the applicant frontend, so recruiter registration has never been
-exercised against the deployed API.
+  The CV library entry is now fixed: `POST /profile/cvs` records it after the
+  upload lands and checks the object is really in the bucket first, so an
+  abandoned upload no longer leaves an entry pointing at nothing. Asking for a
+  presigned URL records nothing at all. Confirming the same key twice returns
+  the same entry, because a browser retrying an upload it is unsure about is
+  the normal case.
 
-**The deployed dev stack is behind everything above until the next `cdk deploy`.**
-The company routes, the company logo upload, the SQS consumer switch, an
-application picking up the transcript kept on the profile, and a posting's
-start date being kept on update all exist only in source. Recruiter registration has still never been exercised against the
-deployed API, so the company app's first real run is also the first real test of
-`POST /companies`.
+After that: recruiter and admin frontend phases, then the remaining Appendix D
+diagrams.
 
 ## Where first deploy problems are expected
 

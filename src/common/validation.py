@@ -261,14 +261,21 @@ def validate_upload_request(
     *,
     image_allowed: bool,
     max_bytes: int,
+    image_only: bool = False,
 ) -> Dict[str, Any]:
-    """FR-5.8. Type and size are checked before a presigned URL is handed out."""
+    """FR-5.8. Type and size are checked before a presigned URL is handed out.
+
+    `image_only` is for the uploads where a document would be meaningless, such
+    as a logo: a PDF there is a mistake rather than a choice, and catching it
+    before the URL is issued is kinder than letting it upload and render as
+    nothing.
+    """
     file_name = require_string(errors, data, "fileName", max_length=255) or ""
     size = optional_int(errors, data, "fileSize", minimum=1, maximum=max_bytes * 4)
 
     extension = file_extension(file_name)
-    allowed = set(ALLOWED_DOCUMENT_EXTENSIONS)
-    if image_allowed:
+    allowed = set() if image_only else set(ALLOWED_DOCUMENT_EXTENSIONS)
+    if image_allowed or image_only:
         allowed |= ALLOWED_IMAGE_EXTENSIONS
     if extension and extension not in allowed:
         errors.add(

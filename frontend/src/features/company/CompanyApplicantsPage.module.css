@@ -1,0 +1,186 @@
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  min-width: 0;
+}
+
+.muted {
+  color: var(--color-text-muted);
+}
+
+/* The one line on the page that is a job of work rather than a fact, so it
+   takes the vermilion the rest of the product reserves for anything owed. */
+.banner {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: 12px 18px;
+  border-radius: var(--radius-md);
+  background: var(--color-glass-solid);
+  box-shadow: inset 0 0 0 1px var(--color-verm-200);
+}
+
+:global([data-theme='ink']) .banner {
+  box-shadow: inset 0 0 0 1px var(--color-verm-700);
+}
+
+.bannerDot {
+  flex: none;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--color-brand-verm);
+  box-shadow: 0 0 0 5px rgb(216 67 28 / 0.16);
+}
+
+.split {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  min-width: 0;
+}
+
+.list,
+.detail {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  overflow: hidden;
+}
+
+/* Below the split only one of the two panes is on screen at a time, so the
+   list steps aside once somebody is open and the back control appears. */
+.detail {
+  display: none;
+}
+
+.detailOpen .list {
+  display: none;
+}
+
+.detailOpen .detail {
+  display: flex;
+}
+
+.back {
+  display: inline-flex;
+  align-items: center;
+  align-self: flex-start;
+  gap: var(--space-2);
+  margin: var(--space-4) 22px 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--color-text-link);
+  cursor: pointer;
+}
+
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3) var(--space-4);
+  padding: 14px var(--space-4);
+  border-bottom: 1px solid var(--color-rule-hairline);
+}
+
+.search {
+  display: flex;
+  flex: 1 1 220px;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 0;
+  padding-left: 12px;
+  border-radius: var(--radius-round);
+  background: var(--color-surface-container);
+  box-shadow: inset 0 0 0 1px var(--color-rule-hairline);
+  color: var(--color-text-muted);
+}
+
+.search:focus-within {
+  box-shadow: inset 0 0 0 2px var(--color-brand-forest);
+}
+
+/* The field carries the shape, so its own border would be a second one. */
+.search input {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  background: none;
+  box-shadow: none;
+}
+
+.search input:focus {
+  outline: none;
+  box-shadow: none;
+}
+
+.lenses {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.count {
+  margin-left: var(--space-2);
+  color: var(--color-text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+/* The rows lay themselves out against this, not against the window. The list
+   is the whole page below the split and a little over half of it above, so its
+   width does not follow the viewport's: a 900px window gives a wider list than
+   a 1200px one, where the detail pane opens beside it. A media query would get
+   both of those wrong. */
+.rows {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  container: applicant-list / inline-size;
+}
+
+.rows > li + li {
+  border-top: 1px solid var(--color-rule-hairline);
+}
+
+.noMatch {
+  padding: 28px 22px;
+}
+
+/* Side by side once there is room for two columns, each scrolling inside
+   itself so the page header stays in view. 128px is the app bar and the main
+   area's top and bottom padding. */
+@media (min-width: 1200px) {
+  .page {
+    height: max(600px, calc(100vh - 128px));
+  }
+
+  .split {
+    flex: 1;
+    flex-direction: row;
+    min-height: 0;
+  }
+
+  .list,
+  .detailOpen .list {
+    display: flex;
+    flex: 1 1 56%;
+  }
+
+  .rows {
+    flex: 1;
+    overflow-y: auto;
+  }
+
+  .detail,
+  .detailOpen .detail {
+    display: flex;
+    flex: 1 1 44%;
+    overflow-y: auto;
+  }
+
+  .back {
+    display: none;
+  }
+}

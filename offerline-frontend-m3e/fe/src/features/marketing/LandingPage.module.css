@@ -1,0 +1,805 @@
+.page {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-9);
+  padding-bottom: var(--space-9);
+}
+
+.muted {
+  color: var(--color-text-muted);
+}
+
+.link {
+  color: var(--color-text-link);
+  text-decoration: underline;
+}
+
+/* The hero. Text and the product preview side by side, stacking under 960px
+   with the preview below rather than beside, so the headline keeps the fold. */
+.hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-7);
+  align-items: center;
+  padding-top: var(--space-7);
+}
+
+.heroText {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-5);
+  justify-items: start;
+  min-width: 0;
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: var(--color-active-wash);
+  color: var(--color-state-active-text);
+  font-size: var(--type-caption-size);
+  font-weight: 600;
+}
+
+.headline {
+  text-wrap: balance;
+  max-width: 16ch;
+}
+
+.lede {
+  color: var(--color-text-secondary);
+  max-width: 54ch;
+}
+
+.search {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  width: 100%;
+}
+
+.searchField {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex: 1 1 240px;
+  min-width: 0;
+  height: 44px;
+  padding: 0 var(--space-3);
+  border-radius: var(--radius-sm);
+  background: var(--color-glass-dense);
+  color: var(--color-text-muted);
+  box-shadow: 0 0 0 1px var(--color-rule-strong) inset;
+}
+
+.searchInput {
+  flex: 1;
+  min-width: 0;
+  border: none;
+  background: none;
+  color: var(--color-text-primary);
+  outline-offset: 4px;
+}
+
+.searchInput::placeholder {
+  color: var(--color-text-subtle);
+}
+
+.city {
+  flex: 0 1 160px;
+  height: 44px;
+  padding: 0 var(--space-3);
+  border: none;
+  border-radius: var(--radius-sm);
+  background: var(--color-glass-dense);
+  color: var(--color-text-primary);
+  box-shadow: 0 0 0 1px var(--color-rule-strong) inset;
+}
+
+.search button {
+  height: 44px;
+}
+
+.hiring {
+  color: var(--color-text-muted);
+}
+
+/* The assurance strip, between rules rather than in cards: three facts, not
+   three objects. */
+.assurances {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-6);
+  padding: var(--space-6) 0;
+  border-top: 1px solid var(--color-rule-hairline);
+  border-bottom: 1px solid var(--color-rule-hairline);
+}
+
+.assurance {
+  display: grid;
+  gap: var(--space-2);
+  justify-items: start;
+}
+
+.assuranceIcon {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 999px;
+  background: var(--color-active-wash);
+  color: var(--color-state-active-text);
+}
+
+.block {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-6);
+  justify-items: start;
+  min-width: 0;
+}
+
+.blockHead {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  justify-content: space-between;
+  gap: var(--space-4);
+  width: 100%;
+}
+
+.blockHead h2,
+.block header h2 {
+  margin-bottom: var(--space-2);
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr));
+  gap: var(--space-4);
+  width: 100%;
+}
+
+.empty {
+  width: 100%;
+  padding: var(--space-7) var(--space-5);
+  display: grid;
+  gap: var(--space-2);
+  justify-items: center;
+  text-align: center;
+}
+
+.tracks {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr));
+  gap: var(--space-4);
+  width: 100%;
+}
+
+.track {
+  padding: var(--space-5);
+  display: grid;
+  gap: var(--space-3);
+  align-content: start;
+}
+
+.trackIcon {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-sm);
+  background: var(--color-active-wash);
+  color: var(--color-state-active-text);
+}
+
+.trackEyebrow {
+  margin-top: var(--space-2);
+  color: var(--color-text-subtle);
+}
+
+.docs {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.docs li {
+  display: flex;
+  align-items: start;
+  gap: var(--space-2);
+  color: var(--color-text-secondary);
+}
+
+.docs svg {
+  margin-top: 2px;
+  color: var(--color-brand-forest);
+}
+
+.steps {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr));
+  gap: var(--space-5);
+  width: 100%;
+  counter-reset: step;
+}
+
+/* Each step opens with a numbered disc sitting on a rule that runs between
+   them, so the four read as one route rather than four separate cards. The
+   rule is drawn from the disc to the next step's edge, which is why the last
+   step has none. */
+.step {
+  display: grid;
+  gap: var(--space-2);
+  justify-items: start;
+  position: relative;
+  padding-top: var(--space-6);
+}
+
+.stepNumber {
+  position: absolute;
+  top: 0;
+  left: 0;
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border-radius: var(--radius-round);
+  background: var(--color-brand-forest);
+  color: var(--color-on-brand);
+  font-family: var(--font-mono);
+  font-size: var(--type-caption-size);
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+}
+
+/* The answer is the step the applicant is waiting for, so it takes the signal
+   hue the rest of the product reserves for anything owed to the viewer. */
+.step:last-child .stepNumber {
+  background: var(--color-brand-verm);
+}
+
+.step::after {
+  content: '';
+  position: absolute;
+  top: 13px;
+  left: 34px;
+  right: calc(var(--space-5) * -1);
+  height: 1px;
+  background: var(--color-rule-hairline);
+}
+
+.step:last-child::after {
+  display: none;
+}
+
+@media (max-width: 719px) {
+  .step::after {
+    display: none;
+  }
+}
+
+/* The pipeline reads as one run rather than five chips: the dots sit on a
+   shared baseline and the rule between them is what carries the sequence. */
+.pipeline {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+  width: 100%;
+}
+
+.stage {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  color: var(--color-text-secondary);
+}
+
+.stageDot {
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  background: var(--color-brand-forest);
+}
+
+.stageLine {
+  width: 32px;
+  height: 1px;
+  background: var(--color-rule-strong);
+}
+
+.endings {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr));
+  gap: var(--space-5);
+  width: 100%;
+  padding-top: var(--space-5);
+  border-top: 1px solid var(--color-rule-hairline);
+}
+
+.ending {
+  display: grid;
+  gap: var(--space-2);
+}
+
+ /* Two by two rather than auto-fit: four points across a wide container left
+    one of them alone on a second row, which reads as an afterthought. */
+.companies {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-5);
+  width: 100%;
+}
+
+@media (min-width: 720px) {
+  .companies {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--space-6) var(--space-7);
+  }
+}
+
+.companyPoint {
+  display: grid;
+  gap: var(--space-2);
+  justify-items: start;
+}
+
+/* The closing panel is forest in both themes, the one surface on this page
+   that does not follow the ground, so it cannot take the theme's ground
+   colours either: a secondary button drawn for a paper page is invisible on
+   dark forest. The panel pins what it needs. Button labels are not among them,
+   because on-brand already holds across themes. */
+.closing {
+  --color-action-fill: var(--color-forest-500);
+  --color-action-fill-hover: var(--color-forest-400);
+  --color-glass-solid: rgba(255, 255, 255, 0.1);
+  --color-text-primary: var(--color-n-50);
+  --color-rule-strong: var(--color-forest-300);
+
+  border-radius: var(--radius-2xl);
+  background: var(--color-forest-800);
+  color: var(--color-n-50);
+  padding: var(--space-8) var(--space-6);
+}
+
+.closingInner {
+  display: grid;
+  gap: var(--space-4);
+  justify-items: center;
+  text-align: center;
+}
+
+.closingHeadline {
+  color: var(--color-n-50);
+  text-wrap: balance;
+}
+
+.closingLede {
+  color: var(--color-forest-100);
+  max-width: 48ch;
+}
+
+.closingActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  justify-content: center;
+  margin-top: var(--space-2);
+}
+
+@media (min-width: 720px) {
+  .assurances {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: var(--space-7);
+  }
+}
+
+@media (min-width: 960px) {
+  .hero {
+    grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
+    gap: var(--space-8);
+    padding-top: var(--space-8);
+  }
+
+  .closing {
+    padding: var(--space-9) var(--space-8);
+  }
+}
+
+/* ----------------------------------------------------------------------
+   Reveal on scroll
+   ----------------------------------------------------------------------
+   Progressive enhancement, deliberately. The content is fully laid out and
+   readable without any of this: the animation is attached only where the
+   browser supports scroll-driven animations natively and the reader has not
+   asked for less motion. There is no scroll-listener fallback, because a
+   reader in Firefox losing a fade is not losing anything.
+
+   Two rules the feature needs to work at all: animation-timeline is declared
+   after the animation shorthand, which would otherwise reset it, and only
+   opacity and transform are animated, so the whole thing stays on the
+   compositor.
+
+   The hero and the strip under it are never in here. The first screen is
+   solid at rest, always. */
+@keyframes reveal {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  @supports ((animation-timeline: view()) and (animation-range: entry)) {
+    .reveal,
+    .reveal .grid > *,
+    .reveal .tracks > *,
+    .reveal .steps > *,
+    .reveal .endings > * {
+      animation: reveal 1ms linear both;
+      animation-timeline: view();
+      animation-range: entry 5% entry 60%;
+    }
+
+    /* A row arrives as a run rather than all at once. Each card carries its own
+       timeline, so the offsets have to sit on the cards themselves: a range set
+       on an element with no animation of its own does nothing. */
+    .reveal .grid > :nth-child(3n + 2),
+    .reveal .tracks > :nth-child(2),
+    .reveal .steps > :nth-child(2),
+    .reveal .endings > :nth-child(2) {
+      animation-range: entry 11% entry 66%;
+    }
+
+    .reveal .grid > :nth-child(3n + 3),
+    .reveal .tracks > :nth-child(3),
+    .reveal .steps > :nth-child(3),
+    .reveal .endings > :nth-child(3) {
+      animation-range: entry 17% entry 72%;
+    }
+
+    .reveal .steps > :nth-child(4) {
+      animation-range: entry 23% entry 78%;
+    }
+  }
+}
+
+/* A printed page has no scroll to drive anything, so the animation is dropped
+   rather than left holding its opening frame. */
+@media print {
+  .reveal,
+  .reveal * {
+    animation: none;
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* ----------------------------------------------------------------------
+   Matching the canvas layout
+   ---------------------------------------------------------------------- */
+
+/* The brand word in the headline carries the display italic and the structural
+   hue, which is what makes the line read as a name rather than a sentence. */
+.brandWord {
+  color: var(--color-brand-forest);
+}
+
+/* The positioning line, both halves, with the signal hue on the half that is
+   about momentum. This is the one place the two hues sit on the same line, and
+   they are separated by a full stop rather than by colour alone. */
+.positioning {
+  font-size: var(--type-eyebrow-size);
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-text-secondary);
+}
+
+.accelerated {
+  color: var(--color-attention-text);
+}
+
+.pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.pill {
+  height: 38px;
+  padding: 0 var(--space-4);
+  border-radius: 999px;
+  background: var(--color-glass-solid);
+  color: var(--color-text-primary);
+  box-shadow: 0 0 0 1px var(--color-rule-hairline) inset;
+  font-size: var(--type-body-sm-size);
+  font-weight: 600;
+}
+
+.pill:hover {
+  box-shadow: 0 0 0 1px var(--color-rule-strong) inset;
+}
+
+.pillOn {
+  background: var(--color-active-wash);
+  color: var(--color-state-active-text);
+  box-shadow: 0 0 0 1.5px var(--color-brand-forest) inset;
+}
+
+.blockAside {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+}
+
+/* Heading on the left, the paragraph that qualifies it on the right. Stacked
+   under 900px, where two columns would leave both too narrow to read. */
+.split {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-3);
+  width: 100%;
+}
+
+.split p {
+  max-width: 58ch;
+}
+
+/* The history section is one pane rather than loose rows: it is making a single
+   claim about how the record behaves, and the panel is what says so. */
+.recordPanel {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-6);
+  width: 100%;
+  padding: var(--space-7) var(--space-6);
+  border-radius: var(--radius-2xl);
+}
+
+.ending {
+  padding: var(--space-4);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-inset-edge);
+}
+
+.endingWord {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--type-body-sm-size);
+  font-weight: 600;
+}
+
+/* Each ending carries its word; the dot is a second cue, never the only one. */
+.endingDot {
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
+  background: var(--color-text-muted);
+}
+
+.companySplit {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-6);
+  width: 100%;
+  align-items: start;
+}
+
+.companyPoints {
+  display: grid;
+  gap: var(--space-5);
+  justify-items: start;
+  min-width: 0;
+}
+
+.companyPoint {
+  display: flex;
+  align-items: start;
+  gap: var(--space-3);
+  min-width: 0;
+}
+
+.companyPoint > span:last-child {
+  display: grid;
+  gap: var(--space-1);
+  min-width: 0;
+}
+
+.pointIcon {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border-radius: var(--radius-xs);
+  background: var(--color-active-wash);
+  color: var(--color-state-active-text);
+}
+
+.closingText {
+  display: grid;
+  gap: var(--space-3);
+  min-width: 0;
+}
+
+@media (min-width: 900px) {
+  .split {
+    grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
+    gap: var(--space-7);
+    align-items: end;
+  }
+
+  .recordPanel {
+    padding: var(--space-8) var(--space-7);
+  }
+
+  .companySplit {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr);
+    gap: var(--space-8);
+  }
+
+  /* Left aligned with the actions beside it, which is how the canvas closes. */
+  .closingInner {
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    justify-items: start;
+    text-align: left;
+  }
+
+  /* Stacked rather than side by side: the two actions go to different people,
+     so one above the other reads as a choice instead of a pair. */
+  .closingActions {
+    flex-direction: column;
+    align-items: stretch;
+    justify-content: center;
+    margin-top: 0;
+  }
+}
+
+/* ----------------------------------------------------------------------
+   Material 3 Expressive pass
+   ---------------------------------------------------------------------- */
+
+/* Hero imagery: the illustration is the backdrop and the live preview panel
+   floats over it, so the product is shown on top of the picture rather than
+   beside it. Hidden under 960px where the stacked layout has no room for both. */
+.heroVisual {
+  position: relative;
+  display: grid;
+  min-width: 0;
+}
+
+.heroArt {
+  display: none;
+}
+
+@media (min-width: 960px) {
+  .heroArt {
+    display: block;
+    position: absolute;
+    inset: -8% -14% -12% -4%;
+    width: 118%;
+    height: auto;
+    z-index: -1;
+    opacity: 0.95;
+  }
+}
+
+.heroText > * {
+  animation: m3-rise var(--m3-dur-slow) var(--m3-spring) both;
+}
+
+.heroText > :nth-child(2) { animation-delay: 60ms; }
+.heroText > :nth-child(3) { animation-delay: 110ms; }
+.heroText > :nth-child(4) { animation-delay: 160ms; }
+.heroText > :nth-child(5) { animation-delay: 210ms; }
+.heroText > :nth-child(6) { animation-delay: 260ms; }
+
+.heroVisual > :last-child {
+  animation: m3-pop var(--m3-dur-slow) var(--m3-spring-slow) 180ms both;
+}
+
+/* Search: one pill, as an M3 Expressive search bar. */
+.search {
+  padding: 6px;
+  border-radius: var(--m3-shape-full);
+  background: var(--m3-surface-container);
+  box-shadow: var(--shadow-soft-sm), 0 0 0 1px var(--m3-outline-variant) inset;
+  transition: box-shadow var(--m3-dur-fast) var(--m3-effects);
+}
+
+.search:focus-within {
+  box-shadow: var(--shadow-soft-md), 0 0 0 2px var(--m3-primary) inset;
+}
+
+.pill {
+  border-radius: var(--m3-shape-md);
+  transition:
+    background-color var(--m3-dur-fast) var(--m3-effects),
+    border-radius var(--m3-dur) var(--m3-spring);
+}
+
+.pillOn {
+  border-radius: var(--m3-shape-full);
+}
+
+.badge {
+  background: var(--m3-primary-container);
+  color: var(--m3-on-primary-container);
+}
+
+.pointIcon {
+  border-radius: var(--m3-shape-md);
+  background: var(--m3-primary-container);
+  color: var(--m3-on-primary-container);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .heroText > *,
+  .heroVisual > :last-child {
+    animation: none;
+  }
+}
+
+/* Inside the pill, the field and the city picker lose their own outlines: the
+   bar is the one container, and the fields are regions of it. */
+.searchField,
+.city {
+  border-radius: var(--m3-shape-full);
+  background: transparent;
+  box-shadow: none;
+}
+
+.city {
+  padding: 0 var(--space-4);
+  cursor: pointer;
+}
+
+.city:hover {
+  background: var(--m3-primary-container);
+}
+
+/* Wrapped onto several rows on a phone, a full pill would clip its contents. */
+@media (max-width: 640px) {
+  .search {
+    border-radius: var(--m3-shape-xl);
+  }
+
+  .search button {
+    width: 100%;
+  }
+}
+
+/* The closing panel's picture: hidden where the panel stacks, since the
+   headline and the two actions already fill a phone screen. */
+.closingArt {
+  display: none;
+}
+
+@media (min-width: 900px) {
+  .closingInner {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 0.8fr) auto;
+    gap: var(--space-6);
+  }
+
+  .closingArt {
+    display: block;
+    width: 100%;
+    max-width: 300px;
+    height: auto;
+    justify-self: center;
+  }
+}
+
+.search button {
+  padding: 0 var(--space-4);
+}
+
+.city {
+  flex: 0 1 132px;
+}

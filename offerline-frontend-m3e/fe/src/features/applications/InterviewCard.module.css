@@ -1,0 +1,148 @@
+/* Sunk into the panel with a vermilion edge: an interview is the one block
+   here that carries a time the viewer has to keep. */
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  border-radius: var(--radius-md);
+  background: var(--color-ground);
+  box-shadow: inset 0 0 0 1px var(--color-verm-200);
+}
+
+:global([data-theme='ink']) .card {
+  box-shadow: inset 0 0 0 1px var(--color-verm-700);
+}
+
+.head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.eyebrow {
+  color: var(--color-attention-text);
+  font-size: var(--type-caption-size);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  line-height: normal;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  height: 22px;
+  padding: 0 var(--space-2);
+  border-radius: var(--radius-xs);
+  font-size: var(--type-caption-size);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.waiting {
+  background: var(--color-attention-wash);
+  color: var(--color-attention-text);
+}
+
+.confirmed {
+  background: var(--color-active-wash);
+  color: var(--color-state-active-text);
+}
+
+.declined {
+  background: var(--color-state-open-bg);
+  color: var(--color-text-muted);
+}
+
+.title {
+  color: var(--color-text-primary);
+  font-size: var(--type-heading-sm-size);
+  font-weight: 600;
+  line-height: normal;
+}
+
+.when {
+  color: var(--color-text-secondary);
+  font-size: 14px;
+  line-height: normal;
+}
+
+.facts {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 0;
+  font-size: var(--type-body-sm-size);
+  line-height: normal;
+}
+
+.facts > div {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.facts dt {
+  flex: none;
+  width: 64px;
+  color: var(--color-text-subtle);
+}
+
+.facts dd {
+  margin: 0;
+  min-width: 0;
+  color: var(--color-text-secondary);
+  overflow-wrap: anywhere;
+}
+
+.facts a {
+  color: var(--color-text-link);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.reply {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.replyButton {
+  flex: 1;
+  font-size: var(--type-body-sm-size);
+}
+
+.declinedNote {
+  color: var(--color-text-muted);
+  font-size: var(--type-body-sm-size);
+  line-height: 1.45;
+}
+
+.foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding-top: 10px;
+  border-top: 1px solid var(--color-rule-hairline);
+}
+
+.moved {
+  color: var(--color-text-subtle);
+  font-size: var(--type-caption-size);
+  line-height: normal;
+}
+
+.calendar {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--color-text-link);
+  font-size: var(--type-body-sm-size);
+  font-weight: 600;
+}
+
+.calendar:hover {
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}

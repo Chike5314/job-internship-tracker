@@ -67,6 +67,18 @@ export function changeApplicationStatus(
   return http.patch(`/applications/${applicationId}/status`, { body: params })
 }
 
+/**
+ * Undoes a rejection. Its own route rather than a status change, because a
+ * rejection is final in the state model and the server refuses every move out
+ * of it. The application comes back at whatever status it held before.
+ */
+export function reinstateApplication(
+  applicationId: string,
+  params: { note?: string } = {},
+): Promise<{ application: ApplicationStatusView }> {
+  return http.post(`/applications/${applicationId}/reinstate`, { body: params })
+}
+
 export function respondToInterview(
   applicationId: string,
   action: 'CONFIRM' | 'DECLINE',

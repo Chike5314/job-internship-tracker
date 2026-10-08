@@ -10,6 +10,11 @@
  * glass-dense beneath it" in the token file. So .glass-dense is what carries
  * a paragraph or metadata; .glass-soft carries headings and short labels
  * only; .glass-sheer never carries text, it only contains other glass.
+ *
+ * Shape: this file is the only place a glass tier's corner is set, and the
+ * radii below are the Material steps, since the radius tokens carry them. The
+ * ramp follows how large a thing each tier is: a card at lg, a dialog or
+ * drawer at xl, and the outer pane that holds other glass at 2xl.
  */
 
 .glass-sheer {
