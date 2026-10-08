@@ -19,7 +19,7 @@ export function PhoneHeader() {
   return (
     <header className={styles.bar}>
       <Link to="/dashboard" className={styles.brand} aria-label="Offerline home">
-        <Logo variant="mark" height={26} />
+        <Logo height={24} />
       </Link>
       <div className={styles.actions}>
         <Link

@@ -14,3 +14,26 @@
   height: 100%;
   width: auto;
 }
+
+/* The mark leads and the name follows on the same optical centre line. The
+   gap scales with the height through em, since the name's size is set from it. */
+.lockup {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4em;
+  color: inherit;
+  white-space: nowrap;
+}
+
+.name {
+  font-family: var(--font-sans);
+  font-weight: 650;
+  letter-spacing: -0.03em;
+  line-height: 1;
+}
+
+.accent {
+  /* A ground that is itself forest green sets --logo-accent to a lighter
+     green, or the second half of the name sinks into it. */
+  color: var(--logo-accent, var(--color-brand-forest));
+}

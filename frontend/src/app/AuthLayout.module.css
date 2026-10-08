@@ -46,6 +46,8 @@
   background: var(--color-forest-800);
   color: var(--color-n-50);
   isolation: isolate;
+  /* The logo's green half would vanish into this forest ground. */
+  --logo-accent: var(--color-forest-200);
 }
 
 /* The bloom field is written for a whole page: fixed to the viewport with
