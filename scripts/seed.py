@@ -175,6 +175,49 @@ APPLICANT_SPECS = [
     },
 ]
 
+# --demo only. Six more people on the Backend Engineer posting, so the board has
+# something to show in each part of a live walkthrough: new applications to
+# move to review in bulk, applications under review to book interviews for in
+# bulk, and one candidate between interview rounds.
+DEMO_APPLICANT_SPECS = [
+    {"email": "brice.tchoupo@example.com", "fullName": "Brice Tchoupo",
+     "academicInfo": {"schoolName": "University of Douala", "fieldOfStudy": "Computer Science", "degreeLevel": "BACHELORS"},
+     "stage": "SUBMITTED",
+     "skills": ["Python", "Django", "PostgreSQL"]},
+    {"email": "joel.mbarga@example.com", "fullName": "Joel Mbarga",
+     "academicInfo": {"schoolName": "University of Yaounde I", "fieldOfStudy": "Computer Science", "degreeLevel": "BACHELORS"},
+     "stage": "SUBMITTED",
+     "skills": ["Go", "Kubernetes"]},
+    {"email": "awa.diallo@example.com", "fullName": "Awa Diallo",
+     "academicInfo": {"schoolName": "Cheikh Anta Diop University", "fieldOfStudy": "Computer Science", "degreeLevel": "BACHELORS"},
+     "stage": "SUBMITTED",
+     "skills": ["Node.js", "AWS Lambda"]},
+    {"email": "clarisse.ngo@example.com", "fullName": "Clarisse Ngo",
+     "academicInfo": {"schoolName": "University of Buea", "fieldOfStudy": "Computer Science", "degreeLevel": "BACHELORS"},
+     "stage": "UNDER_REVIEW",
+     "skills": ["Python", "AWS", "Terraform"]},
+    {"email": "kwame.mensah@example.com", "fullName": "Kwame Mensah",
+     "academicInfo": {"schoolName": "University of Ghana", "fieldOfStudy": "Computer Science", "degreeLevel": "BACHELORS"},
+     "stage": "UNDER_REVIEW",
+     "skills": ["Java", "DynamoDB"]},
+    {"email": "serge.akono@example.com", "fullName": "Serge Akono",
+     "academicInfo": {"schoolName": "University of Dschang", "fieldOfStudy": "Computer Science", "degreeLevel": "BACHELORS"},
+     "stage": "ROUND_TWO",
+     "skills": ["Python", "System design", "AWS"]},
+]
+
+# --demo only. Has a CV and no applications, for applying live on stage.
+PRESENTER_SPEC = {
+    "email": "demo.applicant@example.com",
+    "fullName": "Demo Applicant",
+    "skills": ["Python", "AWS", "React"],
+    "academicInfo": {
+        "schoolName": "University of Buea",
+        "fieldOfStudy": "Computer Engineering",
+        "degreeLevel": "BACHELORS",
+    },
+}
+
 # Which of the default document requirements each opportunity type needs
 # beyond the CV, which is always supplied via reuseCvId.
 APPLICATION_FILE_DOCS = {
@@ -514,6 +557,11 @@ def parse_args():
         "--password", default="SeedData!2026",
         help="Password set on every account this script creates or reuses.",
     )
+    parser.add_argument(
+        "--demo", action="store_true",
+        help="Also add six applicants across the Backend Engineer board and a clean "
+             "presenter account, for a live walkthrough.",
+    )
     parser.add_argument("--company-email", default="acme.robotics@example.com")
     parser.add_argument("--company-name", default="Acme Robotics")
     return parser.parse_args()
@@ -602,6 +650,10 @@ def main() -> None:
     app5 = ensure_application(api, a1, academic, "ACADEMIC_INTERNSHIP")
     advance_status(api, company_token, app5["applicationId"], "REJECTED")
 
+    demo = {}
+    if args.demo:
+        demo = seed_demo(api, idp, pool_id, client_id, company_token, full_time, args.password)
+
     summary = {
         "companyId": company_id,
         "postings": job_ids,
@@ -614,8 +666,71 @@ def main() -> None:
             "rejected": app5["applicationId"],
         },
     }
+    if demo:
+        summary["demo"] = demo
     log("done")
     print(json.dumps(summary, indent=2))
+
+
+def seed_demo(api: Api, idp, pool_id: str, client_id: str, company_token: str,
+              job_id: str, password: str) -> dict:
+    """The board a live walkthrough needs, on the Backend Engineer posting."""
+    log("demo applicants")
+    placed = {}
+    for spec in DEMO_APPLICANT_SPECS:
+        applicant = ensure_applicant(api, idp, pool_id, client_id, spec, password)
+        log(f"  {spec['fullName']} -> {spec['stage']}")
+        application = ensure_application(
+            api, applicant, job_id, "FULL_TIME_JOB",
+            cover_letter_text=(
+                f"I am {spec['fullName'].split()[0]}, and I would like to build "
+                "Offerline's backend with your team. My experience with "
+                f"{', '.join(spec['skills'])} fits the role."
+            ),
+        )
+        application_id = application["applicationId"]
+        if spec["stage"] in ("UNDER_REVIEW", "ROUND_TWO"):
+            advance_status(api, company_token, application_id, "UNDER_REVIEW")
+        if spec["stage"] == "ROUND_TWO" and application.get("status") != "INTERVIEW_SCHEDULED":
+            book_round_two(api, company_token, application_id)
+        placed[spec["email"]] = spec["stage"]
+
+    log("presenter account")
+    ensure_applicant(api, idp, pool_id, client_id, PRESENTER_SPEC, password)
+    log(f"  {PRESENTER_SPEC['email']} (CV in the library, no applications)")
+    placed[PRESENTER_SPEC["email"]] = "PRESENTER"
+    return placed
+
+
+def book_round_two(api: Api, company_token: str, application_id: str) -> None:
+    """Round one in the past and marked complete, round two booked ahead."""
+    status, _ = api.call(
+        "POST", f"/applications/{application_id}/interview", token=company_token,
+        body={
+            "scheduledAt": iso_in(1),
+            "mode": "ONLINE",
+            "durationMinutes": 45,
+            "locationOrLink": "https://meet.example.com/round-one",
+        },
+    )
+    if status not in (200, 201):
+        log("    round one already booked, skipped")
+        return
+    api.must(
+        "PATCH", f"/applications/{application_id}/interview", token=company_token,
+        body={"action": "COMPLETE", "outcomeNote": "Strong on system design."},
+    )
+    api.must(
+        "POST", f"/applications/{application_id}/interview", token=company_token,
+        body={
+            "scheduledAt": iso_in(3),
+            "mode": "ONLINE",
+            "durationMinutes": 60,
+            "locationOrLink": "https://meet.example.com/round-two",
+            "roundLabel": "Technical",
+        },
+    )
+    log("    round one complete, round two (Technical) booked")
 
 
 if __name__ == "__main__":
