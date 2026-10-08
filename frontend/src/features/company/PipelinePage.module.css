@@ -680,3 +680,28 @@
   background: var(--color-attention-wash);
   color: var(--color-attention-text);
 }
+
+/* Shown before a bulk booking that would double-book the company. Nothing is
+   booked until the recruiter chooses. */
+.clash {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: 14px var(--space-4);
+  border-radius: var(--radius-md);
+  background: var(--color-attention-wash);
+  color: var(--color-text-primary);
+}
+
+.clashTitle {
+  font-weight: 600;
+}
+
+.clashList {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding-left: var(--space-4);
+  list-style: disc;
+  font-size: var(--type-body-sm-size);
+}

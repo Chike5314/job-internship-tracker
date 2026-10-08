@@ -17,6 +17,7 @@ import { BULK_LIMIT, COLUMNS, RECRUITER_STATUS_LABEL, applicantName, refusalReas
 import {
   useBulkSchedule,
   useBulkStatus,
+  useCompanyInterviews,
   useExportPipeline,
   useMyCompany,
   useMyPosting,
@@ -69,6 +70,10 @@ export function PipelinePage() {
   const company = useMyCompany()
   const bulk = useBulkStatus(jobId ?? '')
   const bulkSchedule = useBulkSchedule(jobId ?? '')
+  // Every upcoming interview the company has, across all its postings, so a
+  // bulk booking can be checked against the whole calendar and not one board.
+  const calendar = useCompanyInterviews()
+  const [clashes, setClashes] = useState<{ slot: InterviewSlot; lines: string[] } | null>(null)
   const exportCsv = useExportPipeline()
   const update = useUpdatePosting(jobId ?? '')
   const { showToast } = useToast()
@@ -158,7 +163,45 @@ export function PipelinePage() {
       row.status === 'UNDER_REVIEW' || (row.status === 'INTERVIEW_SCHEDULED' && !row.nextInterview),
   )
 
+  /**
+   * The bookings a slot would make, one after another, that overlap an
+   * interview already on the calendar. Two intervals overlap when each starts
+   * before the other ends.
+   */
+  function findClashes(slot: InterviewSlot): string[] {
+    const booked = calendar.data?.interviews ?? []
+    const start = new Date(slot.scheduledAt).getTime()
+    const length = slot.durationMinutes * 60_000
+    const lines: string[] = []
+    toInterview.forEach((row, index) => {
+      const from = start + index * length
+      const to = from + length
+      for (const existing of booked) {
+        const at = new Date(existing.scheduledAt).getTime()
+        const end = at + (existing.durationMinutes ?? 60) * 60_000
+        if (from < end && at < to) {
+          const when = new Date(from).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+          lines.push(
+            `${applicantName(row)} at ${when} overlaps ${existing.applicantName ?? 'another interview'}` +
+              `${existing.jobTitle ? ` (${existing.jobTitle})` : ''}.`,
+          )
+        }
+      }
+    })
+    return lines
+  }
+
+  function requestBulkSchedule(slot: InterviewSlot) {
+    const lines = findClashes(slot)
+    if (lines.length > 0) {
+      setClashes({ slot, lines })
+      return
+    }
+    runBulkSchedule(slot)
+  }
+
   function runBulkSchedule(slot: InterviewSlot) {
+    setClashes(null)
     const applicationIds = toInterview.map((row) => row.applicationId)
     bulkSchedule.mutate(
       { applicationIds, slot },
@@ -489,9 +532,39 @@ export function PipelinePage() {
               pending={bulkSchedule.isPending}
               askRoundName
               submitLabel={`Book ${toInterview.length}`}
-              onSubmit={runBulkSchedule}
-              onCancel={() => setConfirming(null)}
+              onSubmit={requestBulkSchedule}
+              onCancel={() => {
+                setClashes(null)
+                setConfirming(null)
+              }}
             />
+          )}
+          {confirming === 'INTERVIEW' && clashes && (
+            <div className={styles.clash} role="alert">
+              <p className={styles.clashTitle}>
+                {clashes.lines.length === 1
+                  ? '1 booking overlaps an interview you already have'
+                  : `${clashes.lines.length} bookings overlap interviews you already have`}
+              </p>
+              <ul className={styles.clashList}>
+                {clashes.lines.map((line) => (
+                  <li key={line}>{line}</li>
+                ))}
+              </ul>
+              <span className={styles.bulkActions}>
+                <button
+                  type="button"
+                  className={styles.bulkReject}
+                  onClick={() => runBulkSchedule(clashes.slot)}
+                  disabled={bulkSchedule.isPending}
+                >
+                  Book anyway
+                </button>
+                <button type="button" className={styles.bulkQuiet} onClick={() => setClashes(null)}>
+                  Pick another time
+                </button>
+              </span>
+            </div>
           )}
           {(confirming === 'REJECTED' || confirming === 'OFFER_EXTENDED') && (
             <div className={styles.rejectRow}>

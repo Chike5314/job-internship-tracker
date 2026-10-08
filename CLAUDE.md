@@ -291,8 +291,6 @@ Open items:
   flags on one deploy, and every later deploy that left the flags off removed
   the Google provider from the user pool without any error; it happened twice
   on 2026-10-08. A `cdk diff` that shows `GoogleProvider` being destroyed is that.
-- **Bulk interview booking does not check for clashes** with interviews the
-  company already has.
 
 The presentation deck and the Lucidchart prompts for the architecture diagrams
 (`docs/diagrams/lucidchart-prompts.md`) are done.
