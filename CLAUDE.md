@@ -286,16 +286,11 @@ variables, and a build only picks up a variable that was set before it ran.
 
 Open items:
 
-- **Google sign-in is not switched on.** The user pool has no identity
-  providers because `googleClientId` and `googleClientSecretArn` are empty in
-  `cdk.json`. A secret `jiat-dev/google-oauth` exists; the stack passes its
-  whole value as the client secret, so it must be plain text. Fill both
-  context values, add
-  `https://jiat-dev.auth.us-east-1.amazoncognito.com/oauth2/idpresponse` to the
-  Google client's redirect URIs, and redeploy the persistence stack.
-- **`GET /jobs/{id}` can never see a signed in caller** (`public=True` means no
-  authorizer), so a closed or expired posting 403s even the applicant who
-  applied to it. Needs an authorizer-protected route of its own.
+- **Google sign-in depends on `cdk.json`.** `googleClientId` and
+  `googleClientSecretArn` live there now. A deploy run without them, from an
+  older `cdk.json` or with them passed only as `-c` flags, removes the Google
+  provider from the user pool without any error; it happened twice on
+  2026-10-08. A `cdk diff` that shows `GoogleProvider` being destroyed is that.
 - **Bulk interview booking does not check for clashes** with interviews the
   company already has.
 
