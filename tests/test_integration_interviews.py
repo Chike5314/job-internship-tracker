@@ -17,7 +17,9 @@ from test_integration_applications import (
     company_handler,
     jobs_handler,
     posting,  # noqa: F401 - used as a fixture
+    submit,
     submitted_application,
+    upload_cv,
 )
 
 
@@ -346,6 +348,49 @@ def test_a_bulk_change_refuses_a_transition_the_state_model_forbids(posting):
     )
     assert payload["updated"] == []
     assert payload["refused"][0]["applicationId"] == application_id
+
+
+def _bulk(posting, status, ids, note=None):
+    body = {"status": status, "applicationIds": ids}
+    if note:
+        body["note"] = note
+    return call(
+        jobs_handler(),
+        "PATCH",
+        "/jobs/{id}/applications/bulk-status",
+        user="co_1",
+        groups=RECRUITER,
+        path={"id": posting},
+        body=body,
+    )
+
+
+def test_a_bulk_change_never_moves_anyone_to_interview(posting):
+    application_id = submitted_application(posting)
+    _bulk(posting, "UNDER_REVIEW", [application_id])
+
+    _, payload = _bulk(posting, "INTERVIEW_SCHEDULED", [application_id])
+    assert payload["updated"] == []
+    assert "one at a time" in payload["refused"][0]["reason"]
+
+    _, detail = call(
+        app_handler(), "GET", "/applications/{id}", user="co_1", groups=RECRUITER,
+        path={"id": application_id},
+    )
+    assert detail["application"]["status"] == "UNDER_REVIEW"
+
+
+def test_a_bulk_offer_promotes_everyone_under_review(posting):
+    ids = []
+    for n in range(3):
+        _, upload = upload_cv(applicant=f"app_{n}", job_id=posting)
+        _, created = submit(posting, applicant=f"app_{n}", cv_key=upload["s3Key"])
+        ids.append(created["application"]["applicationId"])
+    _bulk(posting, "UNDER_REVIEW", ids)
+
+    _, payload = _bulk(posting, "OFFER_EXTENDED", ids, note="Welcome aboard.")
+    assert sorted(payload["updated"]) == sorted(ids)
+    assert payload["refused"] == []
 
 
 def test_an_export_returns_a_presigned_url_and_counts_its_rows(posting):

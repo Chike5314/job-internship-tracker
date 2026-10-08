@@ -490,6 +490,17 @@ def bulk_status(event: Dict[str, Any], _context: Any) -> Dict[str, Any]:
             refused.append({"applicationId": application_id, "reason": "Not found on this posting."})
             continue
         current = record.get("status", "")
+        if target == INTERVIEW_SCHEDULED:
+            # An interview is a time and a place, booked through
+            # POST /applications/{id}/interview. A status alone would put the
+            # card in the interview column with nothing on the calendar.
+            refused.append(
+                {
+                    "applicationId": application_id,
+                    "reason": "Interviews are booked one at a time, each with its own time.",
+                }
+            )
+            continue
         try:
             assert_transition(current, target, "RECRUITER")
         except ConflictError as exc:

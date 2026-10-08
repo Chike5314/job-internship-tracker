@@ -70,7 +70,8 @@ export function PipelinePage() {
   const { showToast } = useToast()
 
   const [picked, setPicked] = useState<Set<string>>(new Set())
-  const [rejecting, setRejecting] = useState(false)
+  // A bulk change that writes to every applicant asks once before it goes.
+  const [confirming, setConfirming] = useState<null | 'REJECTED' | 'OFFER_EXTENDED'>(null)
   const [bulkNote, setBulkNote] = useState('')
   const [result, setResult] = useState<BulkResult | null>(null)
   const [exported, setExported] = useState<ExportResult | null>(null)
@@ -111,19 +112,55 @@ export function PipelinePage() {
 
   function clearPicked() {
     setPicked(new Set())
-    setRejecting(false)
+    setConfirming(null)
     setBulkNote('')
   }
 
-  function runBulk(status: ApplicationStatus, note?: string) {
-    const applicationIds = Array.from(picked)
+  /**
+   * Picks every card in a column, or drops them all when every one is already
+   * picked. A column longer than the API's limit fills up to the limit and
+   * leaves the rest, newest first, which is the order the column shows.
+   */
+  function toggleColumn(items: PipelineRow[]) {
+    setResult(null)
+    setPicked((current) => {
+      const ids = items.map((row) => row.applicationId)
+      const next = new Set(current)
+      if (ids.every((id) => next.has(id))) {
+        for (const id of ids) next.delete(id)
+        return next
+      }
+      for (const id of ids) {
+        if (next.size >= BULK_LIMIT) break
+        next.add(id)
+      }
+      return next
+    })
+  }
+
+  // Which of the picked applications can make each move. A promotion sends
+  // only those, so a selection that spans columns moves the ones it can and
+  // the rest stay picked for whatever they need next.
+  const pickedRows = rows.filter((row) => picked.has(row.applicationId))
+  const toReview = pickedRows.filter((row) => row.status === 'SUBMITTED')
+  const toOffer = pickedRows.filter(
+    (row) => row.status === 'UNDER_REVIEW' || row.status === 'INTERVIEW_SCHEDULED',
+  )
+
+  function runBulk(status: ApplicationStatus, note?: string, only?: PipelineRow[]) {
+    const applicationIds = only ? only.map((row) => row.applicationId) : Array.from(picked)
     if (applicationIds.length === 0) return
     bulk.mutate(
       { applicationIds, status, note: note || undefined },
       {
         onSuccess: (outcome) => {
           const byId = new Map(rows.map((row) => [row.applicationId, row]))
-          clearPicked()
+          if (only) {
+            const sent = new Set(applicationIds)
+            setPicked((current) => new Set([...current].filter((id) => !sent.has(id))))
+            setConfirming(null)
+            setBulkNote('')
+          } else clearPicked()
           setResult({
             done: bulkSummary(outcome.updated.length, status),
             refused: outcome.refused.map(
@@ -292,6 +329,21 @@ export function PipelinePage() {
                     <span className={styles.count}>{pipeline.isPending ? '' : items.length}</span>
                   </p>
                   <p className={styles.hint}>{column.hint}</p>
+                  {!isDecided && items.length > 1 && (
+                    <button
+                      type="button"
+                      className={styles.selectAll}
+                      onClick={() => toggleColumn(items)}
+                      aria-pressed={items.every((row) => picked.has(row.applicationId))}
+                    >
+                      <Icon name="confirm" size={14} />
+                      {items.every((row) => picked.has(row.applicationId))
+                        ? 'Clear selection'
+                        : items.length > BULK_LIMIT
+                          ? `Select first ${BULK_LIMIT}`
+                          : `Select all ${items.length}`}
+                    </button>
+                  )}
                   {isDecided && rejected > 0 && (
                     <button
                       type="button"
@@ -349,17 +401,29 @@ export function PipelinePage() {
               </span>
               <span className={styles.bulkHint}>Up to {BULK_LIMIT} at a time. Each one is checked on its own.</span>
             </p>
-            {!rejecting && (
+            {confirming === null && (
               <span className={styles.bulkActions}>
-                <button
-                  type="button"
-                  className={styles.bulkReview}
-                  onClick={() => runBulk('UNDER_REVIEW')}
-                  disabled={bulk.isPending}
-                >
-                  Mark under review
-                </button>
-                <button type="button" className={styles.bulkReject} onClick={() => setRejecting(true)}>
+                {toReview.length > 0 && (
+                  <button
+                    type="button"
+                    className={styles.bulkReview}
+                    onClick={() => runBulk('UNDER_REVIEW', undefined, toReview)}
+                    disabled={bulk.isPending}
+                  >
+                    Move {toReview.length} to review
+                  </button>
+                )}
+                {toOffer.length > 0 && (
+                  <button
+                    type="button"
+                    className={styles.bulkReview}
+                    onClick={() => setConfirming('OFFER_EXTENDED')}
+                    disabled={bulk.isPending}
+                  >
+                    Extend offer to {toOffer.length}…
+                  </button>
+                )}
+                <button type="button" className={styles.bulkReject} onClick={() => setConfirming('REJECTED')}>
                   Reject…
                 </button>
               </span>
@@ -368,7 +432,7 @@ export function PipelinePage() {
               Clear
             </button>
           </div>
-          {rejecting && (
+          {confirming && (
             <div className={styles.rejectRow}>
               <label className={styles.rejectField}>
                 <span className={styles.rejectLabel}>Shared note for each applicant (optional)</span>
@@ -377,24 +441,32 @@ export function PipelinePage() {
                   value={bulkNote}
                   onChange={(event) => setBulkNote(event.target.value)}
                   maxLength={500}
-                  placeholder="Thank you for applying. We have chosen to move forward with other candidates."
+                  placeholder={
+                    confirming === 'REJECTED'
+                      ? 'Thank you for applying. We have chosen to move forward with other candidates.'
+                      : 'We are delighted to offer you the role. Details will follow by email.'
+                  }
                   className={styles.rejectInput}
                   autoFocus
                 />
               </label>
               <button
                 type="button"
-                className={styles.rejectConfirm}
-                onClick={() => runBulk('REJECTED', bulkNote.trim())}
+                className={confirming === 'REJECTED' ? styles.rejectConfirm : styles.offerConfirm}
+                onClick={() =>
+                  confirming === 'REJECTED'
+                    ? runBulk('REJECTED', bulkNote.trim())
+                    : runBulk('OFFER_EXTENDED', bulkNote.trim(), toOffer)
+                }
                 disabled={bulk.isPending}
               >
-                Reject {picked.size}
+                {confirming === 'REJECTED' ? `Reject ${picked.size}` : `Extend ${toOffer.length} offers`}
               </button>
               <button
                 type="button"
                 className={styles.bulkQuiet}
                 onClick={() => {
-                  setRejecting(false)
+                  setConfirming(null)
                   setBulkNote('')
                 }}
               >
