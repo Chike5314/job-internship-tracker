@@ -17,7 +17,7 @@
     "senderEmail": "no-reply@example.com",
     "googleClientId": "",
     "googleClientSecretArn": "",
-    "allowedOrigins": ["http://localhost:3000",  "https://main.d2d1vwcwf0wd9a.amplifyapp.com"],
+    "allowedOrigins": ["http://localhost:3000",  "https://main.dshlqks1zd51k.amplifyapp.com"],
     "userPoolDomainPrefix": "jiat-dev",
     "@aws-cdk/aws-lambda:recognizeLayerVersion": true,
     "@aws-cdk/core:checkSecretUsage": true,
