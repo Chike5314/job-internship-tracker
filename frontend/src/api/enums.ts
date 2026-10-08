@@ -7,7 +7,7 @@ export type ExperienceLevel = 'ENTRY' | 'MID' | 'SENIOR'
 export type DegreeLevel = 'HND' | 'BACHELORS' | 'MASTERS' | 'DOCTORATE' | 'OTHER'
 export type InterviewMode = 'ONSITE' | 'ONLINE'
 export type SalaryPeriod = 'HOUR' | 'MONTH' | 'YEAR'
-export type InterviewState = 'PROPOSED' | 'CONFIRMED' | 'DECLINED' | 'CANCELLED'
+export type InterviewState = 'PROPOSED' | 'CONFIRMED' | 'DECLINED' | 'CANCELLED' | 'COMPLETED'
 
 // Matches ALL_STATUSES in src/common/state_machine.py.
 export type ApplicationStatus =

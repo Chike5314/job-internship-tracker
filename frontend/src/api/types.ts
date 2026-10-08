@@ -88,6 +88,15 @@ export interface Interview {
   sequence: number
   replacesInterviewId?: string
   respondedAt?: string
+  /** Which round of the interview stage this is. Missing on interviews booked
+   *  before rounds existed, which were all a first round or a reschedule of
+   *  one; `interviewRound` in lib/interviews.ts infers it for those. */
+  round?: number
+  /** The company's name for the round, such as Technical or Final. */
+  roundLabel?: string
+  /** Set when the company marks the round complete. */
+  completedAt?: string
+  outcomeNote?: string
 }
 
 // From _applicant_view(detailed=False) in application_service/handler.py.
@@ -262,9 +271,11 @@ export interface PipelineRow {
   statusChangedAt: string
   isFinal: boolean
   interviewCount: number
+  /** Interview rounds the company has marked complete. */
+  roundsCompleted?: number
   lastEditedAt?: string
   /** The soonest interview still standing, absent once none is. */
-  nextInterview?: { scheduledAt: string; state: InterviewState } | null
+  nextInterview?: { scheduledAt: string; state: InterviewState; round?: number; roundLabel?: string } | null
 }
 
 /** Every status, including the ones with no applications in them, because the
@@ -310,7 +321,7 @@ export interface ApplicantApplication {
   statusChangedAt: string
   isFinal: boolean
   interviewCount: number
-  nextInterview?: { scheduledAt: string; state: InterviewState } | null
+  nextInterview?: { scheduledAt: string; state: InterviewState; round?: number; roundLabel?: string } | null
 }
 
 /** From company_applicants in jobs_service/handler.py: one row per person
@@ -360,6 +371,8 @@ export interface CompanyInterview {
   mode: InterviewMode
   locationOrLink: string
   interviewState: InterviewState
+  round?: number
+  roundLabel?: string
 }
 
 export interface BulkStatusResult {

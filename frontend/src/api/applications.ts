@@ -88,9 +88,23 @@ export function respondToInterview(
 
 export function scheduleInterview(
   applicationId: string,
-  params: { scheduledAt: string; mode: InterviewMode; durationMinutes: number; locationOrLink: string },
+  params: {
+    scheduledAt: string
+    mode: InterviewMode
+    durationMinutes: number
+    locationOrLink: string
+    roundLabel?: string
+  },
 ): Promise<{ interview: Interview; status: string }> {
   return http.post(`/applications/${applicationId}/interview`, { body: params })
+}
+
+/** The company closes out the open round, which lets the next one be booked. */
+export function completeInterview(
+  applicationId: string,
+  params: { outcomeNote?: string } = {},
+): Promise<{ interviews: Interview[] }> {
+  return http.patch(`/applications/${applicationId}/interview`, { body: { action: 'COMPLETE', ...params } })
 }
 
 /** The company moves a time that still stands. The old entry is kept, marked

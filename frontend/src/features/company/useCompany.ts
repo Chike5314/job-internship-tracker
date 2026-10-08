@@ -19,6 +19,7 @@ import {
   changeApplicationStatus,
   reinstateApplication,
   getApplicationForRecruiter,
+  completeInterview,
   rescheduleInterview,
   scheduleInterview,
 } from '@/api/applications'
@@ -158,6 +159,43 @@ export function useBulkStatus(jobId: string) {
 }
 
 /**
+ * Books one interview for each application, back to back from one start time:
+ * the first at the start, the next when it ends, and so on. Each is its own
+ * booking through the single route, so each applicant gets their own time and
+ * their own invitation, and one refusal leaves the rest booked.
+ */
+export function useBulkSchedule(jobId: string) {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async ({ applicationIds, slot }: { applicationIds: string[]; slot: InterviewSlot }) => {
+      const start = new Date(slot.scheduledAt).getTime()
+      const booked: string[] = []
+      const refused: { applicationId: string; reason: string }[] = []
+      // One after another rather than all at once, so the times stay in the
+      // order of the selection and the API is not hit with fifty at a time.
+      for (const [index, applicationId] of applicationIds.entries()) {
+        const at = new Date(start + index * slot.durationMinutes * 60_000).toISOString()
+        try {
+          await scheduleInterview(applicationId, { ...slot, scheduledAt: at })
+          booked.push(applicationId)
+        } catch (error) {
+          refused.push({
+            applicationId,
+            reason: error instanceof Error ? error.message : 'It was not booked.',
+          })
+        }
+      }
+      return { booked, refused }
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ['company', 'pipeline', jobId] })
+      queryClient.invalidateQueries({ queryKey: ['company', 'interviews'] })
+      queryClient.invalidateQueries({ queryKey: ['company', 'analytics'] })
+    },
+  })
+}
+
+/**
  * One application, as the company reads it. The first read of a SUBMITTED
  * application is what moves it to UNDER_REVIEW, so this read is an action: it
  * runs when the drawer opens and never as a retry nobody asked for. Reads
@@ -183,6 +221,8 @@ export interface InterviewSlot {
   mode: InterviewMode
   durationMinutes: number
   locationOrLink: string
+  /** Only sent when booking a round, never on a reschedule. */
+  roundLabel?: string
 }
 
 /**
@@ -258,7 +298,15 @@ export function useRecruiterActions(applicationId: string, jobId: string) {
     },
   })
 
-  return { move, reinstate, schedule, reschedule }
+  const complete = useMutation({
+    mutationFn: (params: { outcomeNote?: string }) => completeInterview(applicationId, params),
+    onSuccess: () => {
+      void reread()
+      refresh()
+    },
+  })
+
+  return { move, reinstate, schedule, reschedule, complete }
 }
 
 export function useJobAnalytics(jobId: string | undefined) {

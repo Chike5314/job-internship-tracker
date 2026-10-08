@@ -5,7 +5,13 @@ import { initials } from '@/lib/initials'
 import { applicantName, chipTime, hasPassed, recruiterShortLabel, timeInStage } from './pipeline'
 import styles from './PipelineCard.module.css'
 
-const CHIP_WORD = { PROPOSED: 'Awaiting', CONFIRMED: 'Confirmed', DECLINED: 'Declined', CANCELLED: 'Cancelled' }
+const CHIP_WORD = {
+  PROPOSED: 'Awaiting',
+  CONFIRMED: 'Confirmed',
+  DECLINED: 'Declined',
+  CANCELLED: 'Cancelled',
+  COMPLETED: 'Complete',
+}
 
 /**
  * One application on the board. The checkbox picks it for a bulk change; the
@@ -75,7 +81,15 @@ export function PipelineCard({
               passed ? styles.chipPassed : awaiting ? styles.chipAwaiting : styles.chipConfirmed,
             ].join(' ')}
           >
+            {(interview.round ?? 1) > 1 && `R${interview.round} · `}
             {chipTime(interview.scheduledAt)} · {passed ? 'needs an outcome' : CHIP_WORD[interview.state]}
+          </span>
+        )}
+        {/* Between rounds nothing is booked, so the card says where it stands
+            rather than looking like an interview that was never arranged. */}
+        {!interview && row.status === 'INTERVIEW_SCHEDULED' && (row.roundsCompleted ?? 0) > 0 && (
+          <span className={[styles.chip, styles.chipConfirmed].join(' ')}>
+            Round {row.roundsCompleted} complete · book the next or decide
           </span>
         )}
 

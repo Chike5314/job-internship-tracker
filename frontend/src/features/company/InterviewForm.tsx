@@ -61,6 +61,9 @@ export function InterviewForm({
   pending,
   onSubmit,
   onCancel,
+  askRoundName = false,
+  note,
+  submitLabel,
 }: {
   title: string
   /** The applicant's first name, for the line about who is told. */
@@ -71,6 +74,11 @@ export function InterviewForm({
   pending: boolean
   onSubmit: (slot: InterviewSlot) => void
   onCancel: () => void
+  /** Offers a name for the round, for a new booking rather than a move. */
+  askRoundName?: boolean
+  /** A line under the title, for anything the form does beyond one booking. */
+  note?: string
+  submitLabel?: string
 }) {
   const [initial] = useState(() => {
     const today = new Date()
@@ -86,6 +94,7 @@ export function InterviewForm({
   const [mode, setMode] = useState<InterviewMode>(from?.mode ?? 'ONSITE')
   const [place, setPlace] = useState(from?.locationOrLink ?? officeAddress ?? '')
   const [problem, setProblem] = useState<Problem>(null)
+  const [roundLabel, setRoundLabel] = useState('')
 
   const days = dayOptions(initial.today, initial.at)
   const times = timeOptions(timeValue(initial.at))
@@ -119,12 +128,26 @@ export function InterviewForm({
       mode,
       durationMinutes: duration,
       locationOrLink: place.trim(),
+      ...(askRoundName && roundLabel.trim() ? { roundLabel: roundLabel.trim() } : {}),
     })
   }
 
   return (
     <form className={styles.form} onSubmit={submit} noValidate>
       <p className={styles.formTitle}>{title}</p>
+      {note && <p className={styles.controlLabel}>{note}</p>}
+      {askRoundName && (
+        <label className={styles.control}>
+          <span className={styles.controlLabel}>Round name (optional)</span>
+          <Input
+            value={roundLabel}
+            onChange={(event) => setRoundLabel(event.target.value)}
+            maxLength={60}
+            placeholder="Technical, Panel, Final"
+            className={styles.input}
+          />
+        </label>
+      )}
       <div className={styles.pair}>
         <label className={styles.control}>
           <span className={styles.controlLabel}>Date</span>
@@ -211,7 +234,7 @@ export function InterviewForm({
 
       <div className={styles.formActions}>
         <Button type="submit" variant="primary" className={styles.grow} loading={pending}>
-          Send invitation
+          {submitLabel ?? 'Send invitation'}
         </Button>
         <Button type="button" variant="secondary" onClick={onCancel} disabled={pending}>
           Cancel

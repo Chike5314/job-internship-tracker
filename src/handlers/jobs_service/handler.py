@@ -612,6 +612,8 @@ def company_interviews(event: Dict[str, Any], _context: Any) -> Dict[str, Any]:
                 "mode": interview.get("mode"),
                 "locationOrLink": interview.get("locationOrLink"),
                 "interviewState": interview.get("state"),
+                "round": int(interview.get("round") or 1),
+                "roundLabel": interview.get("roundLabel"),
             }
         )
 
@@ -993,6 +995,13 @@ def _pipeline_row(application: Dict[str, Any], applicant: Optional[Dict[str, Any
             "isFinal": application.get("status") in FINAL_STATUSES,
             "interviewCount": len(application.get("interviews") or []),
             "nextInterview": application.get(interview_calendar.SNAPSHOT_FIELD),
+            # How far through its interview rounds the application is, so a
+            # card between rounds can say so rather than showing nothing.
+            "roundsCompleted": sum(
+                1
+                for interview in application.get("interviews") or []
+                if interview.get("state") == "COMPLETED"
+            ),
         }
     )
 

@@ -632,3 +632,115 @@ def test_an_explicit_window_still_bounds_both_ends(posting):
     _, payload = calendar(query={"from": in_days(-1), "to": in_days(14)})
     assert payload["interviews"] == []
     assert payload["awaitingOutcome"] == []
+
+
+# ----------------------------------------------------------------------
+# Interview rounds
+# ----------------------------------------------------------------------
+def interview_action(application_id, action, user="co_1", groups=RECRUITER, **extra):
+    return call(
+        app_handler(),
+        "PATCH",
+        "/applications/{id}/interview",
+        user=user,
+        groups=groups,
+        path={"id": application_id},
+        body={"action": action, **extra},
+    )
+
+
+def detail(application_id):
+    _, payload = call(
+        app_handler(), "GET", "/applications/{id}", user="co_1", groups=RECRUITER,
+        path={"id": application_id},
+    )
+    return payload["application"]
+
+
+def test_the_first_interview_is_round_one(posting):
+    application_id = submitted_application(posting)
+    _, payload = schedule(application_id)
+    assert payload["interview"]["round"] == 1
+
+
+def test_a_second_round_cannot_be_booked_while_the_first_is_open(posting):
+    application_id = submitted_application(posting)
+    schedule(application_id)
+
+    status, payload = schedule(application_id, days=6)
+    assert status == 409
+    assert "Round 1 is still open" in payload["error"]["message"]
+
+
+def test_completing_a_round_lets_the_next_one_be_booked(posting):
+    application_id = submitted_application(posting)
+    schedule(application_id)
+
+    status, _ = interview_action(application_id, "COMPLETE", outcomeNote="Strong on systems design.")
+    assert status == 200
+    _, payload = calendar()
+    assert payload["count"] == 0
+
+    status, payload = schedule(application_id, days=6)
+    assert status == 201
+    assert payload["interview"]["round"] == 2
+
+    _, payload = calendar()
+    assert payload["count"] == 1
+    assert payload["interviews"][0]["round"] == 2
+
+
+def test_a_later_round_does_not_count_the_stage_twice(posting):
+    application_id = submitted_application(posting)
+    schedule(application_id)
+    interview_action(application_id, "COMPLETE")
+    schedule(application_id, days=6)
+
+    history = [entry["status"] for entry in detail(application_id)["statusHistory"]]
+    assert history.count("INTERVIEW_SCHEDULED") == 1
+
+
+def test_a_declined_round_is_booked_again_under_the_same_number(posting):
+    application_id = submitted_application(posting)
+    schedule(application_id)
+    interview_action(application_id, "DECLINE", user="app_1", groups=APPLICANT)
+
+    _, payload = schedule(application_id, days=6)
+    assert payload["interview"]["round"] == 1
+
+
+def test_a_reschedule_keeps_the_round_and_its_name(posting):
+    application_id = submitted_application(posting)
+    schedule(application_id)
+    interview_action(application_id, "COMPLETE")
+    call(
+        app_handler(),
+        "POST",
+        "/applications/{id}/interview",
+        user="co_1",
+        groups=RECRUITER,
+        path={"id": application_id},
+        body={
+            "scheduledAt": in_days(5),
+            "mode": "ONLINE",
+            "locationOrLink": "https://meet.example.com/r2",
+            "roundLabel": "Technical",
+        },
+    )
+    _, payload = interview_action(
+        application_id,
+        "RESCHEDULE",
+        scheduledAt=in_days(7),
+        mode="ONLINE",
+        locationOrLink="https://meet.example.com/r2b",
+    )
+    latest = payload["interviews"][-1]
+    assert latest["round"] == 2
+    assert latest["roundLabel"] == "Technical"
+
+
+def test_only_the_recruiter_can_complete_a_round(posting):
+    application_id = submitted_application(posting)
+    schedule(application_id)
+    status, _ = interview_action(application_id, "COMPLETE", user="app_1", groups=APPLICANT)
+    assert status == 403

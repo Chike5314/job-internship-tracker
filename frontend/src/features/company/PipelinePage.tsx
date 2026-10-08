@@ -11,15 +11,18 @@ import { useToast } from '@/ui/ToastProvider'
 import { formatDateShort } from '@/lib/formatDate'
 import { formatSalary } from '@/lib/formatSalary'
 import { ApplicationDrawer } from './ApplicationDrawer'
+import { InterviewForm } from './InterviewForm'
 import { PipelineCard } from './PipelineCard'
-import { BULK_LIMIT, COLUMNS, RECRUITER_STATUS_LABEL, refusalReason } from './pipeline'
+import { BULK_LIMIT, COLUMNS, RECRUITER_STATUS_LABEL, applicantName, refusalReason } from './pipeline'
 import {
+  useBulkSchedule,
   useBulkStatus,
   useExportPipeline,
   useMyCompany,
   useMyPosting,
   usePipeline,
   useUpdatePosting,
+  type InterviewSlot,
 } from './useCompany'
 import styles from './PipelinePage.module.css'
 
@@ -65,13 +68,14 @@ export function PipelinePage() {
   const pipeline = usePipeline(jobId)
   const company = useMyCompany()
   const bulk = useBulkStatus(jobId ?? '')
+  const bulkSchedule = useBulkSchedule(jobId ?? '')
   const exportCsv = useExportPipeline()
   const update = useUpdatePosting(jobId ?? '')
   const { showToast } = useToast()
 
   const [picked, setPicked] = useState<Set<string>>(new Set())
   // A bulk change that writes to every applicant asks once before it goes.
-  const [confirming, setConfirming] = useState<null | 'REJECTED' | 'OFFER_EXTENDED'>(null)
+  const [confirming, setConfirming] = useState<null | 'REJECTED' | 'OFFER_EXTENDED' | 'INTERVIEW'>(null)
   const [bulkNote, setBulkNote] = useState('')
   const [result, setResult] = useState<BulkResult | null>(null)
   const [exported, setExported] = useState<ExportResult | null>(null)
@@ -146,6 +150,40 @@ export function PipelinePage() {
   const toOffer = pickedRows.filter(
     (row) => row.status === 'UNDER_REVIEW' || row.status === 'INTERVIEW_SCHEDULED',
   )
+  // Ready for an interview: under review, or between rounds with nothing open.
+  // The backend refuses anything else with its own reason, so this only keeps
+  // the count on the button honest.
+  const toInterview = pickedRows.filter(
+    (row) =>
+      row.status === 'UNDER_REVIEW' || (row.status === 'INTERVIEW_SCHEDULED' && !row.nextInterview),
+  )
+
+  function runBulkSchedule(slot: InterviewSlot) {
+    const applicationIds = toInterview.map((row) => row.applicationId)
+    bulkSchedule.mutate(
+      { applicationIds, slot },
+      {
+        onSuccess: ({ booked, refused }) => {
+          const byId = new Map(rows.map((row) => [row.applicationId, row]))
+          const sent = new Set(applicationIds)
+          setPicked((current) => new Set([...current].filter((id) => !sent.has(id))))
+          setConfirming(null)
+          setResult({
+            done:
+              booked.length === 0
+                ? 'No interviews were booked.'
+                : booked.length === 1
+                  ? '1 interview booked. The applicant has been sent an invitation.'
+                  : `${booked.length} interviews booked back to back. Each applicant has been sent their own time.`,
+            refused: refused.map((item) => {
+              const row = byId.get(item.applicationId)
+              return `Not booked: ${row ? `${applicantName(row)}: ` : ''}${item.reason}`
+            }),
+          })
+        },
+      },
+    )
+  }
 
   function runBulk(status: ApplicationStatus, note?: string, only?: PipelineRow[]) {
     const applicationIds = only ? only.map((row) => row.applicationId) : Array.from(picked)
@@ -413,6 +451,16 @@ export function PipelinePage() {
                     Move {toReview.length} to review
                   </button>
                 )}
+                {toInterview.length > 0 && (
+                  <button
+                    type="button"
+                    className={styles.bulkReview}
+                    onClick={() => setConfirming('INTERVIEW')}
+                    disabled={bulk.isPending || bulkSchedule.isPending}
+                  >
+                    Book {toInterview.length} interview{toInterview.length === 1 ? '' : 's'}…
+                  </button>
+                )}
                 {toOffer.length > 0 && (
                   <button
                     type="button"
@@ -432,7 +480,20 @@ export function PipelinePage() {
               Clear
             </button>
           </div>
-          {confirming && (
+          {confirming === 'INTERVIEW' && (
+            <InterviewForm
+              title={`Book ${toInterview.length} interview${toInterview.length === 1 ? '' : 's'}`}
+              first="each applicant"
+              note="Booked back to back from the start time, one after another, each the length you choose. Each applicant gets their own time and invitation."
+              officeAddress={company.data?.company.officeAddress}
+              pending={bulkSchedule.isPending}
+              askRoundName
+              submitLabel={`Book ${toInterview.length}`}
+              onSubmit={runBulkSchedule}
+              onCancel={() => setConfirming(null)}
+            />
+          )}
+          {(confirming === 'REJECTED' || confirming === 'OFFER_EXTENDED') && (
             <div className={styles.rejectRow}>
               <label className={styles.rejectField}>
                 <span className={styles.rejectLabel}>Shared note for each applicant (optional)</span>

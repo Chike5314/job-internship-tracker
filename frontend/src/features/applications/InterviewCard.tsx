@@ -15,6 +15,7 @@ const STATE: Record<Interview['state'], { label: string; tone: string }> = {
   CONFIRMED: { label: 'You confirmed', tone: styles.confirmed! },
   DECLINED: { label: 'You declined', tone: styles.declined! },
   CANCELLED: { label: 'Cancelled', tone: styles.declined! },
+  COMPLETED: { label: 'Round complete', tone: styles.confirmed! },
 }
 
 export function InterviewCard({
@@ -26,7 +27,7 @@ export function InterviewCard({
 }) {
   const respond = useRespondToInterview(application.applicationId)
   const { showToast } = useToast()
-  const title = roundTitle(interviewRound(application.interviews, interview))
+  const title = roundTitle(interviewRound(application.interviews, interview), interview.roundLabel)
   const state = STATE[interview.state]
   // The superseded interview stays in the list, so the time it moved from can
   // be named rather than merely alluded to.

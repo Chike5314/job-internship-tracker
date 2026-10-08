@@ -672,3 +672,34 @@ select.input {
     grid-template-columns: minmax(0, 1fr);
   }
 }
+
+/* Reschedule and complete sit together at the foot of an open round. */
+.interviewButtons {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+/* The rounds already behind this application, read as a short record under
+   the one that is current. */
+.rounds {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: var(--space-3);
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--color-rule-hairline);
+  color: var(--color-text-secondary);
+  font-size: var(--type-body-sm-size);
+}
+
+.rounds li {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 10px;
+}
+
+.roundsName {
+  color: var(--color-text-primary);
+  font-weight: 600;
+}

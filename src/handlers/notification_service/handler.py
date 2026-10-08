@@ -273,8 +273,14 @@ def _send_interview_invitation(
     where = interview.get("locationOrLink", "")
     mode = interview.get("mode", "ONLINE")
 
+    # From the second round on the invitation names the round, so an applicant
+    # can tell a new interview from a reminder about the last one.
+    round_number = int(interview.get("round") or 1)
+    label = interview.get("roundLabel")
+    which = f"Round {round_number}" + (f" ({label})" if label else "")
+    lead = "An interview" if round_number == 1 and not label else f"{which} interview"
     message = (
-        f"An interview for {title} at {company_name} is scheduled for {when}. "
+        f"{lead} for {title} at {company_name} is scheduled for {when}. "
         f"{'Joining link' if mode == 'ONLINE' else 'Address'}: {where}"
     )
 
@@ -288,7 +294,7 @@ def _send_interview_invitation(
     try:
         ics = email.build_ics(
             uid=interview.get("interviewId"),
-            summary=f"Interview: {title} at {company_name}",
+            summary=f"{which} interview: {title} at {company_name}",
             description=message,
             starts_at=when,
             duration_minutes=int(interview.get("durationMinutes", 60)),

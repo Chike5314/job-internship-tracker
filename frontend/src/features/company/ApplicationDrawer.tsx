@@ -11,7 +11,7 @@ import { Textarea } from '@/ui/Textarea'
 import { nameFromUrl } from '@/lib/fileNames'
 import { formatDateShort, formatDay, formatInterviewMoment, formatInterviewWhen } from '@/lib/formatDate'
 import { initials } from '@/lib/initials'
-import { currentInterview } from '@/lib/interviews'
+import { currentInterview, hasOpenInterview, interviewRound, nextRound, roundName } from '@/lib/interviews'
 import { InterviewForm } from './InterviewForm'
 import { RECRUITER_STATUS_LABEL, recruiterShortLabel } from './pipeline'
 import { useRecruiterActions, useRecruiterApplication, type InterviewSlot } from './useCompany'
@@ -29,9 +29,10 @@ const INTERVIEW_STATE = {
   CONFIRMED: { label: 'Confirmed', tone: 'confirmed' },
   DECLINED: { label: 'Declined by applicant', tone: 'declined' },
   CANCELLED: { label: 'Cancelled', tone: 'declined' },
+  COMPLETED: { label: 'Round complete', tone: 'confirmed' },
 } as const
 
-type Mode = null | 'interview' | 'OFFER_EXTENDED' | 'REJECTED' | 'REINSTATE'
+type Mode = null | 'interview' | 'COMPLETE' | 'OFFER_EXTENDED' | 'REJECTED' | 'REINSTATE'
 
 const CONFIRM_COPY = {
   OFFER_EXTENDED: {
@@ -176,7 +177,7 @@ function DrawerContent({
   officeAddress?: string
   onClose: () => void
 }) {
-  const { move, reinstate, schedule, reschedule } = useRecruiterActions(application.applicationId, jobId)
+  const { move, reinstate, schedule, reschedule, complete } = useRecruiterActions(application.applicationId, jobId)
   const [mode, setMode] = useState<Mode>(null)
   const [note, setNote] = useState('')
   const [flash, setFlash] = useState('')
@@ -191,6 +192,10 @@ function DrawerContent({
   // a fresh invitation; a time that still stands is moved.
   const moving = interview && (interview.state === 'PROPOSED' || interview.state === 'CONFIRMED')
   const autoMoved = openedAsNew && status === 'UNDER_REVIEW'
+  // Rounds: one is open at a time, and a new one is booked once it closes.
+  const roundOpen = hasOpenInterview(application.interviews)
+  const upcomingRound = nextRound(application.interviews)
+  const roundsDone = application.interviews.filter((item) => item.state === 'COMPLETED')
 
   function begin(next: Mode) {
     setMode(next)
@@ -213,6 +218,21 @@ function DrawerContent({
       },
       onError: (error) => setProblem(failure(error, 'The invitation did not go through. Try again.')),
     })
+  }
+
+  function sendComplete() {
+    setProblem('')
+    complete.mutate(
+      { outcomeNote: note.trim() || undefined },
+      {
+        onSuccess: () => {
+          setMode(null)
+          setNote('')
+          setFlash(`Round marked complete. Book round ${upcomingRound + 1}, extend an offer, or reject.`)
+        },
+        onError: (error) => setProblem(failure(error, 'The round was not closed. Try again.')),
+      },
+    )
   }
 
   function confirm(target: 'OFFER_EXTENDED' | 'REJECTED') {
@@ -255,6 +275,12 @@ function DrawerContent({
           { label: 'Extend offer', tone: 'secondary', to: 'OFFER_EXTENDED' },
           { label: 'Reject', tone: 'reject', to: 'REJECTED' },
         ]
+      : status === 'INTERVIEW_SCHEDULED' && !roundOpen
+        ? [
+            { label: `Schedule round ${upcomingRound}`, tone: 'primary', to: 'interview' },
+            { label: 'Extend offer', tone: 'secondary', to: 'OFFER_EXTENDED' },
+            { label: 'Reject', tone: 'reject', to: 'REJECTED' },
+          ]
       : status === 'INTERVIEW_SCHEDULED'
         ? [
             { label: 'Extend offer', tone: 'primary', to: 'OFFER_EXTENDED' },
@@ -305,7 +331,9 @@ function DrawerContent({
             interview={interview}
             interviews={application.interviews}
             onMove={() => begin('interview')}
+            onComplete={() => begin('COMPLETE')}
             moving={Boolean(moving)}
+            earlier={roundsDone.filter((done) => done.interviewId !== interview.interviewId)}
           />
         )}
 
@@ -353,7 +381,16 @@ function DrawerContent({
 
         {mode === 'interview' && (
           <InterviewForm
-            title={moving ? 'Reschedule the interview' : interview ? 'Propose a new time' : 'Schedule an interview'}
+            title={
+              moving
+                ? 'Reschedule the interview'
+                : interview && interview.state !== 'COMPLETED'
+                  ? 'Propose a new time'
+                  : upcomingRound > 1
+                    ? `Schedule round ${upcomingRound}`
+                    : 'Schedule an interview'
+            }
+            askRoundName={!moving}
             first={first}
             from={interview}
             officeAddress={officeAddress}
@@ -361,6 +398,38 @@ function DrawerContent({
             onSubmit={sendSlot}
             onCancel={() => begin(null)}
           />
+        )}
+
+        {mode === 'COMPLETE' && (
+          <div className={styles.confirm}>
+            <label className={styles.control}>
+              <span className={styles.formTitle}>Mark this round complete</span>
+              <span className={styles.controlLabel}>
+                Optional outcome note, for your team only. {first} is not emailed.
+              </span>
+              <Textarea
+                value={note}
+                onChange={(event) => setNote(event.target.value)}
+                rows={3}
+                maxLength={500}
+                placeholder="Strong on system design; follow up on testing"
+                className={styles.note}
+              />
+            </label>
+            <div className={styles.formActions}>
+              <button
+                type="button"
+                className={styles.confirmAction}
+                onClick={sendComplete}
+                disabled={complete.isPending}
+              >
+                Mark round complete
+              </button>
+              <Button variant="secondary" onClick={() => begin(null)} disabled={complete.isPending}>
+                Cancel
+              </Button>
+            </div>
+          </div>
         )}
 
         {(mode === 'OFFER_EXTENDED' || mode === 'REJECTED' || mode === 'REINSTATE') && (
@@ -431,12 +500,18 @@ function InterviewCard({
   interviews,
   moving,
   onMove,
+  onComplete,
+  earlier,
 }: {
   interview: Interview
   interviews: Interview[]
   moving: boolean
   onMove: () => void
+  onComplete: () => void
+  /** Rounds already completed before this one, oldest first. */
+  earlier: Interview[]
 }) {
+  const completed = interview.state === 'COMPLETED'
   const state = INTERVIEW_STATE[interview.state]
   const replaced = interview.replacesInterviewId
     ? interviews.find((other) => other.interviewId === interview.replacesInterviewId)
@@ -445,7 +520,9 @@ function InterviewCard({
   return (
     <section className={styles.interview} aria-label="Interview">
       <div className={styles.interviewHead}>
-        <span className={styles.interviewEyebrow}>INTERVIEW</span>
+        <span className={styles.interviewEyebrow}>
+          {roundName(interviewRound(interviews, interview), interview.roundLabel).toUpperCase()}
+        </span>
         <span className={[styles.interviewState, styles[state.tone]].join(' ')}>{state.label}</span>
       </div>
       <p className={styles.interviewWhen}>
@@ -457,12 +534,40 @@ function InterviewCard({
       </p>
       <div className={styles.interviewFoot}>
         <span className={styles.interviewEarlier}>
-          {replaced ? `Moved from ${formatInterviewMoment(replaced.scheduledAt)}` : 'First invitation'}
+          {completed
+            ? interview.outcomeNote || 'No outcome note'
+            : replaced
+              ? `Moved from ${formatInterviewMoment(replaced.scheduledAt)}`
+              : 'First invitation'}
         </span>
-        <Button variant="secondary" className={styles.small} onClick={onMove}>
-          {moving ? 'Reschedule' : 'Propose a new time'}
-        </Button>
+        {!completed && (
+          <span className={styles.interviewButtons}>
+            {moving && (
+              <Button variant="secondary" className={styles.small} onClick={onComplete}>
+                Mark complete
+              </Button>
+            )}
+            <Button variant="secondary" className={styles.small} onClick={onMove}>
+              {moving ? 'Reschedule' : 'Propose a new time'}
+            </Button>
+          </span>
+        )}
       </div>
+      {earlier.length > 0 && (
+        <ul className={styles.rounds}>
+          {earlier.map((done) => (
+            <li key={done.interviewId}>
+              <span className={styles.roundsName}>
+                {roundName(interviewRound(interviews, done), done.roundLabel)}
+              </span>
+              <span>
+                Complete, {formatDateShort(done.completedAt ?? done.scheduledAt)}
+                {done.outcomeNote ? ` · ${done.outcomeNote}` : ''}
+              </span>
+            </li>
+          ))}
+        </ul>
+      )}
     </section>
   )
 }

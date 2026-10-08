@@ -53,18 +53,22 @@ export function SideRail({
   navLabel,
 }: Props) {
   const location = useLocation()
-  const [open, setOpen] = useState(false)
   const drawerId = useId()
 
   // Below the split the destinations fold behind a menu button rather than
   // scrolling sideways in a band, which pushed the page wider than a phone.
-  // Choosing a destination is the end of the errand, so the drawer closes on
-  // every navigation, and Escape closes it the way it closes any other menu.
-  useEffect(() => setOpen(false), [location.pathname, location.search])
+  // Choosing a destination is the end of the errand, so the drawer is open only
+  // on the page it was opened from and reads as closed after any navigation.
+  // Escape closes it the way it closes any other menu.
+  const here = location.pathname + location.search
+  const [openedOn, setOpenedOn] = useState<string | null>(null)
+  const open = openedOn === here
+  const setOpen = (next: boolean | ((current: boolean) => boolean)) =>
+    setOpenedOn((typeof next === 'function' ? next(open) : next) ? here : null)
   useEffect(() => {
     if (!open) return
     function onKeyDown(event: KeyboardEvent) {
-      if (event.key === 'Escape') setOpen(false)
+      if (event.key === 'Escape') setOpenedOn(null)
     }
     window.addEventListener('keydown', onKeyDown)
     return () => window.removeEventListener('keydown', onKeyDown)

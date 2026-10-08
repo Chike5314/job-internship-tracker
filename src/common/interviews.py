@@ -61,6 +61,8 @@ def snapshot(interview: Dict[str, Any]) -> Dict[str, Any]:
             "mode",
             "locationOrLink",
             "state",
+            "round",
+            "roundLabel",
         )
         if key in interview
     }

@@ -209,6 +209,14 @@ reverse an earlier approach.
   `nextInterviewAt` and a `nextInterview` snapshot only while it has an interview
   nothing has closed out, so rows enter and leave the index by themselves. Every
   place an interview or a status changes goes through `src/common/interviews.py`.
+- Interviews run in rounds inside the one `INTERVIEW_SCHEDULED` status; there is
+  no status per round. Each interview entry carries `round` and an optional
+  `roundLabel`. One round is open at a time: the recruiter reschedules, cancels
+  or marks it `COMPLETED` before the next is booked, and the next round is one
+  past the last completed, so a declined round re-booked keeps its number. Only
+  the first round writes a status history entry, so the funnel never counts the
+  stage twice. The bulk status route refuses a move to interview; the board
+  books several back to back through the single interview route instead.
 - **The clock is not a writer.** Nothing runs on a timer in this system, so an
   interview whose time has simply passed still carries `nextInterviewAt`, with a
   value now in the past, and the application still says `INTERVIEW_SCHEDULED`.

@@ -29,6 +29,7 @@ from common.access import (
 from common.auth import get_caller
 from common.errors import (
     ApplicationFrozenError,
+    ConflictError,
     DuplicateApplicationError,
     ForbiddenError,
     InvalidTransitionError,
@@ -68,6 +69,10 @@ INTERVIEW_PROPOSED = "PROPOSED"
 INTERVIEW_CONFIRMED = "CONFIRMED"
 INTERVIEW_DECLINED = "DECLINED"
 INTERVIEW_CANCELLED = "CANCELLED"
+# A round the recruiter has closed out. It is neither open nor a failure: the
+# applicant went through it and the company recorded that, which is what lets
+# the next round be booked.
+INTERVIEW_COMPLETED = "COMPLETED"
 
 
 @functools.lru_cache(maxsize=1)
@@ -582,6 +587,13 @@ def schedule_interview(event: Dict[str, Any], _context: Any) -> Dict[str, Any]:
 
     Each interview is appended rather than written over, so a reschedule leaves
     the earlier entry readable.
+
+    A company may interview in several rounds inside the one interview stage.
+    Each entry carries its round, the number after the last completed one, so a
+    round that was declined or cancelled and booked again keeps its number. Only
+    one round is open at a time: the open one is rescheduled, cancelled or
+    completed before the next is booked, which keeps one interview current for
+    the calendar and for the applicant.
     """
     caller = get_caller(event)
     caller.require("Recruiters")
@@ -590,7 +602,16 @@ def schedule_interview(event: Dict[str, Any], _context: Any) -> Dict[str, Any]:
         raise ForbiddenError("You are not allowed to work with this application.")
 
     body = parse_body(event)
-    interview = _validate_interview(body, caller.user_id)
+    existing: List[Dict[str, Any]] = list(application.get("interviews") or [])
+    open_index = _latest_open_interview(existing)
+    if open_index is not None:
+        raise ConflictError(
+            f"{_round_name(existing[open_index])} is still open. Reschedule it, "
+            "cancel it, or mark it complete before booking the next round."
+        )
+    interview = _validate_interview(
+        body, caller.user_id, round_number=_next_round(existing)
+    )
 
     current = application.get("status", "")
     if current in FINAL_STATUSES:
@@ -599,28 +620,43 @@ def schedule_interview(event: Dict[str, Any], _context: Any) -> Dict[str, Any]:
             {"currentStatus": current},
         )
 
-    table = dynamo.applications()
-    updated = table.update_item(
-        Key={"applicationId": application["applicationId"]},
-        UpdateExpression=(
-            "SET interviews = list_append(if_not_exists(interviews, :empty), :interview), "
-            "#s = :scheduled, statusHistory = "
+    values: Dict[str, Any] = {
+        ":empty": [],
+        ":interview": [dynamo.to_dynamo(interview)],
+    }
+    expression = "SET interviews = list_append(if_not_exists(interviews, :empty), :interview)"
+    names: Dict[str, str] = {}
+    # The first round moves the application into the interview stage. A later
+    # round finds it there already, and a second history entry for the same
+    # status would count the stage twice in the funnel.
+    if current != INTERVIEW_SCHEDULED:
+        expression += (
+            ", #s = :scheduled, statusHistory = "
             "list_append(if_not_exists(statusHistory, :emptyHistory), :entry)"
-        ),
-        ExpressionAttributeNames={"#s": "status"},
-        ExpressionAttributeValues={
-            ":empty": [],
-            ":emptyHistory": [],
-            ":interview": [dynamo.to_dynamo(interview)],
-            ":scheduled": INTERVIEW_SCHEDULED,
-            ":entry": [
-                history_entry(
-                    INTERVIEW_SCHEDULED, caller.user_id, "Interview scheduled."
-                )
-            ],
-        },
-        ReturnValues="ALL_NEW",
-    )["Attributes"]
+        )
+        names["#s"] = "status"
+        values.update(
+            {
+                ":emptyHistory": [],
+                ":scheduled": INTERVIEW_SCHEDULED,
+                ":entry": [
+                    history_entry(
+                        INTERVIEW_SCHEDULED, caller.user_id, "Interview scheduled."
+                    )
+                ],
+            }
+        )
+
+    table = dynamo.applications()
+    kwargs: Dict[str, Any] = {
+        "Key": {"applicationId": application["applicationId"]},
+        "UpdateExpression": expression,
+        "ExpressionAttributeValues": values,
+        "ReturnValues": "ALL_NEW",
+    }
+    if names:
+        kwargs["ExpressionAttributeNames"] = names
+    updated = table.update_item(**kwargs)["Attributes"]
 
     # FR-13.8. Puts the application on the company calendar.
     interview_calendar.apply(
@@ -639,8 +675,9 @@ def schedule_interview(event: Dict[str, Any], _context: Any) -> Dict[str, Any]:
 def update_interview(event: Dict[str, Any], _context: Any) -> Dict[str, Any]:
     """FR-13.4 and FR-13.5.
 
-    The applicant confirms or declines. The recruiter reschedules or cancels,
-    and a reschedule appends a new entry rather than editing the old one.
+    The applicant confirms or declines. The recruiter reschedules, cancels, or
+    completes the round, and a reschedule appends a new entry for the same round
+    rather than editing the old one.
     """
     caller = get_caller(event)
     application = get_application(path_param(event, "id"))
@@ -657,14 +694,16 @@ def update_interview(event: Dict[str, Any], _context: Any) -> Dict[str, Any]:
     body = parse_body(event)
     errors = Errors()
     action = require_enum(
-        errors, body, "action", {"CONFIRM", "DECLINE", "RESCHEDULE", "CANCEL"}
+        errors, body, "action", {"CONFIRM", "DECLINE", "RESCHEDULE", "CANCEL", "COMPLETE"}
     )
     errors.raise_if_any()
 
     if action in ("CONFIRM", "DECLINE") and not is_applicant:
         raise ForbiddenError("Only the applicant can answer an interview invitation.")
-    if action in ("RESCHEDULE", "CANCEL") and not is_recruiter:
-        raise ForbiddenError("Only the recruiter can reschedule or cancel an interview.")
+    if action in ("RESCHEDULE", "CANCEL", "COMPLETE") and not is_recruiter:
+        raise ForbiddenError(
+            "Only the recruiter can reschedule, cancel or complete an interview."
+        )
 
     index = _latest_open_interview(interviews)
     if index is None:
@@ -676,9 +715,23 @@ def update_interview(event: Dict[str, Any], _context: Any) -> Dict[str, Any]:
         interviews[index] = {**interviews[index], "state": INTERVIEW_CANCELLED}
         interviews.append(
             _validate_interview(
-                body, caller.user_id, sequence=len(interviews), replaces=interviews[index]
+                body,
+                caller.user_id,
+                sequence=len(interviews),
+                replaces=interviews[index],
+                round_number=int(interviews[index].get("round") or 1),
             )
         )
+    elif action == "COMPLETE":
+        outcome = optional_string(body, "outcomeNote", max_length=500)
+        completed = {
+            **interviews[index],
+            "state": INTERVIEW_COMPLETED,
+            "completedAt": now_iso(),
+        }
+        if outcome:
+            completed["outcomeNote"] = outcome
+        interviews[index] = completed
     else:
         new_state = {
             "CONFIRM": INTERVIEW_CONFIRMED,
@@ -718,12 +771,30 @@ def _latest_open_interview(interviews: List[Dict[str, Any]]) -> Optional[int]:
     return None
 
 
+def _next_round(interviews: List[Dict[str, Any]]) -> int:
+    """One past the last round the company completed."""
+    done = [
+        int(interview.get("round") or 1)
+        for interview in interviews
+        if interview.get("state") == INTERVIEW_COMPLETED
+    ]
+    return max(done, default=0) + 1
+
+
+def _round_name(interview: Dict[str, Any]) -> str:
+    """Round 2 (Technical), or Round 1 when it has no label."""
+    name = f"Round {int(interview.get('round') or 1)}"
+    label = interview.get("roundLabel")
+    return f"{name} ({label})" if label else name
+
+
 def _validate_interview(
     body: Dict[str, Any],
     actor_id: str,
     *,
     sequence: int = 0,
     replaces: Optional[Dict[str, Any]] = None,
+    round_number: int = 1,
 ) -> Dict[str, Any]:
     errors = Errors()
     scheduled_at = optional_iso_datetime(errors, body, "scheduledAt")
@@ -732,6 +803,10 @@ def _validate_interview(
     mode = require_enum(errors, body, "mode", INTERVIEW_MODES)
     duration = optional_int(errors, body, "durationMinutes", minimum=15, maximum=480) or 60
     location = require_string(errors, body, "locationOrLink", max_length=500)
+    # A reschedule keeps the round's name unless the new body gives another.
+    label = optional_string(body, "roundLabel", max_length=60) or (
+        (replaces or {}).get("roundLabel")
+    )
     errors.raise_if_any()
 
     # FR-13.7
@@ -748,7 +823,10 @@ def _validate_interview(
         "proposedBy": actor_id,
         "proposedAt": now_iso(),
         "sequence": sequence,
+        "round": round_number,
     }
+    if label:
+        entry["roundLabel"] = label
     if replaces:
         entry["replacesInterviewId"] = replaces.get("interviewId")
     return entry
