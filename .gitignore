@@ -13,3 +13,8 @@ cdk.context.json
 # these two are here in case something is ever run from the repo root)
 frontend/node_modules/
 frontend/dist/
+
+# Local scratch copies, never part of the build
+offerline-frontend-m3e/
+offerline-frontend-m3e.zip
+frontend/frontend/
