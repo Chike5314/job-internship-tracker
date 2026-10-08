@@ -147,6 +147,8 @@ export interface RecruiterApplication {
   answers: Record<string, string>
   interviews: Interview[]
   documentUrls: Record<string, string>
+  /** The same files, served to be shown in the page rather than saved. */
+  documentPreviewUrls?: Record<string, string>
 }
 
 // From admin_overview in company_service/handler.py. The four totals come

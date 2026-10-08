@@ -835,11 +835,13 @@ def _validate_interview(
 # ----------------------------------------------------------------------
 # Views
 # ----------------------------------------------------------------------
-def _document_urls(application: Dict[str, Any]) -> Dict[str, str]:
+def _document_urls(application: Dict[str, Any], *, inline: bool = False) -> Dict[str, str]:
     urls = {}
     for document_key, s3_key in (application.get("documents") or {}).items():
         try:
-            urls[document_key] = storage.presigned_download(s3_key, document_key)
+            urls[document_key] = storage.presigned_download(
+                s3_key, document_key, inline=inline
+            )
         except Exception:  # noqa: BLE001
             continue
     return urls
@@ -908,6 +910,9 @@ def _recruiter_view(application: Dict[str, Any], job: Dict[str, Any]) -> Dict[st
         "parsed": application.get("parsed", {}),
         # The documents exactly as they were submitted, per FR-5.12.
         "documentUrls": _document_urls(application),
+        # The same files asking to be shown rather than saved, for reading a
+        # CV in the review page without downloading it.
+        "documentPreviewUrls": _document_urls(application, inline=True),
     }
     return dynamo.from_dynamo({k: v for k, v in view.items() if v is not None})
 

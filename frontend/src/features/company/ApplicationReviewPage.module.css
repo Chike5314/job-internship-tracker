@@ -1,0 +1,232 @@
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.back {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--color-text-primary);
+  font-size: var(--type-body-sm-size);
+  font-weight: 600;
+}
+
+.back:hover {
+  text-decoration: underline;
+}
+
+/* The sprite has no left chevron, so the right one is turned round. */
+.backMark {
+  display: flex;
+  transform: scaleX(-1);
+}
+
+.stepper {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.position {
+  color: var(--color-text-primary);
+  font-size: var(--type-body-sm-size);
+  font-variant-numeric: tabular-nums;
+}
+
+.step {
+  max-width: 260px;
+  height: 40px;
+  padding: 0 14px;
+  overflow: hidden;
+  border-radius: var(--radius-round);
+  background: var(--color-glass-solid);
+  box-shadow: inset 0 0 0 1px var(--color-n-400);
+  color: var(--color-text-primary);
+  font-size: var(--type-body-sm-size);
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.step:hover:not(:disabled) {
+  background-image: linear-gradient(var(--color-glass-hover), var(--color-glass-hover));
+}
+
+.step:disabled {
+  opacity: var(--opacity-disabled);
+}
+
+/* Documents take the room, the record and its actions sit beside them. Below
+   the width that holds both, they stack, documents first, since reading them
+   is why this page was opened rather than the drawer. */
+.layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-4);
+}
+
+@media (min-width: 1180px) {
+  .layout {
+    grid-template-columns: minmax(0, 1fr) 440px;
+    align-items: start;
+  }
+
+  .side {
+    position: sticky;
+    top: var(--space-4);
+    height: calc(100vh - 150px);
+  }
+
+  .viewer {
+    height: calc(100vh - 150px);
+  }
+}
+
+.side {
+  overflow: hidden;
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-inset-edge), var(--shadow-soft-md);
+}
+
+.viewer {
+  display: flex;
+  flex-direction: column;
+  min-height: 70vh;
+  overflow: hidden;
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-inset-edge), var(--shadow-soft-md);
+}
+
+.empty {
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-6);
+  color: var(--color-text-primary);
+}
+
+.tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+  padding: var(--space-2);
+  border-bottom: 1px solid var(--color-rule-hairline);
+}
+
+.tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 40px;
+  padding: 0 14px;
+  border-radius: var(--radius-round);
+  color: var(--color-text-primary);
+  font-size: var(--type-body-sm-size);
+  font-weight: 500;
+}
+
+.tab:hover {
+  background: var(--color-glass-hover);
+}
+
+.tabOn,
+.tabOn:hover {
+  background: var(--m3-primary-container);
+  color: var(--m3-on-primary-container);
+  font-weight: 600;
+}
+
+.file {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.fileBar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2) var(--space-4);
+  padding: 10px var(--space-4);
+  border-bottom: 1px solid var(--color-rule-hairline);
+  background: var(--color-glass-solid);
+}
+
+.fileName {
+  flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  color: var(--color-text-primary);
+  font-size: var(--type-body-sm-size);
+  font-weight: 600;
+}
+
+.fileAction {
+  color: var(--color-text-link);
+  font-size: var(--type-body-sm-size);
+  font-weight: 600;
+  text-decoration: underline;
+}
+
+/* The document is read on white whatever the theme, the way it will print. */
+.frame {
+  flex: 1;
+  width: 100%;
+  min-height: 60vh;
+  border: none;
+  background: #ffffff;
+}
+
+.image {
+  flex: 1;
+  min-height: 0;
+  width: 100%;
+  object-fit: contain;
+  background: #ffffff;
+}
+
+.noPreview {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-3);
+  padding: var(--space-6);
+  background: var(--color-glass-solid);
+  color: var(--color-text-secondary);
+  text-align: center;
+}
+
+.text {
+  flex: 1;
+  overflow: auto;
+  padding: var(--space-5) var(--space-6);
+  background: var(--color-glass-solid);
+}
+
+.textTitle {
+  margin-bottom: var(--space-3);
+  font-family: var(--font-serif);
+  font-size: 28px;
+  font-weight: 400;
+}
+
+.letter {
+  max-width: 72ch;
+  color: var(--color-text-secondary);
+  font-size: var(--type-body-size);
+  line-height: 1.65;
+  white-space: pre-line;
+}

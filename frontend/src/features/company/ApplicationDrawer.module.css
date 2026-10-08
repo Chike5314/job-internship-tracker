@@ -703,3 +703,15 @@ select.input {
   color: var(--color-text-primary);
   font-weight: 600;
 }
+
+/* Opens the same application on its own page, with the documents beside it. */
+.fullView {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: auto;
+  color: var(--color-text-link);
+  font-size: var(--type-body-sm-size);
+  font-weight: 600;
+  text-decoration: underline;
+}

@@ -67,11 +67,20 @@ def presigned_upload(key: str, content_type: Optional[str] = None) -> Dict[str, 
     }
 
 
-def presigned_download(key: str, download_name: Optional[str] = None) -> str:
+def presigned_download(
+    key: str, download_name: Optional[str] = None, *, inline: bool = False
+) -> str:
+    """A short-lived GET link to one document.
+
+    `inline` asks the browser to show the file rather than save it, which is
+    what lets a recruiter read a PDF in the page. The type the file was
+    uploaded with decides whether the browser can show it at all.
+    """
     params: Dict[str, Any] = {"Bucket": config.DOCUMENTS_BUCKET, "Key": key}
     if download_name:
+        disposition = "inline" if inline else "attachment"
         params["ResponseContentDisposition"] = (
-            f'attachment; filename="{safe_file_name(download_name)}"'
+            f'{disposition}; filename="{safe_file_name(download_name)}"'
         )
     return _client().generate_presigned_url(
         "get_object",

@@ -1,4 +1,5 @@
 import { useEffect, useId, useRef, useState, type MouseEvent } from 'react'
+import { Link } from 'react-router-dom'
 import { ApiError } from '@/api/errors'
 import type { ApplicationStatus } from '@/api/enums'
 import type { DocumentRequirement, Interview, RecruiterApplication, StatusHistoryEntry } from '@/api/types'
@@ -158,7 +159,12 @@ function CloseButton({ onClose }: { onClose: () => void }) {
   )
 }
 
-function DrawerContent({
+/**
+ * Everything about one application and every action on it. The drawer shows
+ * it beside the board for a quick look; the review page shows it beside a
+ * document viewer, where the documents list would only repeat the viewer.
+ */
+export function DrawerContent({
   titleId,
   application,
   jobId,
@@ -167,6 +173,7 @@ function DrawerContent({
   companyName,
   officeAddress,
   onClose,
+  layout = 'drawer',
 }: {
   titleId: string
   application: RecruiterApplication
@@ -176,6 +183,7 @@ function DrawerContent({
   companyName: string
   officeAddress?: string
   onClose: () => void
+  layout?: 'drawer' | 'page'
 }) {
   const { move, reinstate, schedule, reschedule, complete } = useRecruiterActions(application.applicationId, jobId)
   const [mode, setMode] = useState<Mode>(null)
@@ -307,7 +315,7 @@ function DrawerContent({
               {applicant.phone && <span className={styles.phone}>{applicant.phone}</span>}
             </p>
           </div>
-          <CloseButton onClose={onClose} />
+          {layout === 'drawer' && <CloseButton onClose={onClose} />}
         </div>
         <div className={styles.statusLine}>
           <StatusTag status={status} label={recruiterShortLabel(status)} />
@@ -316,6 +324,15 @@ function DrawerContent({
               ? `Last edited by applicant ${formatDateShort(application.lastEditedAt)}`
               : `Not edited since it was sent ${formatDateShort(application.appliedAt)}`}
           </span>
+          {layout === 'drawer' && (
+            <Link
+              to={`/company/postings/${jobId}/applications/${application.applicationId}`}
+              className={styles.fullView}
+            >
+              Full view
+              <Icon name="chevron-right" size={14} />
+            </Link>
+          )}
         </div>
         {autoMoved && (
           <p className={styles.moved}>
@@ -337,7 +354,7 @@ function DrawerContent({
           />
         )}
 
-        <Documents application={application} requirements={requirements} />
+        {layout === 'drawer' && <Documents application={application} requirements={requirements} />}
 
         <section className={styles.section} aria-labelledby={`${titleId}-history`}>
           <h3 id={`${titleId}-history`} className={styles.eyebrow}>

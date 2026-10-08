@@ -3,6 +3,8 @@
 The conditional writes behind FR-5.3 and FR-6.10 cannot be tested without a real
 DynamoDB, so this is the suite that actually covers them.
 """
+from urllib.parse import unquote
+
 import boto3
 import pytest
 
@@ -546,3 +548,17 @@ def test_the_funnel_counts_come_out_of_the_status_history(posting):
     assert payload["totalApplications"] == 1
     assert payload["funnel"]["UNDER_REVIEW"] == 1
     assert payload["funnel"]["SUBMITTED"] == 0
+
+
+def test_the_recruiter_gets_a_preview_link_beside_each_download(posting):
+    application_id = submitted_application(posting)
+    _, payload = call(
+        app_handler(), "GET", "/applications/{id}", user="co_1", groups=RECRUITER,
+        path={"id": application_id},
+    )
+    view = payload["application"]
+    assert set(view["documentPreviewUrls"]) == set(view["documentUrls"])
+    preview = unquote(view["documentPreviewUrls"]["cv"])
+    download = unquote(view["documentUrls"]["cv"])
+    assert "response-content-disposition=inline" in preview
+    assert "response-content-disposition=attachment" in download

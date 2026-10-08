@@ -19,6 +19,7 @@ import { CompanyOverviewPage } from '@/features/company/CompanyOverviewPage'
 import { CompanyPostingsPage } from '@/features/company/CompanyPostingsPage'
 import { PostingEditorPage } from '@/features/company/PostingEditorPage'
 import { PipelinePage } from '@/features/company/PipelinePage'
+import { ApplicationReviewPage } from '@/features/company/ApplicationReviewPage'
 import { CompanyApplicantsPage } from '@/features/company/CompanyApplicantsPage'
 import { CompanyInterviewsPage } from '@/features/company/CompanyInterviewsPage'
 import { CompanyAnalyticsPage } from '@/features/company/CompanyAnalyticsPage'
@@ -134,6 +135,7 @@ export const router = createBrowserRouter([
       { path: '/company', element: <CompanyOverviewPage /> },
       { path: '/company/postings', element: <CompanyPostingsPage /> },
       { path: '/company/postings/:jobId/pipeline', element: <PipelinePage /> },
+      { path: '/company/postings/:jobId/applications/:applicationId', element: <ApplicationReviewPage /> },
       { path: '/company/applicants', element: <CompanyApplicantsPage /> },
       // The selected person sits in the path rather than a query string, so a
       // candidate is a link somebody can send.
