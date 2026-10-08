@@ -357,6 +357,7 @@ class ApplicationStack(cdk.Stack):
         route("/jobs/mine", "GET", self.jobs_fn)
         route("/jobs/mine/{id}", "GET", self.jobs_fn)
         route("/jobs/{id}", "GET", self.jobs_fn, public=True)
+        route("/jobs/{id}/applied", "GET", self.jobs_fn)
         route("/jobs/{id}", "PATCH", self.jobs_fn)
         route("/jobs/{id}/applications", "GET", self.jobs_fn)
         route("/jobs/{id}/applications/bulk-status", "PATCH", self.jobs_fn)

@@ -1,6 +1,8 @@
 import { useQuery } from '@tanstack/react-query'
-import { getJob, listJobs, type PostingFilters } from '@/api/jobs'
+import { ApiError } from '@/api/errors'
+import { getAppliedJob, getJob, listJobs, type PostingFilters } from '@/api/jobs'
 import { queryKeys } from '@/api/queryKeys'
+import { useAuth } from '@/auth/AuthProvider'
 
 export function usePostingsList(filters: PostingFilters) {
   return useQuery({
@@ -35,10 +37,29 @@ export function useLocationFacets() {
   }
 }
 
+/**
+ * One posting. The public route answers 403 once a posting has closed or
+ * expired, and it can never see who is asking. A signed in applicant who
+ * applied to it is then asked for it again through GET /jobs/{id}/applied,
+ * which checks exactly that; anyone else keeps the original 403.
+ */
 export function usePosting(jobId: string) {
+  const { status } = useAuth()
+  const signedIn = status === 'signedIn'
   return useQuery({
-    queryKey: queryKeys.jobs.detail(jobId),
-    queryFn: () => getJob(jobId),
+    queryKey: [...queryKeys.jobs.detail(jobId), signedIn],
+    queryFn: async () => {
+      try {
+        return await getJob(jobId)
+      } catch (error) {
+        if (!signedIn || !(error instanceof ApiError) || error.status !== 403) throw error
+        try {
+          return await getAppliedJob(jobId)
+        } catch {
+          throw error
+        }
+      }
+    },
     staleTime: 5 * 60_000,
   })
 }

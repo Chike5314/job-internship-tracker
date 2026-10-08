@@ -26,11 +26,9 @@ export function PostingDetailPage() {
     return <Skeleton height={320} radius="var(--radius-xl)" />
   }
 
-  // GET /jobs/{id} is public=True at the API Gateway level, so it never
-  // sees a signed-in caller no matter what token is sent. That means the
-  // owner-or-already-applied exception in the handler can never fire, and
-  // a CLOSED or EXPIRED posting 403s everyone, applicants who already
-  // applied to it included. Treated as a plain state, not an error.
+  // A closed or expired posting 403s on the public route. usePosting asks
+  // again as the signed in applicant, so this is only reached by somebody who
+  // never applied to it. Treated as a plain state, not an error.
   if (error instanceof ApiError && error.status === 403) {
     return (
       <EmptyState

@@ -6,6 +6,7 @@ Routes
     GET    /jobs/mine                            the caller's own postings, drafts included
     GET    /jobs/mine/{id}                       one of them in any status, with its company
     GET    /jobs/{id}                            public detail
+    GET    /jobs/{id}/applied                    the same, in any status, for an applicant who applied
     PATCH  /jobs/{id}                            edit or change lifecycle status
     GET    /jobs/{id}/applications               the pipeline for one posting
     PATCH  /jobs/{id}/applications/bulk-status   one status change across a selection
@@ -245,12 +246,31 @@ def get_job_details(event: Dict[str, Any], _context: Any) -> Dict[str, Any]:
 
     Public route with no authorizer, so the caller is always anonymous here (see
     the note at the end of common/auth.py). The owner reads its own posting
-    through GET /jobs/mine/{id}. An applicant who already applied should keep
-    access once a posting expires, and that needs an authorizer protected
-    counterpart of its own; _has_applied is the check it will use.
+    through GET /jobs/mine/{id}, and an applicant who already applied reads it
+    in any status through GET /jobs/{id}/applied.
     """
     job = get_job(path_param(event, "id"))
     if job.get("postingStatus") != PUBLISHED:
+        raise ForbiddenError("This posting is not open.")
+
+    company = find_company(job["companyId"])
+    return ok({"job": _job_view(job, full=False), "company": _company_snippet(company, job)})
+
+
+@router.route("GET", "/jobs/{id}/applied")
+def get_applied_job(event: Dict[str, Any], _context: Any) -> Dict[str, Any]:
+    """FR-4.10. A posting an applicant applied to stays readable to them.
+
+    The public detail route serves published postings only and, carrying no
+    authorizer, can never tell who is asking, so a posting that closed or
+    expired after somebody applied answered them with a 403. This is its
+    authorizer protected counterpart: any status, but only for an applicant
+    with an application on it.
+    """
+    caller = get_caller(event)
+    caller.require("Applicants")
+    job = get_job(path_param(event, "id"))
+    if not _has_applied(caller.user_id, job["jobId"]):
         raise ForbiddenError("This posting is not open.")
 
     company = find_company(job["companyId"])

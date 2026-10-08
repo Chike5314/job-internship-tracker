@@ -562,3 +562,52 @@ def test_the_recruiter_gets_a_preview_link_beside_each_download(posting):
     download = unquote(view["documentUrls"]["cv"])
     assert "response-content-disposition=inline" in preview
     assert "response-content-disposition=attachment" in download
+
+
+def close(job_id):
+    call(
+        jobs_handler(),
+        "PATCH",
+        "/jobs/{id}",
+        user="co_1",
+        groups=RECRUITER,
+        path={"id": job_id},
+        body={"postingStatus": "CLOSED"},
+    )
+
+
+def applied_view(job_id, user):
+    return call(
+        jobs_handler(), "GET", "/jobs/{id}/applied", user=user, groups=APPLICANT,
+        path={"id": job_id},
+    )
+
+
+def test_an_applicant_still_reads_a_closed_posting_they_applied_to(posting):
+    submitted_application(posting)
+    close(posting)
+
+    public, _ = call(jobs_handler(), "GET", "/jobs/{id}", path={"id": posting})
+    assert public == 403
+
+    status, payload = applied_view(posting, "app_1")
+    assert status == 200
+    assert payload["job"]["jobId"] == posting
+    assert payload["job"]["isOpen"] is False
+    assert payload["company"]
+
+
+def test_a_closed_posting_stays_closed_to_an_applicant_who_never_applied(posting):
+    submitted_application(posting)
+    close(posting)
+
+    status, _ = applied_view(posting, "app_9")
+    assert status == 403
+
+
+def test_the_applied_view_is_for_applicants_only(posting):
+    status, _ = call(
+        jobs_handler(), "GET", "/jobs/{id}/applied", user="co_1", groups=RECRUITER,
+        path={"id": posting},
+    )
+    assert status == 403

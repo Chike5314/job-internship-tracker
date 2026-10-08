@@ -23,3 +23,8 @@ export function listJobs(filters: PostingFilters = {}): Promise<{ count: number;
 export function getJob(jobId: string): Promise<{ job: JobSummary; company: CompanySnippet }> {
   return http.get(`/jobs/${jobId}`, { auth: 'none' })
 }
+
+/** A posting the caller applied to, in any status, including closed ones. */
+export function getAppliedJob(jobId: string): Promise<{ job: JobSummary; company: CompanySnippet }> {
+  return http.get(`/jobs/${jobId}/applied`)
+}
