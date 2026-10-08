@@ -1,13 +1,30 @@
 # Offerline live demo: walkthrough guide
 
-A 12 to 15 minute walkthrough of the main flow, for an audience from the AWS
-Cloud and AI track. Every step says what the person on screen does, what to
-say, and which AWS services just did the work, so the demo doubles as the
-architecture explanation.
-
 The main flow: **an applicant applies, a recruiter reviews and interviews,
-the recruiter makes an offer, the applicant accepts.** Everything else is
-optional.
+the recruiter makes an offer, the applicant accepts.**
+
+## The 8 minute showcase
+
+For the Digisol presentation to staff and interns from other departments.
+Slides take about five minutes; the live part is three. Prepare as in
+section 1 below, with the applicant and recruiter windows side by side.
+
+| When | Slide or screen | Say |
+| --- | --- | --- |
+| 0:00 | Cover, The problem, How we approached it | The pain, then one answer to each |
+| 2:00 | What we built, Built on AWS | Both sides of one record; AWS services as jobs, not jargon |
+| 4:00 | Live demo, applicant window | Open Robotics Software Engineer, Apply, pick the CV, upload a letter, Submit. "That file went straight into an encrypted S3 locker." |
+| 5:00 | Recruiter window | Open the posting's pipeline, click the new card, then Full view. "Opening it moved it to Under review." |
+| 5:45 | Applicant window | Status now Under review, and the bell lit up. "Nobody pressed send: the change triggered it." |
+| 6:15 | Recruiter, then applicant | Extend offer; the applicant accepts it |
+| 7:00 | What we learned, Thank you | AWS lessons, applied; questions |
+
+If a step fails on stage, go back to the slides: the What we built slide shows
+both screens. Everything after this section is the full 12 to 15 minute version,
+with the console tour, for a technical audience or for questions.
+
+The full version below names the AWS services behind each step, so the demo
+doubles as the architecture explanation.
 
 ## 1. The day before
 
