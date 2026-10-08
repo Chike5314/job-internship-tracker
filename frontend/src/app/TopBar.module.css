@@ -45,14 +45,84 @@
   min-width: 0;
 }
 
-@media (max-width: 640px) {
+.menuButton,
+.phoneOnly {
+  display: none;
+}
+
+.wideOnly {
+  display: inline-flex;
+  align-items: center;
+}
+
+.themeRow {
+  align-items: center;
+  gap: var(--space-2);
+  min-height: 48px;
+  color: var(--color-text-secondary);
+}
+
+/* Below this the links wrapped onto two or three lines of their own and the
+   bar took a fifth of a phone screen. They fold behind a menu button instead
+   and open as a list under the bar; signing in and getting started stay in
+   view, because they are what a visitor on a phone came to do. */
+@media (max-width: 719px) {
   .bar {
-    gap: var(--space-3) var(--space-4);
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: var(--space-3);
     padding: var(--space-3) var(--space-4);
   }
 
   .nav {
-    gap: var(--space-3) var(--space-4);
+    display: none;
+    order: 3;
+    flex: 1 0 100%;
+    flex-direction: column;
+    gap: 0;
+    padding-top: var(--space-2);
+    border-top: 1px solid var(--color-rule-hairline);
+  }
+
+  .nav[data-open='true'] {
+    display: flex;
+  }
+
+  .nav a {
+    display: flex;
+    align-items: center;
+    min-height: 48px;
+  }
+
+  .actions {
+    flex-wrap: nowrap;
+    gap: var(--space-2);
+  }
+
+  .menuButton {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: none;
+    width: 44px;
+    height: 44px;
+    border: none;
+    border-radius: var(--m3-shape-full);
+    background: transparent;
+    color: var(--color-text-primary);
+    cursor: pointer;
+  }
+
+  .menuButton:hover {
+    background: var(--color-glass-hover);
+  }
+
+  .wideOnly {
+    display: none;
+  }
+
+  .phoneOnly {
+    display: flex;
   }
 }
 

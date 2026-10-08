@@ -47,6 +47,11 @@
 .headline {
   text-wrap: balance;
   max-width: 16ch;
+  /* The display size is 76px, and "opportunity" alone is wider than a phone
+     at that size, so the hero scales with the viewport and reaches the full
+     size from about 720px up. */
+  font-size: clamp(40px, 10.5vw, var(--type-display-xl-size));
+  overflow-wrap: break-word;
 }
 
 .lede {

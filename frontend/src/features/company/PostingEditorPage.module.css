@@ -354,19 +354,26 @@
     grid-column: auto;
   }
 
-  /* The steps become a strip across the top, numbers and names only. */
+  /* The steps become a two by two grid above the form, numbers and names
+     only. A strip that scrolled sideways hid the last step off the edge of a
+     phone, so a recruiter could not see how far there was to go. */
   .stepList {
-    flex-direction: row;
-    overflow-x: auto;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: var(--space-1);
   }
 
   .stepButton {
     align-items: center;
     gap: var(--space-2);
-    width: auto;
+    width: 100%;
+    min-width: 0;
     padding: var(--space-2) var(--space-3) var(--space-2) var(--space-2);
-    white-space: nowrap;
+    line-height: 1.25;
+  }
+
+  .stepButton > * {
+    min-width: 0;
   }
 
   .stepHint,

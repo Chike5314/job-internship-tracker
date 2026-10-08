@@ -201,33 +201,39 @@
 .tableWrap {
   padding: 0 var(--space-2) 6px;
   overflow-x: auto;
+  container: postings-table / inline-size;
 }
 
 .table {
   width: 100%;
-  min-width: 920px;
+  /* The other five columns are fixed and the posting column takes what is
+     left. They used to total 852px against a 920px minimum, which left the
+     title 68px and put it under the location. They now total 730px, and
+     below the width that gives the title about 170px the table becomes a
+     list of cards instead (see the container query at the end). */
+  min-width: 900px;
   border-collapse: collapse;
   table-layout: fixed;
 }
 
 .colLocation {
-  width: 186px;
+  width: 150px;
 }
 
 .colApplicants {
-  width: 136px;
+  width: 116px;
 }
 
 .colDeadline {
-  width: 166px;
+  width: 140px;
 }
 
 .colStatus {
-  width: 136px;
+  width: 124px;
 }
 
 .colActions {
-  width: 228px;
+  width: 200px;
 }
 
 .table th,
@@ -275,15 +281,15 @@
   min-width: 0;
 }
 
+/* Wraps rather than truncating: a recruiter with two internships whose names
+   differ only at the end could not tell them apart with an ellipsis. */
 .postingTitle {
   max-width: 100%;
-  overflow: hidden;
   color: var(--color-text-primary);
   font-size: var(--type-body-size);
   font-weight: 600;
-  line-height: normal;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  line-height: 1.3;
+  overflow-wrap: anywhere;
 }
 
 a.postingTitle:hover {
@@ -461,5 +467,83 @@ a.postingTitle:hover {
 
   .search {
     width: 100%;
+  }
+}
+
+/* Too narrow for the table, the table is a list of cards: one posting per
+   block, its title first, then each value under a small label of its own, so
+   nothing scrolls sideways and no heading has to share a line it cannot fit
+   on. Measured against the card, not the window, because the rail beside it
+   takes a different share of the window at different sizes. */
+@container postings-table (max-width: 899px) {
+  .tableWrap {
+    padding: 0;
+    overflow-x: visible;
+  }
+
+  .table,
+  .table tbody,
+  .table tr,
+  .table th,
+  .table td {
+    display: block;
+    width: auto;
+    min-width: 0;
+  }
+
+  .table colgroup {
+    display: none;
+  }
+
+  .table thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+  }
+
+  .table tr {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--space-3) var(--space-4);
+    padding: var(--space-4);
+  }
+
+  .table tbody tr + tr {
+    border-top: 1px solid var(--color-n-200);
+  }
+
+  .table tbody tr + tr th,
+  .table tbody tr + tr td {
+    border-top: none;
+  }
+
+  .table th,
+  .table td,
+  .table th:first-child,
+  .table td:first-child {
+    padding: 0;
+  }
+
+  .table th[scope='row'],
+  .actionsCell {
+    grid-column: 1 / -1;
+  }
+
+  .table td[data-label]::before {
+    content: attr(data-label);
+    display: block;
+    margin-bottom: 2px;
+    color: var(--color-text-subtle);
+    font-size: var(--type-caption-size);
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+
+  .actionsCell .actions {
+    justify-content: flex-start;
+    flex-wrap: wrap;
   }
 }

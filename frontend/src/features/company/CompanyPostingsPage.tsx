@@ -318,8 +318,8 @@ function PostingRow({ job, counts }: { job: JobSummary; counts?: Counts }) {
           </span>
         </span>
       </th>
-      <td className={styles.location}>{location(job)}</td>
-      <td>
+      <td className={styles.location} data-label="Location">{location(job)}</td>
+      <td data-label="Applicants">
         <span className={styles.stack}>
           <span className={styles.figure}>{applications}</span>
           <span className={unopened > 0 ? styles.unopened : styles.note}>
@@ -333,19 +333,19 @@ function PostingRow({ job, counts }: { job: JobSummary; counts?: Counts }) {
           </span>
         </span>
       </td>
-      <td>
+      <td data-label="Deadline">
         <span className={styles.stack}>
           <span className={styles.deadline}>{deadline.main}</span>
           <span className={styles.note}>{deadline.note}</span>
         </span>
       </td>
-      <td>
+      <td data-label="Status">
         <span className={[styles.status, styles[status.toLowerCase()]].join(' ')}>
           <span className={styles.statusDot} aria-hidden="true" />
           {STATUS_LABEL[status]}
         </span>
       </td>
-      <td>
+      <td className={styles.actionsCell}>
         <span className={styles.actions}>
           {status !== 'DRAFT' && (
             <Link to={`/company/postings/${job.jobId}/pipeline`} className={styles.action}>

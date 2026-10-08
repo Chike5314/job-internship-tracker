@@ -1,6 +1,14 @@
-import markSvg from '@/assets/brand/offerline-mark.svg?raw'
-import wordmarkSvg from '@/assets/brand/offerline-wordmark.svg?raw'
+import markSource from '@/assets/brand/offerline-mark.svg?raw'
+import wordmarkSource from '@/assets/brand/offerline-wordmark.svg?raw'
 import styles from './Logo.module.css'
+
+// The traced files carry the source image's content credentials in a
+// <metadata> block, about 7.7KB of each. Inlined, that went into the page on
+// every logo and read as the link's text, so it is dropped here and the files
+// themselves are left as the designer delivered them.
+const stripMetadata = (svg: string) => svg.replace(/<metadata>[\s\S]*?<\/metadata>/g, '')
+const markSvg = stripMetadata(markSource)
+const wordmarkSvg = stripMetadata(wordmarkSource)
 
 interface LogoProps {
   /**
