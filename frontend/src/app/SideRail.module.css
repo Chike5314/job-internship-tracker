@@ -135,40 +135,74 @@
   }
 }
 
-/* Below the split the rail becomes a band: the brand on one line and the
-   destinations scrolling across under it, with the foot's links held at the
-   end of that row. The identity card goes with the account menu in the bar,
-   so it is not repeated here. */
+/* The drawer only exists as a box below the split. Above it, its children sit
+   in the rail's own column as if it were not there. */
+.drawer {
+  display: contents;
+}
+
+.menuButton {
+  display: none;
+}
+
+/* Below the split the rail is a bar: the brand and a menu button on one line,
+   and the destinations in a drawer that opens beneath it as a plain vertical
+   list. Nothing scrolls sideways, so the page is never wider than the phone.
+   The identity card goes with the account menu in the app bar, so it is not
+   repeated here. */
 @media (max-width: 899px) {
   .rail {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) auto;
-    gap: var(--space-4) var(--space-2);
-    padding: var(--space-4);
+    position: sticky;
+    top: 0;
+    z-index: 20;
+    gap: 0;
+    padding: var(--space-3) var(--space-4);
+    background: var(--color-surface-container);
   }
 
   .head {
-    grid-column: 1 / -1;
+    padding: 0;
   }
 
-  .nav {
-    flex-direction: row;
-    gap: var(--space-2);
-    overflow-x: auto;
-    padding-bottom: var(--space-1);
+  .section {
+    margin-right: auto;
   }
 
-  .link {
+  .menuButton {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
     flex: none;
-    padding: 0 var(--space-4);
+    width: 44px;
+    height: 44px;
+    border: none;
+    border-radius: var(--m3-shape-full);
+    background: transparent;
+    color: var(--color-text-primary);
+    cursor: pointer;
   }
 
-  .link > span:first-of-type {
-    flex: none;
+  .menuButton:hover {
+    background: var(--color-glass-hover);
+  }
+
+  .drawer {
+    display: none;
+    flex-direction: column;
+    gap: var(--space-3);
+    max-height: calc(100vh - 72px);
+    overflow-y: auto;
+    padding-top: var(--space-3);
+  }
+
+  .drawer[data-open='true'] {
+    display: flex;
   }
 
   .foot {
     margin-top: 0;
+    padding-top: var(--space-3);
+    border-top: 1px solid var(--color-rule-hairline);
   }
 
   .identity {

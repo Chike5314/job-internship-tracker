@@ -1,5 +1,5 @@
 import { NavLink, useLocation } from 'react-router-dom'
-import { useEffect, useRef, type ReactNode } from 'react'
+import { useEffect, useId, useState, type ReactNode } from 'react'
 import { Logo } from './Logo'
 import { Icon, type IconName } from '@/ui/Icon'
 import styles from './SideRail.module.css'
@@ -53,31 +53,22 @@ export function SideRail({
   navLabel,
 }: Props) {
   const location = useLocation()
-  const navRef = useRef<HTMLElement>(null)
+  const [open, setOpen] = useState(false)
+  const drawerId = useId()
 
-  // Below the split the destinations scroll across in a band, and on a narrow
-  // screen the current one can sit out of view. It is brought to the middle
-  // of the band, moving only the band, never the page.
-  // The links widen after the first paint, once the web fonts land and once a
-  // count arrives with its data, so it centres again whenever a link changes
-  // size; a position worked out before that no longer holds.
+  // Below the split the destinations fold behind a menu button rather than
+  // scrolling sideways in a band, which pushed the page wider than a phone.
+  // Choosing a destination is the end of the errand, so the drawer closes on
+  // every navigation, and Escape closes it the way it closes any other menu.
+  useEffect(() => setOpen(false), [location.pathname, location.search])
   useEffect(() => {
-    const nav = navRef.current
-    if (!nav) return
-    function centre() {
-      if (!nav || nav.scrollWidth <= nav.clientWidth) return
-      const current = nav.querySelector<HTMLElement>('[aria-current="page"]')
-      if (!current) return
-      const band = nav.getBoundingClientRect()
-      const link = current.getBoundingClientRect()
-      nav.scrollLeft += link.left + link.width / 2 - (band.left + band.width / 2)
+    if (!open) return
+    function onKeyDown(event: KeyboardEvent) {
+      if (event.key === 'Escape') setOpen(false)
     }
-    centre()
-    if (typeof ResizeObserver === 'undefined') return
-    const observer = new ResizeObserver(() => centre())
-    for (const link of Array.from(nav.children)) observer.observe(link)
-    return () => observer.disconnect()
-  }, [location.pathname])
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  }, [open])
 
   function renderLink(item: RailDestination) {
     return (
@@ -111,9 +102,20 @@ export function SideRail({
           <Logo height={24} />
         </NavLink>
         {section && <span className={['t-eyebrow', styles.section].join(' ')}>{section}</span>}
+        <button
+          type="button"
+          className={styles.menuButton}
+          aria-expanded={open}
+          aria-controls={drawerId}
+          aria-label={open ? 'Close menu' : 'Open menu'}
+          onClick={() => setOpen((value) => !value)}
+        >
+          <Icon name={open ? 'close' : 'menu'} size={22} />
+        </button>
       </div>
 
-      <nav ref={navRef} className={styles.nav} aria-label={navLabel}>
+      <div id={drawerId} className={styles.drawer} data-open={open}>
+      <nav className={styles.nav} aria-label={navLabel}>
         {destinations.map(renderLink)}
       </nav>
 
@@ -127,6 +129,7 @@ export function SideRail({
           {identity && <div className={styles.identity}>{identity}</div>}
         </div>
       )}
+      </div>
     </div>
   )
 }
