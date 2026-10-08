@@ -24,7 +24,7 @@ development account: AWS account `400294419066`, region `us-east-1`, stacks
 against it twice, confirming idempotency, and populated it with a verified
 company, three published postings, two applicants with CVs, and five
 applications spread across the pipeline including one scheduled interview.
-Everything has been verified by `cdk synth` and by 99 tests.
+Everything has been verified by `cdk synth` and by 150 tests.
 
 Cognito hosted UI: `https://jiat-dev.auth.us-east-1.amazoncognito.com`. The app
 client only allows the authorization code OAuth flow with callback
@@ -80,8 +80,9 @@ docs/brand/                design tokens and logo files, the frontend's source o
 ## Frontend
 
 `frontend/` is a React 19 + Vite + TypeScript SPA, not yet a separate repo (see
-`frontend/README.md` if one exists, otherwise this section). Applicant
-experience only so far: sign up and sign in through custom branded forms
+`frontend/README.md` if one exists, otherwise this section). Three apps in
+one: applicant, company and admin. The applicant side: sign up and sign in
+through custom branded forms
 (`aws-amplify`'s Auth module, since the app client only allows
 `ALLOW_USER_SRP_AUTH`), browse and filter postings, apply through a form
 rendered entirely from a posting's `documentRequirements`, track applications,
@@ -95,6 +96,18 @@ the only recruiter view organised by person rather than by posting, which is
 what makes a repeat applicant visible at all; it is a two-pane list and detail
 like the applicant side's applications page, with the selected person in the
 path so a candidate is a link somebody can send.
+
+One application is read in two places: the drawer over the pipeline board for
+a quick look, and `ApplicationReviewPage` at
+`/company/postings/:jobId/applications/:applicationId`, which frames the
+documents in the page (PDFs and images, through the `documentPreviewUrls` the
+recruiter view carries, presigned with an inline disposition) and steps through
+the posting's applications in board order. Both render `DrawerContent`; the
+page passes `layout="page"`, which drops the drawer's documents list.
+
+Below 900px the side rail folds behind a menu button, and below 720px so does
+the landing page's top bar. Both stay open only on the page they were opened
+from, rather than resetting state in an effect.
 
 Design tokens are generated, not hand authored: `frontend/scripts/build-tokens.mjs`
 reads `docs/brand/tokens.json` directly and writes `frontend/src/styles/tokens.css`,
@@ -160,7 +173,7 @@ Two things worth knowing before touching this code again:
 - Cognito user pool, three groups, optional Google identity provider.
 - SQS submission queue with a dead letter queue at three attempts, SNS recruiter
   topic, hourly posting expiry rule.
-- Six domain Lambda functions and 39 REST routes behind a Cognito authorizer
+- Six domain Lambda functions and 40 REST routes behind a Cognito authorizer
   (all but a handful of public, anonymous-friendly ones, such as the posting
   listing and detail views and `GET /companies/{id}`).
 - Identity trigger on the user pool. Post confirmation covers email and password
@@ -175,7 +188,7 @@ Two things worth knowing before touching this code again:
   account directly, and a platform overview. Moderation decisions append to a
   history rather than overwriting.
 - Company interview calendar on a sparse GSI.
-- 137 tests in two layers. 32 unit tests over the pure rules, 105 integration tests
+- 150 tests in two layers: unit tests over the pure rules, and integration tests
   running the real handlers against moto with DynamoDB and its indexes, S3, SQS,
   SNS, SES and Cognito standing up in process.
 
@@ -263,33 +276,31 @@ so nothing company-facing is seeded with numbers of its own any more.
 
 ## Immediate next step
 
-The seed script, the first deploy, and the applicant-facing frontend are all
-done; see Status and Frontend above. The four SRS 7.2 runtime flows have now
-been walked for real in a browser against the live API: sign in, document
-upload (a real presigned S3 PUT), application submission, and status change
-(an offer accepted, an interview confirmed), all verified with Playwright
-during the build, not just asserted.
+The frontend is hosted on Amplify Hosting, in a friend's AWS account rather
+than 400294419066, at `https://main.dshlqks1zd51k.amplifyapp.com`, built from
+`main` on GitHub. That origin is in `allowedOrigins` in `cdk.json` next to
+localhost; a recreated Amplify app gets a new id, and the backend refuses it
+until the new URL replaces the old one there and both stacks are redeployed.
+The Amplify app needs `AMPLIFY_MONOREPO_APP_ROOT=frontend` and the five `VITE_`
+variables, and a build only picks up a variable that was set before it ran.
 
-Two things left before the applicant side is really finished:
+Open items:
 
-- **Amplify Hosting**, connected by hand to a GitHub-hosted frontend repo,
-  per the manual steps below. Until then the frontend only runs locally.
-- **Two things noted during frontend verification but not fixed**, since
-  fixing them is backend work and this pass was scoped to the frontend:
-  `GET /jobs/{id}` can never see a signed in caller for the same reason
-  `GET /jobs/mine` couldn't before it was split out (`public=True` means no
-  authorizer, ever, regardless of what token is sent), so a closed or expired
-  posting 403s even the applicant who already applied to it. Still open.
+- **Google sign-in is not switched on.** The user pool has no identity
+  providers because `googleClientId` and `googleClientSecretArn` are empty in
+  `cdk.json`. A secret `jiat-dev/google-oauth` exists; the stack passes its
+  whole value as the client secret, so it must be plain text. Fill both
+  context values, add
+  `https://jiat-dev.auth.us-east-1.amazoncognito.com/oauth2/idpresponse` to the
+  Google client's redirect URIs, and redeploy the persistence stack.
+- **`GET /jobs/{id}` can never see a signed in caller** (`public=True` means no
+  authorizer), so a closed or expired posting 403s even the applicant who
+  applied to it. Needs an authorizer-protected route of its own.
+- **Bulk interview booking does not check for clashes** with interviews the
+  company already has.
 
-  The CV library entry is now fixed: `POST /profile/cvs` records it after the
-  upload lands and checks the object is really in the bucket first, so an
-  abandoned upload no longer leaves an entry pointing at nothing. Asking for a
-  presigned URL records nothing at all. Confirming the same key twice returns
-  the same entry, because a browser retrying an upload it is unsure about is
-  the normal case.
-
-After that: recruiter and admin frontend phases, then the remaining Appendix D
-diagrams.
+The presentation deck and the Lucidchart prompts for the architecture diagrams
+(`docs/diagrams/lucidchart-prompts.md`) are done.
 
 ## Where first deploy problems are expected
 
@@ -319,9 +330,6 @@ diagrams.
 
 ## Still to do beyond the backend
 
-- Recruiter and admin frontend views. The applicant view is done (see
-  Frontend above); the design system, tokens and logo files it uses are the
-  same ones a recruiter or admin view would use, already proven out.
 - Remaining Appendix D diagrams: class, sequence, state machine, activity,
   deployment, component. The use case diagram, the ER diagram and data flow
   diagrams at levels 0, 1 and 2 are done and were delivered as SVG and PNG.
