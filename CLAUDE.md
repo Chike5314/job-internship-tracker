@@ -287,10 +287,10 @@ variables, and a build only picks up a variable that was set before it ran.
 Open items:
 
 - **Google sign-in depends on `cdk.json`.** `googleClientId` and
-  `googleClientSecretArn` live there now. A deploy run without them, from an
-  older `cdk.json` or with them passed only as `-c` flags, removes the Google
-  provider from the user pool without any error; it happened twice on
-  2026-10-08. A `cdk diff` that shows `GoogleProvider` being destroyed is that.
+  `googleClientSecretArn` live there now. Before that they were passed as `-c`
+  flags on one deploy, and every later deploy that left the flags off removed
+  the Google provider from the user pool without any error; it happened twice
+  on 2026-10-08. A `cdk diff` that shows `GoogleProvider` being destroyed is that.
 - **Bulk interview booking does not check for clashes** with interviews the
   company already has.
 
