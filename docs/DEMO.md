@@ -6,8 +6,15 @@ the recruiter makes an offer, the applicant accepts.**
 ## The 8 minute showcase
 
 For the Digisol presentation to staff and interns from other departments.
-Slides take about five minutes; the live part is three. Prepare as in
-section 1 below, with the applicant and recruiter windows side by side.
+Slides take about five minutes; the live part is three.
+
+**Data:** enter the Cameroon data set in [DEMO_DATA.md](DEMO_DATA.md) the
+evening before. On stage the applicant is **Brenda Ngwa**, the company is
+**Mountainview Digital Labs**, and the posting is **Cloud Engineering Intern**.
+Where the table below says Robotics Software Engineer, use Cloud Engineering
+Intern. (The seed script's data in section 1 still works as a fallback.)
+
+Open the applicant and recruiter windows side by side.
 
 | When | Slide or screen | Say |
 | --- | --- | --- |

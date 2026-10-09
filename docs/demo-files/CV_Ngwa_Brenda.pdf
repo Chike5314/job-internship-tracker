@@ -1,0 +1,78 @@
+%PDF-1.4
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [3 0 R] /Count 1 >>
+endobj
+3 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 4 0 R /F2 5 0 R >> >> /Contents 6 0 R >>
+endobj
+4 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>
+endobj
+5 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold >>
+endobj
+6 0 obj
+<< /Length 639 >>
+stream
+BT
+/F1 11 Tf
+56 790 Td
+16 TL
+/F2 15 Tf
+(Brenda Ngwa) Tj
+T*
+/F1 11 Tf
+(Buea, South West Region, Cameroon) Tj
+T*
+() Tj
+T*
+/F2 15 Tf
+(Education) Tj
+T*
+/F1 11 Tf
+(University of Buea, Faculty of Science) Tj
+T*
+(BSc Computer Science, final year) Tj
+T*
+() Tj
+T*
+/F2 15 Tf
+(Skills) Tj
+T*
+/F1 11 Tf
+(Python, Linux, AWS basics \(EC2, S3, Lambda\), Git, SQL) Tj
+T*
+() Tj
+T*
+/F2 15 Tf
+(Experience) Tj
+T*
+/F1 11 Tf
+(2025  Volunteer IT support, campus computer lab, University of Buea) Tj
+T*
+(2024  Built a timetable web app for her department \(Python, Flask\)) Tj
+T*
+() Tj
+T*
+(Sample document for the Offerline demo. The person is fictional.) Tj
+T*
+ET
+endstream
+endobj
+xref
+0 7
+0000000000 65535 f 
+0000000009 00000 n 
+0000000058 00000 n 
+0000000115 00000 n 
+0000000251 00000 n 
+0000000321 00000 n 
+0000000396 00000 n 
+trailer
+<< /Size 7 /Root 1 0 R >>
+startxref
+1086
+%%EOF
