@@ -103,11 +103,14 @@
 
 .reply {
   display: flex;
+  flex-wrap: wrap;
   gap: var(--space-2);
 }
 
+/* Side by side while each has room for its label; on a phone they stack,
+   full width, rather than squeezing "Confirm attendance" to its edges. */
 .replyButton {
-  flex: 1;
+  flex: 1 1 170px;
   font-size: var(--type-body-sm-size);
 }
 

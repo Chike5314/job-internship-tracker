@@ -7,6 +7,9 @@ interface FlyoutProps {
   anchorRef: React.RefObject<HTMLElement | null>
   title: string
   children: ReactNode
+  /** Below the trigger by default. Above, for a trigger at the foot of the
+   *  screen, where opening downward would run off it. */
+  placement?: 'below' | 'above'
 }
 
 /**
@@ -14,7 +17,7 @@ interface FlyoutProps {
  * Traps focus while open, closes on Escape or an outside click, and
  * returns focus to the trigger on close.
  */
-export function Flyout({ open, onClose, anchorRef, title, children }: FlyoutProps) {
+export function Flyout({ open, onClose, anchorRef, title, children, placement = 'below' }: FlyoutProps) {
   const panelRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -75,7 +78,7 @@ export function Flyout({ open, onClose, anchorRef, title, children }: FlyoutProp
       ref={panelRef}
       role="dialog"
       aria-label={title}
-      className={[styles.panel, 'glass-dense'].join(' ')}
+      className={[styles.panel, placement === 'above' ? styles.above : '', 'glass-dense'].join(' ')}
     >
       {children}
     </div>

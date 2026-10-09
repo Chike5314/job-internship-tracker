@@ -46,7 +46,7 @@ export function ApplicantSidebar() {
       destinations={destinations}
       secondary={secondary}
       navLabel="Applicant"
-      identity={<RailIdentity name={identity?.fullName ?? ''} subtitle="Applicant" />}
+      identity={<RailIdentity name={identity?.fullName ?? ''} subtitle="Applicant" profileTo="/profile" />}
     />
   )
 }

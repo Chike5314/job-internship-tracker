@@ -10,3 +10,12 @@
   box-shadow: var(--shadow-inset-edge), var(--shadow-soft-lg);
   padding: var(--space-4);
 }
+
+.above {
+  top: auto;
+  bottom: calc(100% + var(--space-2));
+  left: 0;
+  right: auto;
+  width: max(100%, 240px);
+  padding: var(--space-2);
+}

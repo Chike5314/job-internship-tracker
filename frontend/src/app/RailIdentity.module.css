@@ -1,4 +1,16 @@
+.wrapper {
+  position: relative;
+}
+
+/* A button now, so it carries the reset a button needs to look like the card
+   it was, and a hover that says it can be pressed. */
 .card {
+  width: 100%;
+  border: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
   display: flex;
   align-items: center;
   gap: var(--space-3);
@@ -52,4 +64,43 @@
 .chevron {
   flex: none;
   color: var(--color-text-subtle);
+}
+
+.card:hover {
+  background-image: linear-gradient(var(--color-glass-hover), var(--color-glass-hover));
+}
+
+.chevron {
+  transition: transform var(--m3-dur-fast) var(--m3-effects);
+}
+
+/* The menu opens upward, so the chevron points up while it is open. */
+.chevronOpen {
+  transform: rotate(180deg);
+}
+
+.menu {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-height: 44px;
+  padding: 0 var(--space-3);
+  border: none;
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--color-text-primary);
+  font: inherit;
+  font-size: var(--type-body-sm-size);
+  text-align: left;
+  cursor: pointer;
+}
+
+.item:hover {
+  background: var(--color-glass-hover);
 }

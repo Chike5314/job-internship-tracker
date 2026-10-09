@@ -37,6 +37,8 @@ export function CompanySidebar() {
       identity={
         <RailIdentity
           organisation
+          profileTo="/company/profile"
+          profileLabel="Update company profile"
           name={company?.company.companyName ?? identity?.fullName ?? ''}
           subtitle={
             company ? (

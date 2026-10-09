@@ -70,7 +70,9 @@
 }
 
 .offerText {
-  flex: 1;
+  /* Below this width the message would wrap a word to a line beside the
+     button, so the button moves under it instead. */
+  flex: 1 1 240px;
   min-width: 0;
   line-height: normal;
 }
@@ -273,6 +275,11 @@
 @media (max-width: 640px) {
   .columns {
     display: none;
+  }
+
+  /* On a phone the offer's button takes the full width under its message. */
+  .offer > button {
+    flex: 1 1 100%;
   }
 
   .phoneSearch {
