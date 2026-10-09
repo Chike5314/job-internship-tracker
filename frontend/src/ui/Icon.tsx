@@ -17,7 +17,7 @@ export type IconName =
   | 'analytics' | 'funnel' | 'trend' | 'admin' | 'suspend' | 'approve'
   | 'theme-paper' | 'theme-ink' | 'theme-system'
   | 'dashboard' | 'applications' | 'file' | 'folder' | 'date' | 'star'
-  | 'send' | 'save' | 'home' | 'person' | 'lock';
+  | 'send' | 'save' | 'home' | 'person' | 'lock' | 'eye' | 'eye-off';
 
 type Props = {
   name: IconName;

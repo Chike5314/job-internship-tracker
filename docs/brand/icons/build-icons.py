@@ -105,6 +105,11 @@ GROUPS = {
     "Posting editor": {
         "lock": "lock",
     },
+    # Password fields: show or hide what has been typed.
+    "Password fields": {
+        "eye": "eye",
+        "eye-off": "eye-off",
+    },
 }
 
 BODY = re.compile(r"<svg[^>]*>(.*)</svg>", re.S)

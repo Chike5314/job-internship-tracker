@@ -7,6 +7,7 @@ import { Button } from '@/ui/Button'
 import { ButtonLink } from '@/ui/ButtonLink'
 import { Field } from '@/ui/Field'
 import { Input } from '@/ui/Input'
+import { PasswordInput } from '@/ui/PasswordInput'
 import { PasswordRulesList } from './PasswordRulesList'
 import styles from './authPanel.module.css'
 
@@ -133,10 +134,9 @@ export function ResetPasswordPage() {
 
             <Field label="New password" hint={`${MIN_PASSWORD_LENGTH} characters or more`} error={passwordError}>
               {(props) => (
-                <Input
+                <PasswordInput
                   {...props}
                   className={styles.input}
-                  type="password"
                   autoComplete="new-password"
                   value={password}
                   onChange={(event) => setPassword(event.target.value)}

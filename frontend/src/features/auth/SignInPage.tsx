@@ -9,6 +9,7 @@ import { safeNextPath } from '@/auth/RouteGuards'
 import { Button } from '@/ui/Button'
 import { Field } from '@/ui/Field'
 import { Input } from '@/ui/Input'
+import { PasswordInput } from '@/ui/PasswordInput'
 import { GoogleButton } from './GoogleButton'
 import { PasswordRulesList } from './PasswordRulesList'
 import styles from './authPanel.module.css'
@@ -103,10 +104,9 @@ function SignInForm() {
 
         <Field label="Password">
           {(props) => (
-            <Input
+            <PasswordInput
               {...props}
               className={styles.input}
-              type="password"
               autoComplete="current-password"
               required
               value={password}
@@ -196,10 +196,9 @@ function NewPasswordForm({ email, onDone }: { email: string; onDone: () => Promi
       <div className={styles.fields}>
         <Field label="New password" hint={`${MIN_PASSWORD_LENGTH} characters or more`} error={passwordError}>
           {(props) => (
-            <Input
+            <PasswordInput
               {...props}
               className={styles.input}
-              type="password"
               autoComplete="new-password"
               value={password}
               onChange={(event) => setPassword(event.target.value)}

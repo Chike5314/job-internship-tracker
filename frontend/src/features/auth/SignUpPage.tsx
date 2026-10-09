@@ -6,6 +6,7 @@ import { meetsPasswordPolicy, MIN_PASSWORD_LENGTH } from '@/auth/passwordRules'
 import { Button } from '@/ui/Button'
 import { Field } from '@/ui/Field'
 import { Input } from '@/ui/Input'
+import { PasswordInput } from '@/ui/PasswordInput'
 import { PasswordRulesList } from './PasswordRulesList'
 import { AccountTabs, useAccount } from './AccountTabs'
 import { GoogleButton } from './GoogleButton'
@@ -116,10 +117,9 @@ function ApplicantSignUp() {
 
         <Field label="Password" hint={PASSWORD_HINT} error={errors.password}>
           {(props) => (
-            <Input
+            <PasswordInput
               {...props}
               className={styles.input}
-              type="password"
               autoComplete="new-password"
               value={password}
               onChange={(event) => setPassword(event.target.value)}
@@ -248,10 +248,9 @@ function CompanySignUp() {
 
         <Field label="Password" hint={PASSWORD_HINT} error={errors.password}>
           {(props) => (
-            <Input
+            <PasswordInput
               {...props}
               className={styles.input}
-              type="password"
               autoComplete="new-password"
               value={password}
               onChange={(event) => setPassword(event.target.value)}
