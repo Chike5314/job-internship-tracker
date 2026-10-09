@@ -67,13 +67,6 @@ export function DetailsStep({
           : ''
       : ''
   const describedMissing = showErrors && !draft.description.trim()
-  // Duration is its own field on a posting, which the posting page shows as a
-  // fact, so it keeps a fixed row here for the types it belongs to. A posting
-  // that already says it in a detail of its own is not asked twice.
-  const durationAsDetail = details.some((detail) => detail.label.trim().toLowerCase() === 'duration')
-  const showDuration =
-    Boolean(draft.duration) || (draft.opportunityType !== 'FULL_TIME_JOB' && !durationAsDetail)
-
   function setSalary(changes: Partial<Salary>) {
     onChange({ salary: { currency: 'XAF', period: 'MONTH', ...salary, ...changes } })
   }
@@ -295,21 +288,6 @@ export function DetailsStep({
           </h2>
           <p className={styles.cardNote}>Shown on the posting. Applicants can't filter on these.</p>
         </div>
-
-        {showDuration && (
-          <div className={styles.detail}>
-            <span className={styles.fixedLabel}>Duration</span>
-            <Input
-              value={draft.duration ?? ''}
-              onChange={(event) => onChange({ duration: event.target.value })}
-              placeholder="For example, 6 months"
-              aria-label="Duration"
-              maxLength={60}
-              className={styles.detailInput}
-            />
-            <span aria-hidden="true" />
-          </div>
-        )}
 
         {details.map((detail, index) => {
           const half = showErrors && !detail.label.trim() !== !detail.value.trim()

@@ -123,6 +123,24 @@ export function BasicsStep({
           </span>
         </fieldset>
 
+        {/* How long an internship lasts is part of what it is, so it is asked
+            here, beside the type, rather than among the optional extras. A
+            job has no fixed length, so the field appears for internships, or
+            when a posting already carries one. */}
+        {(draft.opportunityType !== 'FULL_TIME_JOB' || Boolean(draft.duration)) && (
+          <label className={styles.field}>
+            <span className={styles.label}>Duration</span>
+            <Input
+              value={draft.duration ?? ''}
+              onChange={(event) => onChange({ duration: event.target.value })}
+              placeholder="For example, 3 months"
+              maxLength={60}
+              className={styles.input}
+            />
+            <span className={styles.hint}>Shown on the posting, beside the type.</span>
+          </label>
+        )}
+
         <fieldset className={styles.group}>
           <legend className={styles.label}>Where the work happens</legend>
           <div className={styles.segments}>
