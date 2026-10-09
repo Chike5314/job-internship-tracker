@@ -338,7 +338,7 @@ class ApplicationStack(cdk.Stack):
         route("/profile/cvs", "POST", self.auth_fn)
 
         # Companies and admin moderation
-        route("/companies", "POST", self.company_fn, public=True)
+        route("/companies", "POST", self.company_fn)
         route("/companies", "GET", self.company_fn)
         # Literal segments, so they resolve ahead of /companies/{id}. That
         # route is public and therefore blind to its caller, which is the

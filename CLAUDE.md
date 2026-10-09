@@ -55,10 +55,12 @@ work, and a route with no authorizer attached never gets
 `requestContext.authorizer.claims` populated by API Gateway no matter what a
 client sends. The `mine=true` query flag that used to live on that route could
 therefore never see a signed in caller. Fixed by splitting a separate,
-authorizer-protected `GET /jobs/mine` off from the public `GET /jobs`. Worth
-checking whether the same public-route-with-an-optional-caller pattern exists
-anywhere else before it bites again (`POST /companies` reads a caller the same
-way and is also `public=True` in the route table).
+authorizer-protected `GET /jobs/mine` off from the public `GET /jobs`. It bit
+again on 2026-10-09: `POST /companies` was `public=True` but needs its caller,
+whose id becomes the company id, so every company sign-up answered 401 from
+the handler. It now carries the authorizer; the confirm page signs the new
+account in first, so a token is always there. Any route whose handler calls
+`get_caller` must not be `public=True`.
 
 ## Layout
 
